@@ -52,7 +52,8 @@ Or run SQL manually in Supabase Dashboard → SQL Editor.
    - Import your Git repository
 
 2. **Configure Project:**
-   - Root Directory: `web` (or use vercel.json)
+   - Go to **Settings** → **General**
+   - Set **Root Directory** to: `web` (MUST be set in Vercel UI)
    - Framework: Next.js (auto-detected)
 
 3. **Add Environment Variables:**

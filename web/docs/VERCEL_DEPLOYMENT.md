@@ -22,16 +22,19 @@ This guide will help you deploy PolovniSatovi to Vercel.
 
 In Vercel project settings:
 1. Go to **Settings** → **General**
-2. Set **Root Directory** to: `web`
-3. The `vercel.json` file in the root already configures this
+2. Find **Root Directory** section
+3. Click **Edit** and set it to: `web`
+4. Click **Save**
 
 **Framework Preset:** Next.js (auto-detected)
 
-**Build Command:** `npm run build` (runs automatically, includes Prisma generate via postinstall)
+**Build Command:** Will run `npm run build` from the `web/` directory (includes Prisma generate via postinstall)
 
 **Output Directory:** `.next` (default)
 
 **Install Command:** `npm install` (default)
+
+**Note:** The `vercel.json` file in the repository root provides build configuration. The Root Directory must be set manually in Vercel UI.
 
 ## Step 3: Configure Environment Variables
 

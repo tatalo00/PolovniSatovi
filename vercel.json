@@ -2,8 +2,8 @@
   "buildCommand": "npm install && npm run prisma:generate && npm run build",
   "devCommand": "npm run dev",
   "installCommand": "npm install",
-  "framework": "nextjs",
-  "rootDirectory": "web"
+  "framework": "nextjs"
 }
+
 
 
