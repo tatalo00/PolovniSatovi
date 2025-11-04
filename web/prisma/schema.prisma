@@ -1,0 +1,204 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Core models for MVP
+
+model User {
+  id                    String    @id @default(cuid())
+  email                 String    @unique
+  emailVerified         DateTime?
+  name                  String?
+  image                 String?
+  password              String?   // For email/password auth
+  passwordResetToken    String?
+  passwordResetExpires  DateTime?
+  role                  UserRole  @default(BUYER)
+  locale                String?   @db.VarChar(8)
+  phoneVerified         Boolean   @default(false)
+  locationCountry       String?
+  locationCity          String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  sellerProfile SellerProfile?
+  listings      Listing[]
+  messages      Message[]
+  threadsBuyer  MessageThread[] @relation("buyerThreads")
+  threadsSeller MessageThread[] @relation("sellerThreads")
+  favorites     Favorite[]
+  reports       Report[] @relation("userReports")
+}
+
+enum UserRole {
+  BUYER
+  SELLER
+  ADMIN
+}
+
+model SellerProfile {
+  id              String  @id @default(cuid())
+  userId          String  @unique
+  user            User    @relation(fields: [userId], references: [id])
+  storeName       String
+  description     String?
+  locationCountry String
+  locationCity    String
+  ratingAvg       Decimal?  @db.Decimal(3, 2)
+}
+
+model Listing {
+  id           String       @id @default(cuid())
+  sellerId     String
+  seller       User         @relation(fields: [sellerId], references: [id])
+  title        String
+  brand        String
+  model        String
+  reference    String?
+  year         Int?
+  condition    String
+  priceEurCents Int
+  currency     String       @default("EUR")
+  boxPapers    String?
+  description  String?
+  location     String?
+  status       ListingStatus @default(DRAFT)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  photos       ListingPhoto[]
+  threads      MessageThread[]
+  favorites    Favorite[]
+  reports      Report[]
+
+  @@index([brand])
+  @@index([model])
+  @@index([title])
+  @@index([status])
+  @@index([priceEurCents])
+  @@index([createdAt])
+}
+
+enum ListingStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+  ARCHIVED
+}
+
+model ListingPhoto {
+  id        String  @id @default(cuid())
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id])
+  url       String
+  order     Int     @default(0)
+
+  @@index([listingId])
+}
+
+model MessageThread {
+  id        String  @id @default(cuid())
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id])
+  buyerId   String
+  sellerId  String
+  buyer     User    @relation("buyerThreads", fields: [buyerId], references: [id])
+  seller    User    @relation("sellerThreads", fields: [sellerId], references: [id])
+  createdAt DateTime @default(now())
+
+  messages  Message[]
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  threadId  String
+  thread    MessageThread @relation(fields: [threadId], references: [id])
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id])
+  body      String
+  createdAt DateTime @default(now())
+  readAt    DateTime?
+
+  @@index([threadId])
+}
+
+model Report {
+  id         String  @id @default(cuid())
+  listingId  String
+  listing    Listing @relation(fields: [listingId], references: [id])
+  reporterId String
+  reporter   User    @relation("userReports", fields: [reporterId], references: [id])
+  reason     String
+  status     ReportStatus @default(OPEN)
+  createdAt  DateTime @default(now())
+}
+
+enum ReportStatus {
+  OPEN
+  CLOSED
+}
+
+model Favorite {
+  id        String  @id @default(cuid())
+  userId    String
+  user      User    @relation(fields: [userId], references: [id])
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, listingId])
+}
+
+// Auth.js (NextAuth) required models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}

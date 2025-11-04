@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PolovniSatovi - Marketplace for Used Watches
 
-## Getting Started
+A full-stack marketplace application built with Next.js 16, TypeScript, Prisma, and Supabase.
 
-First, run the development server:
+## Quick Start
+
+### Local Development
 
 ```bash
+cd web
+npm install
+cp .env.example .env.local  # Configure your environment variables
+npm run prisma:generate
+npm run prisma:migrate deploy
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Deployment to Vercel
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Push code to Git repository
+2. Import project in Vercel dashboard
+3. Set Root Directory to `web` (or use `vercel.json`)
+4. Add environment variables (see `docs/VERCEL_DEPLOYMENT.md`)
+5. Deploy!
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+See `VERCEL_DEPLOYMENT_CHECKLIST.md` for quick reference.
 
-## Learn More
+## Documentation
 
-To learn more about Next.js, take a look at the following resources:
+- **Deployment**: `docs/VERCEL_DEPLOYMENT.md` or `VERCEL_DEPLOYMENT_CHECKLIST.md`
+- **Environment Variables**: `docs/ENVIRONMENT.md`
+- **Setup**: `SETUP.md`
+- **Features**: `FEATURES.md`
+- **Troubleshooting**: `TROUBLESHOOTING.md`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Tech Stack
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Framework**: Next.js 16 (App Router)
+- **Language**: TypeScript
+- **Database**: PostgreSQL (Supabase)
+- **ORM**: Prisma
+- **Auth**: NextAuth.js v5
+- **Styling**: Tailwind CSS
+- **UI Components**: shadcn/ui
+- **Storage**: Supabase Storage
+- **Email**: Resend
 
-## Deploy on Vercel
+## Project Structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+web/
+├── app/              # Next.js App Router pages
+├── components/       # React components
+├── lib/             # Utility libraries
+├── prisma/          # Database schema and migrations
+└── public/          # Static assets
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## License
+
+[Add your license here]
+
