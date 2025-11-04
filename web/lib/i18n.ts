@@ -376,7 +376,7 @@ const translations = {
 
 // Get translation function
 export function getTranslations(locale: Locale = defaultLocale) {
-  const t = (key: TranslationKey): string => {
+  const t = (key: TranslationKey): any => {
     return translations[locale][key] || translations[defaultLocale][key] || String(key);
   };
 

@@ -58,6 +58,14 @@ export async function POST(request: Request) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
+    // Ensure supabase is available (checked at module level, but TypeScript needs this)
+    if (!supabase) {
+      return NextResponse.json(
+        { error: "Supabase nije konfigurisan. Molimo kontaktirajte administratora." },
+        { status: 500 }
+      );
+    }
+
     // Upload to Supabase Storage
     const { data, error } = await supabase.storage
       .from('listings')

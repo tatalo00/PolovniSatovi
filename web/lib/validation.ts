@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z, ZodIssue } from "zod";
 
 // Common validation schemas
 export const emailSchema = z.string().email("Neispravan email format");
@@ -39,7 +39,7 @@ export function validateAndSanitize<T>(
     if (error instanceof z.ZodError) {
       return {
         success: false,
-        error: error.errors.map((e) => e.message).join(", "),
+        error: error.issues.map((e: any) => e.message).join(", "),
       };
     }
     return { success: false, error: "Validation error" };

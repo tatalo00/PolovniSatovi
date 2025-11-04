@@ -31,7 +31,7 @@ export default async function ListingsPage({
 
   // Build where clause
   const where: any = {
-    status: "APPROVED", // Only show approved listings
+    status: "APPROVED",
   };
 
   if (params.search) {
@@ -136,7 +136,7 @@ export default async function ListingsPage({
         <aside className="lg:col-span-1">
           <ListingFilters
             brands={brands.map((b) => b.brand)}
-            searchParams={params}
+            searchParams={params as Record<string, string | undefined>}
           />
         </aside>
 
@@ -146,7 +146,7 @@ export default async function ListingsPage({
             total={total}
             currentPage={page}
             totalPages={totalPages}
-            searchParams={params}
+            searchParams={params as Record<string, string | undefined>}
           />
         </div>
       </div>

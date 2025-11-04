@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -34,7 +34,7 @@ const listingSchema = z.object({
   year: z.string().optional(),
   condition: z.string().min(1, "Stanje je obavezno"),
   priceEurCents: z.string().regex(/^\d+(\.\d{1,2})?$/, "Cena mora biti validan broj"),
-  currency: z.string().default("EUR"),
+  currency: z.string(),
   boxPapers: z.string().optional(),
   description: z.string().optional(),
   location: z.string().optional(),
@@ -59,7 +59,7 @@ export function ListingForm({ listing }: ListingFormProps) {
     watch,
   } = useForm<ListingFormData>({
     resolver: zodResolver(listingSchema),
-        defaultValues: listing
+    defaultValues: listing
       ? {
           title: listing.title,
           brand: listing.brand,
@@ -73,13 +73,14 @@ export function ListingForm({ listing }: ListingFormProps) {
           description: listing.description || "",
           location: listing.location || "",
         }
-      : undefined,
+      : {
+          currency: "EUR",
+        },
   });
 
   const onSubmit = async (data: ListingFormData) => {
     setLoading(true);
     try {
-      // Convert EUR price to cents
       const priceInEur = parseFloat(data.priceEurCents);
       const priceEurCents = Math.round(priceInEur * 100);
 
@@ -156,6 +157,7 @@ export function ListingForm({ listing }: ListingFormProps) {
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit(onSubmit)}>
+        <input type="hidden" {...register("currency")} />
         <CardContent className="space-y-6">
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Osnovne informacije</h3>
@@ -265,7 +267,7 @@ export function ListingForm({ listing }: ListingFormProps) {
                 <Label htmlFor="boxPapers">Box i papiri</Label>
                 <Select
                   defaultValue={listing?.boxPapers || undefined}
-                  onValueChange={(value) => setValue("boxPapers", value || null)}
+                  onValueChange={(value) => setValue("boxPapers", value || undefined)}
                   disabled={loading}
                 >
                   <SelectTrigger>
@@ -371,4 +373,3 @@ export function ListingForm({ listing }: ListingFormProps) {
     </Card>
   );
 }
-
