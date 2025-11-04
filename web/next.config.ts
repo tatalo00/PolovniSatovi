@@ -52,9 +52,6 @@ const nextConfig: NextConfig = {
 
     return config;
   },
-  // Add empty turbopack config to silence the warning
-  // We're using webpack explicitly for Prisma client compatibility
-  turbopack: {},
 };
 
 export default nextConfig;
