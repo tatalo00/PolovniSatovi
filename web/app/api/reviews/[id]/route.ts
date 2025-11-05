@@ -145,6 +145,17 @@ export async function DELETE(request: Request, { params }: RouteParams) {
 }
 
 async function updateSellerRating(sellerId: string) {
+  // Check if seller profile exists first
+  const sellerProfile = await prisma.sellerProfile.findUnique({
+    where: { userId: sellerId },
+    select: { id: true },
+  });
+
+  // If no seller profile exists, we don't need to update the rating
+  if (!sellerProfile) {
+    return;
+  }
+
   const reviews = await prisma.review.findMany({
     where: { sellerId },
     select: { rating: true },
@@ -154,8 +165,6 @@ async function updateSellerRating(sellerId: string) {
     await prisma.sellerProfile.update({
       where: { userId: sellerId },
       data: { ratingAvg: null },
-    }).catch(() => {
-      // Seller profile might not exist, that's okay
     });
     return;
   }
@@ -166,8 +175,6 @@ async function updateSellerRating(sellerId: string) {
   await prisma.sellerProfile.update({
     where: { userId: sellerId },
     data: { ratingAvg: roundedAvg },
-  }).catch(() => {
-    // Seller profile might not exist, that's okay
   });
 }
 

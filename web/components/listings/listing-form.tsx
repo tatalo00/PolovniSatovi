@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -102,16 +103,17 @@ export function ListingForm({ listing }: ListingFormProps) {
 
       if (!response.ok) {
         const error = await response.json();
-        alert(error.error || "Došlo je do greške");
+        toast.error(error.error || "Došlo je do greške");
         return;
       }
 
       const result = await response.json();
+      toast.success(listing ? "Oglas je ažuriran!" : "Oglas je kreiran!");
       router.push(`/dashboard/listings`);
       router.refresh();
     } catch (error) {
       console.error("Error saving listing:", error);
-      alert("Došlo je do greške. Pokušajte ponovo.");
+      toast.error("Došlo je do greške. Pokušajte ponovo.");
     } finally {
       setLoading(false);
     }
@@ -121,7 +123,7 @@ export function ListingForm({ listing }: ListingFormProps) {
     if (!listing) return;
 
     if (!photos || photos.length === 0) {
-      alert("Oglas mora imati najmanje jednu fotografiju");
+      toast.error("Oglas mora imati najmanje jednu fotografiju");
       return;
     }
 
@@ -133,16 +135,16 @@ export function ListingForm({ listing }: ListingFormProps) {
 
       if (!response.ok) {
         const error = await response.json();
-        alert(error.error || "Došlo je do greške");
+        toast.error(error.error || "Došlo je do greške");
         return;
       }
 
-      alert("Oglas je poslat na odobrenje!");
+      toast.success("Oglas je poslat na odobrenje!");
       router.push("/dashboard/listings");
       router.refresh();
     } catch (error) {
       console.error("Error submitting listing:", error);
-      alert("Došlo je do greške. Pokušajte ponovo.");
+      toast.error("Došlo je do greške. Pokušajte ponovo.");
     } finally {
       setLoading(false);
     }

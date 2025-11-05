@@ -142,12 +142,29 @@ export async function POST(request: Request) {
 }
 
 async function updateSellerRating(sellerId: string) {
+  // Check if seller profile exists first
+  const sellerProfile = await prisma.sellerProfile.findUnique({
+    where: { userId: sellerId },
+    select: { id: true },
+  });
+
+  // If no seller profile exists, we don't need to update the rating
+  if (!sellerProfile) {
+    return;
+  }
+
   const reviews = await prisma.review.findMany({
     where: { sellerId },
     select: { rating: true },
   });
 
-  if (reviews.length === 0) return;
+  if (reviews.length === 0) {
+    await prisma.sellerProfile.update({
+      where: { userId: sellerId },
+      data: { ratingAvg: null },
+    });
+    return;
+  }
 
   const avgRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
   const roundedAvg = Math.round(avgRating * 100) / 100;
@@ -155,8 +172,6 @@ async function updateSellerRating(sellerId: string) {
   await prisma.sellerProfile.update({
     where: { userId: sellerId },
     data: { ratingAvg: roundedAvg },
-  }).catch(() => {
-    // Seller profile might not exist, that's okay
   });
 }
 

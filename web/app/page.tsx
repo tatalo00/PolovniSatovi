@@ -8,48 +8,59 @@ import { Card, CardContent } from "@/components/ui/card";
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  // Fetch featured listings (recent approved listings)
-  const featuredListings = await prisma.listing.findMany({
-    where: { status: "APPROVED" },
-    include: {
-      photos: {
-        orderBy: { order: "asc" },
-        take: 1,
-      },
-      seller: {
-        select: {
-          name: true,
-          locationCity: true,
-        },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-    take: 8,
-  });
+  // Fetch data with error handling
+  let featuredListings: any[] = [];
+  let brands: any[] = [];
+  let totalListings = 0;
+  let totalSellers = 0;
 
-  // Get unique brands for categories
-  const brands = await prisma.listing.findMany({
-    where: { status: "APPROVED" },
-    select: { brand: true },
-    distinct: ["brand"],
-    orderBy: { brand: "asc" },
-  });
-
-  // Get statistics
-  const [totalListings, totalSellers] = await Promise.all([
-    prisma.listing.count({
+  try {
+    // Fetch featured listings (recent approved listings)
+    featuredListings = await prisma.listing.findMany({
       where: { status: "APPROVED" },
-    }),
-    prisma.user.count({
-      where: {
-        listings: {
-          some: {
-            status: "APPROVED",
+      include: {
+        photos: {
+          orderBy: { order: "asc" },
+          take: 1,
+        },
+        seller: {
+          select: {
+            name: true,
+            locationCity: true,
           },
         },
       },
-    }),
-  ]);
+      orderBy: { createdAt: "desc" },
+      take: 8,
+    });
+
+    // Get unique brands for categories
+    brands = await prisma.listing.findMany({
+      where: { status: "APPROVED" },
+      select: { brand: true },
+      distinct: ["brand"],
+      orderBy: { brand: "asc" },
+    });
+
+    // Get statistics
+    [totalListings, totalSellers] = await Promise.all([
+      prisma.listing.count({
+        where: { status: "APPROVED" },
+      }),
+      prisma.user.count({
+        where: {
+          listings: {
+            some: {
+              status: "APPROVED",
+            },
+          },
+        },
+      }),
+    ]);
+  } catch (error: any) {
+    console.error("Database error on homepage:", error);
+    // Continue with empty data - page will still render
+  }
 
   return (
     <main>

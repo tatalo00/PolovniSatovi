@@ -8,6 +8,8 @@ import { ReviewList } from "./review-list";
 import { ReviewForm } from "./review-form";
 import { SellerRatingSummary } from "./seller-rating-summary";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface ListingReviewsSectionProps {
   listingId: string;
@@ -27,6 +29,8 @@ export function ListingReviewsSection({
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingReview, setEditingReview] = useState<string | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [reviewToDelete, setReviewToDelete] = useState<string | null>(null);
 
   const currentUserId = (session?.user as any)?.id;
 
@@ -78,19 +82,23 @@ export function ListingReviewsSection({
       setShowForm(false);
       setEditingReview(null);
       fetchReviews();
+      toast.success(editingReview ? "Ocena je ažurirana!" : "Ocena je dodata!");
     } catch (error: any) {
-      alert(error.message || "Došlo je do greške");
+      toast.error(error.message || "Došlo je do greške");
       throw error;
     }
   };
 
-  const handleDeleteReview = async (reviewId: string) => {
-    if (!confirm("Da li ste sigurni da želite da obrišete ovu ocenu?")) {
-      return;
-    }
+  const handleDeleteClick = (reviewId: string) => {
+    setReviewToDelete(reviewId);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDeleteReview = async () => {
+    if (!reviewToDelete) return;
 
     try {
-      const response = await fetch(`/api/reviews/${reviewId}`, {
+      const response = await fetch(`/api/reviews/${reviewToDelete}`, {
         method: "DELETE",
       });
 
@@ -98,9 +106,12 @@ export function ListingReviewsSection({
         throw new Error("Greška pri brisanju ocene");
       }
 
+      toast.success("Ocena je obrisana");
       fetchReviews();
+      setDeleteConfirmOpen(false);
+      setReviewToDelete(null);
     } catch (error: any) {
-      alert(error.message || "Došlo je do greške");
+      toast.error(error.message || "Došlo je do greške");
     }
   };
 
@@ -166,9 +177,19 @@ export function ListingReviewsSection({
             reviews={reviews}
             currentUserId={currentUserId}
             onEdit={handleEditReview}
-            onDelete={handleDeleteReview}
+            onDelete={handleDeleteClick}
           />
         )}
+        <ConfirmDialog
+          open={deleteConfirmOpen}
+          onOpenChange={setDeleteConfirmOpen}
+          title="Obriši ocenu"
+          description="Da li ste sigurni da želite da obrišete ovu ocenu? Ova akcija se ne može poništiti."
+          confirmText="Obriši"
+          cancelText="Otkaži"
+          variant="destructive"
+          onConfirm={handleDeleteReview}
+        />
 
         {!session && (
           <p className="text-sm text-muted-foreground text-center">

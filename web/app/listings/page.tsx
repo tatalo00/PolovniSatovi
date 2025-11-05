@@ -91,40 +91,50 @@ export default async function ListingsPage({
     }
   }
 
-  // Fetch listings and total count
-  const [listings, total] = await Promise.all([
-    prisma.listing.findMany({
-      where,
-      include: {
-        photos: {
-          orderBy: { order: "asc" },
-          take: 1,
-        },
-        seller: {
-          select: {
-            name: true,
-            email: true,
-            locationCity: true,
-            locationCountry: true,
+  // Fetch listings and total count with error handling
+  let listings: any[] = [];
+  let total = 0;
+  let brands: any[] = [];
+  let totalPages = 0;
+
+  try {
+    [listings, total] = await Promise.all([
+      prisma.listing.findMany({
+        where,
+        include: {
+          photos: {
+            orderBy: { order: "asc" },
+            take: 1,
+          },
+          seller: {
+            select: {
+              name: true,
+              email: true,
+              locationCity: true,
+              locationCountry: true,
+            },
           },
         },
-      },
-      orderBy,
-      take: limit,
-      skip: offset,
-    }),
-    prisma.listing.count({ where }),
-  ]);
+        orderBy,
+        take: limit,
+        skip: offset,
+      }),
+      prisma.listing.count({ where }),
+    ]);
 
-  // Get unique brands for filter
-  const brands = await prisma.listing.findMany({
-    where: { status: "APPROVED" },
-    select: { brand: true },
-    distinct: ["brand"],
-    orderBy: { brand: "asc" },
-  });
+    // Get unique brands for filter
+    brands = await prisma.listing.findMany({
+      where: { status: "APPROVED" },
+      select: { brand: true },
+      distinct: ["brand"],
+      orderBy: { brand: "asc" },
+    });
 
-  const totalPages = Math.ceil(total / limit);
+    totalPages = Math.ceil(total / limit);
+  } catch (error: any) {
+    console.error("Database error on listings page:", error);
+    // Continue with empty data - page will still render with error message
+  }
 
   return (
     <main className="container mx-auto px-4 py-8">

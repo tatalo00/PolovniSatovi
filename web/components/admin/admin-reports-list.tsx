@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -38,14 +39,15 @@ export function AdminReportsList({ reports, currentStatus }: AdminReportsListPro
 
       if (!response.ok) {
         const error = await response.json();
-        alert(error.error || "Došlo je do greške");
+        toast.error(error.error || "Došlo je do greške");
         return;
       }
 
+      toast.success("Prijava je zatvorena");
       router.refresh();
     } catch (error) {
       console.error("Error closing report:", error);
-      alert("Došlo je do greške. Pokušajte ponovo.");
+      toast.error("Došlo je do greške. Pokušajte ponovo.");
     } finally {
       setProcessing(null);
     }

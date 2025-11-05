@@ -56,6 +56,14 @@ export async function POST(request: Request, { params }: RouteParams) {
         { status: 401 }
       );
     }
+    // Handle database connection errors
+    if (error.code === "P1001" || error.name === "PrismaClientInitializationError") {
+      logger.error("Database connection error", { error });
+      return NextResponse.json(
+        { error: "Greška pri povezivanju sa bazom podataka. Molimo pokušajte ponovo." },
+        { status: 503 }
+      );
+    }
     logger.error("Error marking messages as read", { error });
     return NextResponse.json(
       { error: "Došlo je do greške" },

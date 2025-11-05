@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -82,10 +83,10 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
       }
 
       router.refresh();
-      alert("Profil je uspešno ažuriran!");
+      toast.success("Profil je uspešno ažuriran!");
     } catch (error: any) {
       console.error("Error updating profile:", error);
-      alert(error.message || "Došlo je do greške. Pokušajte ponovo.");
+      toast.error(error.message || "Došlo je do greške. Pokušajte ponovo.");
     } finally {
       setLoading(false);
     }

@@ -7,21 +7,27 @@ import { Button } from "@/components/ui/button";
 import { trackContactSeller } from "@/lib/analytics";
 import Link from "next/link";
 import { MessageSquare } from "lucide-react";
+import { toast } from "sonner";
 
 interface ContactSellerFormProps {
   listingId: string;
   listingTitle: string;
   sellerEmail: string;
+  sellerId: string;
 }
 
 export function ContactSellerForm({
   listingId,
   listingTitle,
   sellerEmail,
+  sellerId,
 }: ContactSellerFormProps) {
   const { data: session } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  
+  // Check if current user is the seller
+  const isSeller = session?.user?.id === sellerId;
 
   const handleStartConversation = async () => {
     setLoading(true);
@@ -46,7 +52,7 @@ export function ContactSellerForm({
       router.push(`/dashboard/messages/${thread.id}`);
     } catch (error: any) {
       console.error("Error creating thread:", error);
-      alert(error.message || "Došlo je do greške. Pokušajte ponovo.");
+      toast.error(error.message || "Došlo je do greške. Pokušajte ponovo.");
       setLoading(false);
     }
   };
@@ -62,6 +68,17 @@ export function ContactSellerForm({
             Prijavite se
           </Link>
         </Button>
+      </div>
+    );
+  }
+
+  // Don't show contact form if user is the seller
+  if (isSeller) {
+    return (
+      <div className="space-y-4">
+        <p className="text-sm text-muted-foreground text-center">
+          Ovo je vaš oglas
+        </p>
       </div>
     );
   }

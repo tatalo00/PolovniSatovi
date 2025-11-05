@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -213,6 +213,9 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
       {/* Lightbox Modal */}
       <Dialog open={isLightboxOpen} onOpenChange={setIsLightboxOpen}>
         <DialogContent className="max-w-7xl w-full h-full max-h-[90vh] p-0 bg-black/95 border-none">
+          <DialogTitle className="sr-only">
+            Galerija slika - {title}
+          </DialogTitle>
           <div className="relative w-full h-full flex flex-col">
             {/* Lightbox Header */}
             <div className="flex items-center justify-between p-4 text-white">

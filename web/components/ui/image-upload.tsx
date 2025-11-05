@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, X, Loader2 } from "lucide-react";
 import Image from "next/image";
+import { toast } from "sonner";
 
 interface ImageUploadProps {
   value?: string[];
@@ -26,7 +27,7 @@ export function ImageUpload({
     const files = Array.from(e.target.files || []);
     
     if (files.length + value.length > maxImages) {
-      alert(`Maksimum ${maxImages} slika je dozvoljeno`);
+      toast.error(`Maksimum ${maxImages} slika je dozvoljeno`);
       return;
     }
 
@@ -105,7 +106,7 @@ export function ImageUpload({
     } catch (error: any) {
       console.error("Upload error:", error);
       const errorMessage = error.message || "Greška pri uploadu slika. Pokušajte ponovo.";
-      alert(errorMessage);
+      toast.error(errorMessage);
       // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = "";

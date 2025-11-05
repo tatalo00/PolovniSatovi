@@ -9,6 +9,8 @@ import { PriceDisplay } from "@/components/currency/price-display";
 import { Edit, Trash2, Eye, Send } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface ListingListProps {
   listings: any[];
@@ -34,31 +36,38 @@ const statusColors: Record<string, string> = {
 export function ListingList({ listings, showActions = false }: ListingListProps) {
   const router = useRouter();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [listingToDelete, setListingToDelete] = useState<string | null>(null);
 
+  const handleDeleteClick = (id: string) => {
+    setListingToDelete(id);
+    setDeleteConfirmOpen(true);
+  };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Da li ste sigurni da želite da obrišete ovaj oglas?")) {
-      return;
-    }
+  const handleDelete = async () => {
+    if (!listingToDelete) return;
 
-    setDeletingId(id);
+    setDeletingId(listingToDelete);
     try {
-      const response = await fetch(`/api/listings/${id}`, {
+      const response = await fetch(`/api/listings/${listingToDelete}`, {
         method: "DELETE",
       });
 
       if (!response.ok) {
         const error = await response.json();
-        alert(error.error || "Došlo je do greške");
+        toast.error(error.error || "Došlo je do greške");
         return;
       }
 
+      toast.success("Oglas je obrisan");
       router.refresh();
     } catch (error) {
       console.error("Error deleting listing:", error);
-      alert("Došlo je do greške. Pokušajte ponovo.");
+      toast.error("Došlo je do greške. Pokušajte ponovo.");
     } finally {
       setDeletingId(null);
+      setListingToDelete(null);
+      setDeleteConfirmOpen(false);
     }
   };
 
@@ -157,17 +166,19 @@ export function ListingList({ listings, showActions = false }: ListingListProps)
                     size="sm"
                     className="flex-1"
                     onClick={async () => {
-                      if (!confirm("Pošaljite oglas na odobrenje?")) return;
                       try {
                         const res = await fetch(`/api/listings/${listing.id}/submit`, {
                           method: "POST",
                         });
                         if (res.ok) {
+                          toast.success("Oglas je poslat na odobrenje!");
                           router.refresh();
-                          alert("Oglas je poslat na odobrenje!");
+                        } else {
+                          const error = await res.json();
+                          toast.error(error.error || "Greška pri slanju oglasa");
                         }
                       } catch (error) {
-                        alert("Greška pri slanju oglasa");
+                        toast.error("Greška pri slanju oglasa");
                       }
                     }}
                   >
@@ -178,7 +189,7 @@ export function ListingList({ listings, showActions = false }: ListingListProps)
                 <Button
                   variant="destructive"
                   size="sm"
-                  onClick={() => handleDelete(listing.id)}
+                  onClick={() => handleDeleteClick(listing.id)}
                   disabled={deletingId === listing.id}
                 >
                   <Trash2 className="h-4 w-4" />
@@ -188,6 +199,17 @@ export function ListingList({ listings, showActions = false }: ListingListProps)
           )}
         </Card>
       ))}
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title="Obriši oglas"
+        description="Da li ste sigurni da želite da obrišete ovaj oglas? Ova akcija se ne može poništiti."
+        confirmText="Obriši"
+        cancelText="Otkaži"
+        variant="destructive"
+        onConfirm={handleDelete}
+        loading={deletingId !== null}
+      />
     </div>
   );
 }

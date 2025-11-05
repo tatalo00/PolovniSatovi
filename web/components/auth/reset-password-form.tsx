@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -58,12 +59,13 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
       }
 
       setSuccess(true);
+      toast.success("Šifra je uspešno promenjena! Preusmeravamo vas na prijavu...");
       setTimeout(() => {
         router.push("/auth/signin");
       }, 3000);
     } catch (error: any) {
       console.error("Error:", error);
-      alert(error.message || "Došlo je do greške. Pokušajte ponovo.");
+      toast.error(error.message || "Došlo je do greške. Pokušajte ponovo.");
     } finally {
       setLoading(false);
     }

@@ -182,6 +182,7 @@ export default async function ListingPage({ params }: ListingPageProps) {
                 listingId={listing.id}
                 listingTitle={listing.title}
                 sellerEmail={listing.seller.email}
+                sellerId={listing.seller.id}
               />
               <div className="pt-4 border-t">
                 <ReportListingForm

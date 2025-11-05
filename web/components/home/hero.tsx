@@ -25,7 +25,7 @@ export function Hero() {
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl text-center">
           <h1 className="mb-6 text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
-            Pronađite Svoj Savršeni Sat
+            Pronađite svoj savršeni sat
           </h1>
           <p className="mb-8 text-lg text-muted-foreground md:text-xl">
             Najveća ponuda polovnih i vintage satova na Balkanu. Pretražite hiljade oglasa od pouzdanih prodavaca.

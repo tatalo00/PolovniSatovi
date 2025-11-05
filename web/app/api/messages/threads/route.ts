@@ -101,6 +101,14 @@ export async function GET() {
         { status: 401 }
       );
     }
+    // Handle database connection errors
+    if (error.code === "P1001" || error.name === "PrismaClientInitializationError") {
+      logger.error("Database connection error", { error });
+      return NextResponse.json(
+        { error: "Greška pri povezivanju sa bazom podataka. Molimo pokušajte ponovo." },
+        { status: 503 }
+      );
+    }
     logger.error("Error fetching threads", { error });
     return NextResponse.json(
       { error: "Došlo je do greške" },
@@ -206,6 +214,14 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: error.issues[0].message },
         { status: 400 }
+      );
+    }
+    // Handle database connection errors
+    if (error.code === "P1001" || error.name === "PrismaClientInitializationError") {
+      logger.error("Database connection error", { error });
+      return NextResponse.json(
+        { error: "Greška pri povezivanju sa bazom podataka. Molimo pokušajte ponovo." },
+        { status: 503 }
       );
     }
     logger.error("Error creating thread", { error });

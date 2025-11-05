@@ -16,6 +16,18 @@ import {
 } from "@/components/ui/select";
 import { CheckCircle, XCircle, Eye } from "lucide-react";
 import { PriceDisplay } from "@/components/currency/price-display";
+import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 interface AdminListingQueueProps {
   listings: any[];
@@ -25,58 +37,75 @@ interface AdminListingQueueProps {
 export function AdminListingQueue({ listings, currentStatus }: AdminListingQueueProps) {
   const router = useRouter();
   const [processing, setProcessing] = useState<string | null>(null);
+  const [approveConfirmOpen, setApproveConfirmOpen] = useState(false);
+  const [listingToApprove, setListingToApprove] = useState<string | null>(null);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [listingToReject, setListingToReject] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
 
+  const handleApproveClick = (listingId: string) => {
+    setListingToApprove(listingId);
+    setApproveConfirmOpen(true);
+  };
 
-  const handleApprove = async (listingId: string) => {
-    if (!confirm("Da li ste sigurni da želite da odobrite ovaj oglas?")) {
-      return;
-    }
+  const handleApprove = async () => {
+    if (!listingToApprove) return;
 
-    setProcessing(listingId);
+    setProcessing(listingToApprove);
     try {
-      const response = await fetch(`/api/admin/listings/${listingId}/approve`, {
+      const response = await fetch(`/api/admin/listings/${listingToApprove}/approve`, {
         method: "POST",
       });
 
       if (!response.ok) {
         const error = await response.json();
-        alert(error.error || "Došlo je do greške");
+        toast.error(error.error || "Došlo je do greške");
         return;
       }
 
+      toast.success("Oglas je odobren!");
       router.refresh();
-      alert("Oglas je odobren!");
+      setApproveConfirmOpen(false);
+      setListingToApprove(null);
     } catch (error) {
       console.error("Error approving listing:", error);
-      alert("Došlo je do greške. Pokušajte ponovo.");
+      toast.error("Došlo je do greške. Pokušajte ponovo.");
     } finally {
       setProcessing(null);
     }
   };
 
-  const handleReject = async (listingId: string) => {
-    const reason = prompt("Unesite razlog odbijanja (opciono):");
-    if (reason === null) return; // User cancelled
+  const handleRejectClick = (listingId: string) => {
+    setListingToReject(listingId);
+    setRejectReason("");
+    setRejectDialogOpen(true);
+  };
 
-    setProcessing(listingId);
+  const handleReject = async () => {
+    if (!listingToReject) return;
+
+    setProcessing(listingToReject);
     try {
-      const response = await fetch(`/api/admin/listings/${listingId}/reject`, {
+      const response = await fetch(`/api/admin/listings/${listingToReject}/reject`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason }),
+        body: JSON.stringify({ reason: rejectReason.trim() || undefined }),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        alert(error.error || "Došlo je do greške");
+        toast.error(error.error || "Došlo je do greške");
         return;
       }
 
+      toast.success("Oglas je odbijen!");
       router.refresh();
-      alert("Oglas je odbijen!");
+      setRejectDialogOpen(false);
+      setListingToReject(null);
+      setRejectReason("");
     } catch (error) {
       console.error("Error rejecting listing:", error);
-      alert("Došlo je do greške. Pokušajte ponovo.");
+      toast.error("Došlo je do greške. Pokušajte ponovo.");
     } finally {
       setProcessing(null);
     }
@@ -181,7 +210,7 @@ export function AdminListingQueue({ listings, currentStatus }: AdminListingQueue
                       <div className="mt-4 flex gap-2">
                         <Button
                           size="sm"
-                          onClick={() => handleApprove(listing.id)}
+                          onClick={() => handleApproveClick(listing.id)}
                           disabled={processing === listing.id}
                         >
                           <CheckCircle className="mr-2 h-4 w-4" />
@@ -190,7 +219,7 @@ export function AdminListingQueue({ listings, currentStatus }: AdminListingQueue
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => handleReject(listing.id)}
+                          onClick={() => handleRejectClick(listing.id)}
                           disabled={processing === listing.id}
                         >
                           <XCircle className="mr-2 h-4 w-4" />
@@ -215,6 +244,57 @@ export function AdminListingQueue({ listings, currentStatus }: AdminListingQueue
           ))}
         </div>
       )}
+      <ConfirmDialog
+        open={approveConfirmOpen}
+        onOpenChange={setApproveConfirmOpen}
+        title="Odobri oglas"
+        description="Da li ste sigurni da želite da odobrite ovaj oglas?"
+        confirmText="Odobri"
+        cancelText="Otkaži"
+        onConfirm={handleApprove}
+        loading={listingToApprove !== null && processing === listingToApprove}
+      />
+      <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Odbij oglas</DialogTitle>
+            <DialogDescription>
+              Unesite razlog odbijanja (opciono). Razlog će biti poslat prodavcu.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="rejectReason">Razlog odbijanja</Label>
+              <Textarea
+                id="rejectReason"
+                placeholder="Opišite razlog odbijanja oglasa..."
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                rows={4}
+                disabled={listingToReject !== null && processing === listingToReject}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setRejectDialogOpen(false)}
+              disabled={listingToReject !== null && processing === listingToReject}
+            >
+              Otkaži
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleReject}
+              disabled={listingToReject !== null && processing === listingToReject}
+            >
+              {listingToReject !== null && processing === listingToReject ? "Odbijanje..." : "Odbij"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

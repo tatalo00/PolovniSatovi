@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -33,7 +34,7 @@ export function ReportListingForm({ listingId, listingTitle }: ReportListingForm
     e.preventDefault();
 
     if (!reason.trim()) {
-      alert("Molimo unesite razlog prijave");
+      toast.error("Molimo unesite razlog prijave");
       return;
     }
 
@@ -47,17 +48,17 @@ export function ReportListingForm({ listingId, listingTitle }: ReportListingForm
 
       if (!response.ok) {
         const error = await response.json();
-        alert(error.error || "Došlo je do greške");
+        toast.error(error.error || "Došlo je do greške");
         return;
       }
 
-      alert("Oglas je uspešno prijavljen. Hvala vam!");
+      toast.success("Oglas je uspešno prijavljen. Hvala vam!");
       setOpen(false);
       setReason("");
       router.refresh();
     } catch (error) {
       console.error("Error reporting listing:", error);
-      alert("Došlo je do greške. Pokušajte ponovo.");
+      toast.error("Došlo je do greške. Pokušajte ponovo.");
     } finally {
       setLoading(false);
     }

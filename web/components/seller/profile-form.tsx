@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -80,15 +81,15 @@ export function SellerProfileForm() {
 
       if (!response.ok) {
         const error = await response.json();
-        alert(error.error || "Došlo je do greške");
+        toast.error(error.error || "Došlo je do greške");
         return;
       }
 
       router.refresh();
-      alert(existingProfile ? "Profil je ažuriran!" : "Profil je kreiran!");
+      toast.success(existingProfile ? "Profil je ažuriran!" : "Profil je kreiran!");
     } catch (error) {
       console.error("Error saving profile:", error);
-      alert("Došlo je do greške. Pokušajte ponovo.");
+      toast.error("Došlo je do greške. Pokušajte ponovo.");
     } finally {
       setLoading(false);
     }

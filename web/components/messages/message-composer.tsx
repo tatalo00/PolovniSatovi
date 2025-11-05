@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Send } from "lucide-react";
+import { toast } from "sonner";
 
 interface MessageComposerProps {
   threadId: string;
@@ -35,7 +36,7 @@ export function MessageComposer({ threadId, onMessageSent }: MessageComposerProp
       onMessageSent?.();
     } catch (error: any) {
       console.error("Error sending message:", error);
-      alert(error.message || "Došlo je do greške. Pokušajte ponovo.");
+      toast.error(error.message || "Došlo je do greške. Pokušajte ponovo.");
     } finally {
       setLoading(false);
     }
