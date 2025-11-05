@@ -42,6 +42,8 @@ model User {
   threadsSeller MessageThread[] @relation("sellerThreads")
   favorites     Favorite[]
   reports       Report[] @relation("userReports")
+  reviews       Review[] @relation("reviews")
+  sellerReviews Review[] @relation("sellerReviews")
 }
 
 enum UserRole {
@@ -84,6 +86,7 @@ model Listing {
   threads      MessageThread[]
   favorites    Favorite[]
   reports      Report[]
+  reviews      Review[]
 
   @@index([brand])
   @@index([model])
@@ -112,14 +115,15 @@ model ListingPhoto {
 }
 
 model MessageThread {
-  id        String  @id @default(cuid())
+  id        String   @id @default(cuid())
   listingId String
-  listing   Listing @relation(fields: [listingId], references: [id])
+  listing   Listing  @relation(fields: [listingId], references: [id])
   buyerId   String
   sellerId  String
-  buyer     User    @relation("buyerThreads", fields: [buyerId], references: [id])
-  seller    User    @relation("sellerThreads", fields: [sellerId], references: [id])
+  buyer     User     @relation("buyerThreads", fields: [buyerId], references: [id])
+  seller    User     @relation("sellerThreads", fields: [sellerId], references: [id])
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   messages  Message[]
 }
@@ -162,6 +166,25 @@ model Favorite {
   createdAt DateTime @default(now())
 
   @@unique([userId, listingId])
+}
+
+model Review {
+  id          String   @id @default(cuid())
+  listingId   String?
+  sellerId    String
+  reviewerId  String
+  reviewer    User     @relation("reviews", fields: [reviewerId], references: [id], onDelete: Cascade)
+  seller      User     @relation("sellerReviews", fields: [sellerId], references: [id], onDelete: Cascade)
+  listing     Listing? @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  rating      Int      // 1-5 stars
+  title       String?
+  comment     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([sellerId])
+  @@index([listingId])
+  @@unique([reviewerId, listingId]) // One review per listing per user
 }
 
 // Auth.js (NextAuth) required models

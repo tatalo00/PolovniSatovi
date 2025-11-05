@@ -2,12 +2,11 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { trackContactSeller } from "@/lib/analytics";
 import Link from "next/link";
+import { MessageSquare } from "lucide-react";
 
 interface ContactSellerFormProps {
   listingId: string;
@@ -21,63 +20,36 @@ export function ContactSellerForm({
   sellerEmail,
 }: ContactSellerFormProps) {
   const { data: session } = useSession();
-  const [name, setName] = useState(session?.user?.name || "");
-  const [email, setEmail] = useState(session?.user?.email || "");
-  const [message, setMessage] = useState("");
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleStartConversation = async () => {
     setLoading(true);
 
     try {
-      const response = await fetch("/api/contact", {
+      // Create or get existing thread
+      const response = await fetch("/api/messages/threads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          listingId,
-          listingTitle,
-          sellerEmail,
-          buyerName: name,
-          buyerEmail: email,
-          message,
-        }),
+        body: JSON.stringify({ listingId }),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        alert(error.error || "Došlo je do greške");
-        return;
+        throw new Error(error.error || "Došlo je do greške");
       }
 
+      const thread = await response.json();
       trackContactSeller(listingId);
-      setSent(true);
-      setMessage("");
-    } catch (error) {
-      console.error("Error sending message:", error);
-      alert("Došlo je do greške. Pokušajte ponovo.");
-    } finally {
+
+      // Redirect to the thread
+      router.push(`/dashboard/messages/${thread.id}`);
+    } catch (error: any) {
+      console.error("Error creating thread:", error);
+      alert(error.message || "Došlo je do greške. Pokušajte ponovo.");
       setLoading(false);
     }
   };
-
-  if (sent) {
-    return (
-      <div className="rounded-md bg-green-50 p-4 text-green-800">
-        <p className="font-medium">Poruka je poslata!</p>
-        <p className="text-sm mt-1">Prodavac će vam odgovoriti na email.</p>
-        <Button
-          variant="outline"
-          size="sm"
-          className="mt-2"
-          onClick={() => setSent(false)}
-        >
-          Pošalji još jednu poruku
-        </Button>
-      </div>
-    );
-  }
 
   if (!session) {
     return (
@@ -95,50 +67,19 @@ export function ContactSellerForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="name">Vaše ime</Label>
-        <Input
-          id="name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          disabled={loading}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          disabled={loading}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="message">Poruka</Label>
-        <Textarea
-          id="message"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Pošaljite poruku prodavcu o ovom satu..."
-          rows={4}
-          required
-          disabled={loading}
-        />
-      </div>
-
-      <Button type="submit" className="w-full" disabled={loading}>
-        {loading ? "Slanje..." : "Pošalji poruku"}
+    <div className="space-y-4">
+      <Button
+        onClick={handleStartConversation}
+        className="w-full"
+        disabled={loading}
+      >
+        <MessageSquare className="mr-2 h-4 w-4" />
+        {loading ? "Kreiranje konverzacije..." : "Pošalji poruku"}
       </Button>
       <p className="text-xs text-muted-foreground text-center">
-        Vaša poruka će biti poslata prodavcu na email adresu
+        Otvorite konverzaciju sa prodavcem direktno u aplikaciji
       </p>
-    </form>
+    </div>
   );
 }
 

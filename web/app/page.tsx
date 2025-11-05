@@ -4,6 +4,9 @@ import { FeaturedListings } from "@/components/home/featured-listings";
 import { Categories } from "@/components/home/categories";
 import { Card, CardContent } from "@/components/ui/card";
 
+// Force dynamic rendering to avoid build-time database queries
+export const dynamic = 'force-dynamic';
+
 export default async function HomePage() {
   // Fetch featured listings (recent approved listings)
   const featuredListings = await prisma.listing.findMany({

@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { CurrencySwitcher } from "@/components/currency/currency-switcher";
+import { MessagesNavLink } from "@/components/messages/messages-nav-link";
 
 function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
   const pathname = usePathname();
@@ -79,6 +80,7 @@ export function Navbar() {
           <CurrencySwitcher className="w-20" />
           {isLoggedIn ? (
             <>
+              <MessagesNavLink />
               <Button variant="ghost" asChild>
                 <Link href="/dashboard">Dashboard</Link>
               </Button>
@@ -127,38 +129,44 @@ export function Navbar() {
           )}
         </div>
 
-        <div className="md:hidden">
+        <div className="md:hidden flex items-center gap-2">
+          <CurrencySwitcher className="w-20" />
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label="Open menu">
+              <Button variant="ghost" size="icon" aria-label="Otvori meni" className="h-10 w-10">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right">
+            <SheetContent side="right" className="w-[85vw] sm:w-[400px]">
               <SheetHeader>
                 <SheetTitle>PolovniSatovi</SheetTitle>
               </SheetHeader>
-              <div className="mt-4 flex flex-col gap-4">
+              <div className="mt-6 flex flex-col gap-3">
                 <NavLink href="/listings">Oglasi</NavLink>
                 <NavLink href="/sell">Prodaj</NavLink>
                 {isLoggedIn ? (
                   <>
+                    <NavLink href="/dashboard/messages">Poruke</NavLink>
                     <NavLink href="/dashboard">Dashboard</NavLink>
                     {(user as any)?.role === "ADMIN" && (
                       <NavLink href="/admin">Admin Panel</NavLink>
                     )}
-                    <Button variant="outline" onClick={handleSignOut}>
-                      Odjavi se
-                    </Button>
+                    <div className="pt-4 border-t">
+                      <Button variant="outline" onClick={handleSignOut} className="w-full">
+                        Odjavi se
+                      </Button>
+                    </div>
                   </>
                 ) : (
                   <>
-                    <Link href="/auth/signin" className="text-muted-foreground hover:text-foreground">
-                      Prijava
-                    </Link>
-                    <Button asChild>
-                      <Link href="/auth/signup">Registracija</Link>
-                    </Button>
+                    <div className="pt-4 border-t space-y-2">
+                      <Button variant="outline" asChild className="w-full">
+                        <Link href="/auth/signin">Prijava</Link>
+                      </Button>
+                      <Button asChild className="w-full">
+                        <Link href="/auth/signup">Registracija</Link>
+                      </Button>
+                    </div>
                   </>
                 )}
               </div>

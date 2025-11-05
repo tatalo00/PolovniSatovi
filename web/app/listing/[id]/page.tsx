@@ -1,14 +1,17 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import Image from "next/image";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ContactSellerForm } from "@/components/listings/contact-seller-form";
 import { ReportListingForm } from "@/components/listings/report-listing-form";
 import { PriceDisplay } from "@/components/currency/price-display";
 import { ListingViewTracker } from "@/components/listings/listing-view-tracker";
+import { ListingImageGallery } from "@/components/listings/listing-image-gallery";
+import { ListingReviewsSection } from "@/components/reviews/listing-reviews-section";
 import { Metadata } from "next";
+
+// Force dynamic rendering to avoid build-time database queries
+export const dynamic = 'force-dynamic';
 
 interface ListingPageProps {
   params: Promise<{ id: string }>;
@@ -95,43 +98,8 @@ export default async function ListingPage({ params }: ListingPageProps) {
         <div className="lg:col-span-2 space-y-6">
           {/* Photos */}
           <Card>
-            <CardContent className="p-0">
-              <div className="grid grid-cols-1 gap-2">
-                {listing.photos.length > 0 ? (
-                  <>
-                    <div className="relative aspect-square w-full overflow-hidden rounded-t-lg">
-                      <Image
-                        src={listing.photos[0].url}
-                        alt={listing.title}
-                        fill
-                        className="object-cover"
-                        priority
-                      />
-                    </div>
-                    {listing.photos.length > 1 && (
-                      <div className="grid grid-cols-4 gap-2 p-2">
-                        {listing.photos.slice(1).map((photo, index) => (
-                          <div
-                            key={photo.id}
-                            className="relative aspect-square w-full overflow-hidden rounded"
-                          >
-                            <Image
-                              src={photo.url}
-                              alt={`${listing.title} ${index + 2}`}
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="flex aspect-square w-full items-center justify-center bg-muted rounded-t-lg">
-                    <span className="text-muted-foreground">Nema slike</span>
-                  </div>
-                )}
-              </div>
+            <CardContent className="p-4 md:p-6">
+              <ListingImageGallery photos={listing.photos} title={listing.title} />
             </CardContent>
           </Card>
 
@@ -201,11 +169,11 @@ export default async function ListingPage({ params }: ListingPageProps) {
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Price Card */}
-          <Card>
+        <div className="space-y-4 md:space-y-6">
+          {/* Price Card - Sticky on mobile */}
+          <Card className="sticky top-20 md:static z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <CardHeader>
-              <CardTitle className="text-3xl">
+              <CardTitle className="text-2xl md:text-3xl">
                 <PriceDisplay amountEurCents={listing.priceEurCents} showSwitcher />
               </CardTitle>
             </CardHeader>
@@ -250,6 +218,15 @@ export default async function ListingPage({ params }: ListingPageProps) {
             </CardContent>
           </Card>
         </div>
+      </div>
+
+      {/* Reviews Section */}
+      <div className="mt-8">
+        <ListingReviewsSection
+          listingId={listing.id}
+          sellerId={listing.seller.id}
+          sellerName={listing.seller.name || listing.seller.email}
+        />
       </div>
     </main>
   );

@@ -2,6 +2,9 @@ import { prisma } from "@/lib/prisma";
 import { ListingFilters } from "@/components/listings/listing-filters";
 import { ListingContent } from "@/components/listings/listing-content";
 
+// Force dynamic rendering to avoid build-time database queries
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
   title: "Oglasi",
   description: "Pretražite ponudu polovnih i vintage satova",
