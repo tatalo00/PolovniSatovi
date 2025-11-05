@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { ListingStatus } from "@/lib/generated/prisma/client";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { AdminListingQueue } from "@/components/admin/admin-listing-queue";
@@ -8,18 +8,30 @@ export const metadata = {
   description: "Pregled i odobrenje oglasa",
 };
 
+const LISTING_STATUSES = Object.values(ListingStatus) as string[];
+
+function isListingStatus(value: string): value is ListingStatus {
+  return LISTING_STATUSES.includes(value);
+}
+
 export default async function AdminListingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams?: { status?: string | string[] };
 }) {
   await requireAdmin();
 
-  const params = await searchParams;
-  const status = params.status || "PENDING";
+  const rawStatus = Array.isArray(searchParams?.status)
+    ? searchParams?.status[0]
+    : searchParams?.status;
+  const normalizedStatus =
+    typeof rawStatus === "string" ? rawStatus.toUpperCase() : undefined;
+  const status: ListingStatus = normalizedStatus && isListingStatus(normalizedStatus)
+    ? normalizedStatus
+    : ListingStatus.PENDING;
 
   const listings = await prisma.listing.findMany({
-    where: { status: status as any },
+    where: { status },
     include: {
       seller: {
         select: {

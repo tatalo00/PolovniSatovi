@@ -33,10 +33,11 @@ export async function POST(request: Request) {
     const body = await request.json();
     const validation = validateAndSanitize(resetPasswordSchema, body);
 
-    if (!validation.success) {
-      logger.warn("Reset password validation failed", { error: validation.error });
+    if (validation.success === false) {
+      const { error } = validation;
+      logger.warn("Reset password validation failed", { error });
       return NextResponse.json(
-        { error: validation.error },
+        { error },
         { status: 400 }
       );
     }

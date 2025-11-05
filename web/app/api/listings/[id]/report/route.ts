@@ -43,7 +43,7 @@ export async function POST(
     const body = await request.json();
     const validation = reportSchema.safeParse(body);
 
-    if (!validation.success) {
+    if (validation.success == false) {
       return NextResponse.json(
         { error: validation.error.issues[0].message },
         { status: 400 }

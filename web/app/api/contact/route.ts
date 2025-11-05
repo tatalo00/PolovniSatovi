@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const validation = validateAndSanitize(contactSchema, body);
 
-    if (!validation.success) {
+    if (validation.success == false) {
       logger.warn("Contact form validation failed", { error: validation.error });
       return NextResponse.json(
         { error: validation.error },

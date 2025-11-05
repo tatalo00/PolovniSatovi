@@ -98,7 +98,7 @@ export async function PATCH(
     const body = await request.json();
     const validation = listingUpdateSchema.safeParse(body);
 
-    if (!validation.success) {
+    if (validation.success == false) {
       return NextResponse.json(
         { error: validation.error.issues[0].message },
         { status: 400 }

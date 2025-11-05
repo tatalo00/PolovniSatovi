@@ -56,7 +56,7 @@ export async function PATCH(request: Request) {
     const body = await request.json();
     const validation = validateAndSanitize(profileUpdateSchema, body);
 
-    if (!validation.success) {
+    if (validation.success == false) {
       logger.warn("Profile update validation failed", { error: validation.error });
       return NextResponse.json(
         { error: validation.error },

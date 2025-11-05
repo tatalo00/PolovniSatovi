@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const validation = validateAndSanitize(signupSchema, body);
 
-    if (!validation.success) {
+    if (validation.success == false) {
       logger.warn("Signup validation failed", { error: validation.error });
       return NextResponse.json(
         { error: validation.error },

@@ -33,10 +33,11 @@ export async function POST(request: Request) {
     const body = await request.json();
     const validation = validateAndSanitize(forgotPasswordSchema, body);
 
-    if (!validation.success) {
-      logger.warn("Forgot password validation failed", { error: validation.error });
+    if (validation.success == false) {
+      const errorMessage = "error" in validation ? validation.error : "Validation error";
+      logger.warn("Forgot password validation failed", { error: errorMessage });
       return NextResponse.json(
-        { error: validation.error },
+        { error: errorMessage },
         { status: 400 }
       );
     }

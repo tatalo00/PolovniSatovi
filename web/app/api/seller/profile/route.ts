@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const validation = sellerProfileSchema.safeParse(body);
 
-    if (!validation.success) {
+    if (validation.success == false) {
       return NextResponse.json(
         { error: validation.error.issues[0].message },
         { status: 400 }
@@ -110,7 +110,7 @@ export async function PATCH(request: Request) {
     const body = await request.json();
     const validation = sellerProfileSchema.safeParse(body);
 
-    if (!validation.success) {
+    if (validation.success == false) {
       return NextResponse.json(
         { error: validation.error.issues[0].message },
         { status: 400 }
