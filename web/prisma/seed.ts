@@ -6,7 +6,7 @@ import { resolve } from "path";
 config({ path: resolve(process.cwd(), ".env.local"), override: true });
 config({ path: resolve(process.cwd(), ".env") });
 
-import { PrismaClient } from "../lib/generated/prisma/client";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 

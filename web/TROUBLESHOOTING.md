@@ -1,16 +1,15 @@
-# Troubleshooting Guide
+﻿# Troubleshooting Guide
 
 ## Fixed Issues
-
-### 1. ✅ Prisma Client Import Error
+### 1. Prisma Client Import Error
 **Problem:** `Cannot find module '../lib/generated/prisma'`
 
-**Solution:** Updated seed.ts to import from the correct path:
+**Solution:** Update imports to use the official package:
 ```typescript
-import { PrismaClient } from "../lib/generated/prisma/client";
+import { PrismaClient } from "@prisma/client";
 ```
 
-### 2. ✅ Environment Variable Loading
+### 2. âœ… Environment Variable Loading
 **Problem:** Prisma config was skipping environment variable loading
 
 **Solution:** Updated `prisma.config.ts` to explicitly load `.env.local`:
@@ -35,11 +34,11 @@ This is a **Supabase configuration issue**, not a code issue. You need to config
    - Select your project
 
 2. **Check Database Settings:**
-   - Go to **Settings** → **Database**
+   - Go to **Settings** â†’ **Database**
    - Verify your project is active (not paused)
 
 3. **Get Connection String:**
-   - In **Settings** → **Database** → **Connection string**
+   - In **Settings** â†’ **Database** â†’ **Connection string**
    - Select **URI** format
    - Copy the connection string
 
@@ -53,7 +52,7 @@ This is a **Supabase configuration issue**, not a code issue. You need to config
      ```
 
 5. **Check IP Restrictions:**
-   - In Supabase Dashboard → **Settings** → **Database**
+   - In Supabase Dashboard â†’ **Settings** â†’ **Database**
    - Look for IP restrictions or firewall settings
    - If enabled, add your current IP or disable for development
 
@@ -75,7 +74,7 @@ This is a **Supabase configuration issue**, not a code issue. You need to config
 
 If you can't connect via Prisma migrations, you can manually run the SQL:
 
-1. Go to Supabase Dashboard → **SQL Editor**
+1. Go to Supabase Dashboard â†’ **SQL Editor**
 2. Run the migration SQL manually (you can see the SQL Prisma generates)
 3. Or use Supabase's migration tool
 
@@ -106,4 +105,6 @@ Once you can connect to the database:
 2. Verify your `.env.local` file format
 3. Test connection with: `node scripts/check-env.js`
 4. Check Supabase status: https://status.supabase.com
+
+
 

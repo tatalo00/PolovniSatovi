@@ -30,7 +30,7 @@
 ```bash
 npm run prisma:generate
 ```
-This creates the Prisma client in `lib/generated/prisma/`.
+This generates the Prisma client under `node_modules/@prisma/client` (and the accompanying `.prisma` directory).
 
 ### 2. Run Migrations (Creates Database Tables)
 ```bash

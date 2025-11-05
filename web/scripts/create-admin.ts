@@ -1,6 +1,6 @@
 import { config } from "dotenv";
 import { resolve } from "path";
-import { PrismaClient } from "../lib/generated/prisma/client";
+import { PrismaClient } from "@prisma/client";
 import readline from "readline";
 
 // Load environment variables from .env.local

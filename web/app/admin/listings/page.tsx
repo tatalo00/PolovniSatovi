@@ -1,4 +1,4 @@
-import { ListingStatus } from "@/lib/generated/prisma/client";
+import { ListingStatus } from "@prisma/client";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { AdminListingQueue } from "@/components/admin/admin-listing-queue";
@@ -62,4 +62,3 @@ export default async function AdminListingsPage({
     </main>
   );
 }
-

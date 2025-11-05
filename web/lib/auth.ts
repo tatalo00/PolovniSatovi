@@ -1,7 +1,7 @@
 import "server-only";
 
 import { auth } from "@/auth";
-import { UserRole } from "@/lib/generated/prisma/client";
+import { UserRole } from "@prisma/client";
 
 export async function getCurrentUser() {
   const session = await auth();

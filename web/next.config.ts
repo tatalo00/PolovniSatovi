@@ -34,7 +34,6 @@ const nextConfig: NextConfig = {
       config.externals = config.externals || [];
       config.externals.push({
         "@prisma/client": "commonjs @prisma/client",
-        "@/lib/generated/prisma/client": "commonjs @prisma/client",
       });
     }
 
@@ -50,14 +49,6 @@ const nextConfig: NextConfig = {
             "node:url": false,
             "node:fs": false,
           }),
-    };
-
-    // Allow generated Prisma client imports that reference .js files to resolve the corresponding .ts sources
-    config.resolve.extensionAlias = {
-      ...(config.resolve.extensionAlias || {}),
-      ".js": [".js", ".ts"],
-      ".mjs": [".mjs", ".mts"],
-      ".cjs": [".cjs", ".cts"],
     };
 
     return config;
