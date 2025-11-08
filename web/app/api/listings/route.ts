@@ -36,7 +36,9 @@ export async function GET(request: NextRequest) {
     };
 
     const status: ListingStatus =
-      rawStatus && isListingStatus(rawStatus) ? rawStatus : "APPROVED";
+      rawStatus && isListingStatus(rawStatus)
+        ? rawStatus
+        : ListingStatus.APPROVED;
     const q = searchParams.get("q") ?? searchParams.get("search") ?? undefined;
     const brand = searchParams.get("brand") ?? undefined;
     const model = searchParams.get("model") ?? undefined;
@@ -54,7 +56,7 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit;
 
     const where: Prisma.ListingWhereInput = {
-      status,
+      status: { equals: status },
     };
 
     if (q) {
