@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ListingFilters } from "@/components/listings/listing-filters";
 import { ListingContent } from "@/components/listings/listing-content";
@@ -10,95 +11,205 @@ export const metadata = {
   description: "Pretražite ponudu polovnih i vintage satova",
 };
 
-interface SearchParams {
+interface IncomingSearchParams {
+  q?: string;
   search?: string;
   brand?: string;
-  condition?: string;
+  model?: string;
+  min?: string;
   minPrice?: string;
+  max?: string;
   maxPrice?: string;
   year?: string;
+  cond?: string;
+  condition?: string;
+  loc?: string;
   location?: string;
   sort?: string;
+  cols?: string;
   page?: string;
 }
+
+type NormalizedParams = Record<string, string>;
+
+const normalizeSearchParams = (params: IncomingSearchParams): NormalizedParams => {
+  const normalized: NormalizedParams = {};
+
+  const q = params.q ?? params.search;
+  if (q && q.trim().length > 0) {
+    normalized.q = q.trim();
+  }
+
+  if (params.brand && params.brand.trim().length > 0) {
+    normalized.brand = params.brand.trim();
+  }
+
+  if (params.model && params.model.trim().length > 0) {
+    normalized.model = params.model.trim();
+  }
+
+  const min = params.min ?? params.minPrice;
+  if (min && min.trim().length > 0) {
+    normalized.min = min.trim();
+  }
+
+  const max = params.max ?? params.maxPrice;
+  if (max && max.trim().length > 0) {
+    normalized.max = max.trim();
+  }
+
+  if (params.year && params.year.trim().length > 0) {
+    normalized.year = params.year.trim();
+  }
+
+  const cond = params.cond ?? params.condition;
+  if (cond && cond.trim().length > 0) {
+    normalized.cond = cond.trim();
+  }
+
+  const loc = params.loc ?? params.location;
+  if (loc && loc.trim().length > 0) {
+    normalized.loc = loc.trim();
+  }
+
+  if (params.sort && params.sort.trim().length > 0) {
+    normalized.sort = params.sort.trim();
+  }
+
+  if (params.cols && ["3", "4", "5"].includes(params.cols.trim())) {
+    normalized.cols = params.cols.trim();
+  }
+
+  if (params.page && params.page.trim().length > 0) {
+    normalized.page = params.page.trim();
+  }
+
+  return normalized;
+};
+
+const buildWhereClause = (filters: NormalizedParams): Prisma.ListingWhereInput => {
+  const where: Prisma.ListingWhereInput = {
+    status: "APPROVED",
+  };
+
+  if (filters.q) {
+    where.OR = [
+      { title: { contains: filters.q, mode: "insensitive" } },
+      { model: { contains: filters.q, mode: "insensitive" } },
+      { reference: { contains: filters.q, mode: "insensitive" } },
+    ];
+  }
+
+  if (filters.brand) {
+    where.brand = { contains: filters.brand, mode: "insensitive" };
+  }
+
+  if (filters.model) {
+    where.model = { contains: filters.model, mode: "insensitive" };
+  }
+
+  if (filters.cond) {
+    where.condition = filters.cond;
+  }
+
+  if (filters.min || filters.max) {
+    where.priceEurCents = {};
+
+    if (filters.min) {
+      const minValue = parseInt(filters.min, 10);
+      if (!Number.isNaN(minValue)) {
+        where.priceEurCents.gte = minValue * 100;
+      }
+    }
+
+    if (filters.max) {
+      const maxValue = parseInt(filters.max, 10);
+      if (!Number.isNaN(maxValue)) {
+        where.priceEurCents.lte = maxValue * 100;
+      }
+    }
+  }
+
+  if (filters.year) {
+    const yearValue = parseInt(filters.year, 10);
+    if (!Number.isNaN(yearValue)) {
+      where.year = yearValue;
+    }
+  }
+
+  if (filters.loc) {
+    where.AND = [
+      ...(where.AND ?? []),
+      {
+        OR: [
+          { location: { contains: filters.loc, mode: "insensitive" } },
+          { seller: { locationCity: { contains: filters.loc, mode: "insensitive" } } },
+          { seller: { locationCountry: { contains: filters.loc, mode: "insensitive" } } },
+        ],
+      },
+    ];
+  }
+
+  return where;
+};
+
+const resolveOrderBy = (
+  sort?: string
+): Prisma.ListingOrderByWithRelationInput | Prisma.ListingOrderByWithRelationInput[] => {
+  switch (sort) {
+    case "price-asc":
+      return { priceEurCents: "asc" };
+    case "price-desc":
+      return { priceEurCents: "desc" };
+    case "year-desc":
+      return [
+        { year: { sort: "desc", nulls: "last" } },
+        { createdAt: "desc" },
+      ];
+    case "year-asc":
+      return [
+        { year: { sort: "asc", nulls: "last" } },
+        { createdAt: "desc" },
+      ];
+    case "oldest":
+      return { createdAt: "asc" };
+    case "newest":
+    default:
+      return { createdAt: "desc" };
+  }
+};
 
 export default async function ListingsPage({
   searchParams,
 }: {
-  searchParams: Promise<SearchParams>;
+  searchParams: Promise<IncomingSearchParams>;
 }) {
   const params = await searchParams;
-  const page = parseInt(params.page || "1");
-  const limit = 20;
-  const offset = (page - 1) * limit;
+  const normalizedParams = normalizeSearchParams(params);
 
-  // Build where clause
-  const where: any = {
-    status: "APPROVED",
-  };
-
-  if (params.search) {
-    where.OR = [
-      { title: { contains: params.search, mode: "insensitive" } },
-      { brand: { contains: params.search, mode: "insensitive" } },
-      { model: { contains: params.search, mode: "insensitive" } },
-      { reference: { contains: params.search, mode: "insensitive" } },
-    ];
-  }
-
-  if (params.brand) {
-    where.brand = { contains: params.brand, mode: "insensitive" };
-  }
-
-  if (params.condition) {
-    where.condition = params.condition;
-  }
-
-  if (params.minPrice || params.maxPrice) {
-    where.priceEurCents = {};
-    if (params.minPrice) {
-      where.priceEurCents.gte = parseInt(params.minPrice) * 100;
+  const columns = (() => {
+    const parsed = parseInt(normalizedParams.cols ?? "3", 10);
+    if ([3, 4, 5].includes(parsed)) {
+      return parsed;
     }
-    if (params.maxPrice) {
-      where.priceEurCents.lte = parseInt(params.maxPrice) * 100;
-    }
-  }
+    return 3;
+  })();
 
-  if (params.year) {
-    where.year = parseInt(params.year);
-  }
+  const page = parseInt(normalizedParams.page ?? "1", 10);
+  const currentPage = Number.isNaN(page) || page < 1 ? 1 : page;
+  const limit = columns === 5 ? 25 : 24;
+  const offset = (currentPage - 1) * limit;
 
-  if (params.location) {
-    where.location = { contains: params.location, mode: "insensitive" };
-  }
+  const where = buildWhereClause(normalizedParams);
+  const orderBy = resolveOrderBy(normalizedParams.sort);
 
-  // Build orderBy
-  let orderBy: any = { createdAt: "desc" };
-  if (params.sort) {
-    switch (params.sort) {
-      case "price-asc":
-        orderBy = { priceEurCents: "asc" };
-        break;
-      case "price-desc":
-        orderBy = { priceEurCents: "desc" };
-        break;
-      case "newest":
-        orderBy = { createdAt: "desc" };
-        break;
-      case "oldest":
-        orderBy = { createdAt: "asc" };
-        break;
-    }
-  }
-
-  // Fetch listings and total count with error handling
   let listings: any[] = [];
   let total = 0;
-  let brands: any[] = [];
   let totalPages = 0;
+  let popularBrands: string[] = [];
 
   try {
-    [listings, total] = await Promise.all([
+    [listings, total, popularBrands] = await Promise.all([
       prisma.listing.findMany({
         where,
         include: {
@@ -120,21 +231,29 @@ export default async function ListingsPage({
         skip: offset,
       }),
       prisma.listing.count({ where }),
+      prisma.listing.findMany({
+        where: { status: "APPROVED" },
+        select: { brand: true },
+        distinct: ["brand"],
+        orderBy: { brand: "asc" },
+        take: 12,
+      }).then((rows) => rows.map((row) => row.brand)),
     ]);
-
-    // Get unique brands for filter
-    brands = await prisma.listing.findMany({
-      where: { status: "APPROVED" },
-      select: { brand: true },
-      distinct: ["brand"],
-      orderBy: { brand: "asc" },
-    });
 
     totalPages = Math.ceil(total / limit);
   } catch (error: any) {
     console.error("Database error on listings page:", error);
-    // Continue with empty data - page will still render with error message
   }
+
+  const clientSearchParams: Record<string, string | undefined> = {
+    ...normalizedParams,
+  };
+
+  if (currentPage > 1) {
+    clientSearchParams.page = currentPage.toString();
+  }
+
+  clientSearchParams.cols = columns.toString();
 
   return (
     <main className="container mx-auto px-4 py-8">
@@ -148,8 +267,8 @@ export default async function ListingsPage({
       <div className="grid gap-8 lg:grid-cols-4">
         <aside className="lg:col-span-1">
           <ListingFilters
-            brands={brands.map((b) => b.brand)}
-            searchParams={params as Record<string, string | undefined>}
+            popularBrands={popularBrands}
+            searchParams={clientSearchParams}
           />
         </aside>
 
@@ -157,9 +276,11 @@ export default async function ListingsPage({
           <ListingContent
             listings={listings}
             total={total}
-            currentPage={page}
+            currentPage={currentPage}
             totalPages={totalPages}
-            searchParams={params as Record<string, string | undefined>}
+            searchParams={clientSearchParams}
+            columns={columns}
+            perPage={limit}
           />
         </div>
       </div>

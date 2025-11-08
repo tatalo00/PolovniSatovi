@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { ListingList } from "@/components/listings/listing-list";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -36,6 +37,13 @@ export default async function MyListingsPage() {
 
   return (
     <main className="container mx-auto px-4 py-8">
+      <Breadcrumbs
+        items={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "Moji Oglasi" },
+        ]}
+        className="mb-6"
+      />
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Moji Oglasi</h1>

@@ -11,7 +11,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAdmin();
+    const admin = await requireAdmin();
 
     const { id } = await params;
 
@@ -46,6 +46,14 @@ export async function POST(
     await prisma.listing.update({
       where: { id },
       data: {
+        status: "APPROVED",
+      },
+    });
+
+    await prisma.listingStatusAudit.create({
+      data: {
+        listingId: id,
+        userId: (admin as any).id,
         status: "APPROVED",
       },
     });

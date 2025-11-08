@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
+import { PasswordStrength } from "./password-strength";
 
 export function SignUpForm() {
   const router = useRouter();
@@ -102,9 +103,7 @@ export function SignUpForm() {
               disabled={loading}
               minLength={8}
             />
-            <p className="text-xs text-muted-foreground">
-              Najmanje 8 karaktera
-            </p>
+            <PasswordStrength password={password} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Potvrdite šifru</Label>

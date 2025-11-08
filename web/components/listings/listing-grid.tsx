@@ -4,58 +4,94 @@ import Link from "next/link";
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { PriceDisplay } from "@/components/currency/price-display";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 interface ListingGridProps {
   listings: any[];
+  columns: number;
+  scrollKey?: string;
 }
 
-export function ListingGrid({ listings }: ListingGridProps) {
-
+export function ListingGrid({ listings, columns, scrollKey }: ListingGridProps) {
   if (listings.length === 0) {
     return (
-      <Card>
-        <CardContent className="pt-6">
-          <p className="text-center text-muted-foreground">
-            Nema oglasa koji odgovaraju vašim filterima.
-          </p>
-        </CardContent>
-      </Card>
+      <EmptyState
+        iconType="listings"
+        title="Nema oglasa"
+        description="Nema oglasa koji odgovaraju vašim filterima. Pokušajte da ih prilagodite ili obrišete."
+        action={{
+          label: "Obriši sve filtere",
+          href: "/listings",
+        }}
+      />
     );
   }
 
+  const gridColumnClass =
+    columns === 5 ? "lg:grid-cols-5" : columns === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3";
+
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div
+      className={cn(
+        "grid gap-4 sm:grid-cols-2",
+        gridColumnClass,
+        columns === 5 ? "gap-3 xl:gap-4" : "gap-4"
+      )}
+      data-scroll-key={scrollKey}
+    >
       {listings.map((listing) => (
         <Link key={listing.id} href={`/listing/${listing.id}`}>
-          <Card className="h-full transition-shadow hover:shadow-lg">
-            <div className="relative aspect-square w-full overflow-hidden rounded-t-lg">
+          <Card className="group flex h-full flex-col overflow-hidden transition-all duration-200 hover:border-primary/20 hover:shadow-lg">
+            <div className="relative aspect-[3/4] w-full overflow-hidden">
               {listing.photos && listing.photos.length > 0 ? (
                 <Image
                   src={listing.photos[0].url}
                   alt={listing.title}
                   fill
-                  className="object-cover"
+                  className="object-cover transition-transform duration-200 group-hover:scale-105"
+                  loading="lazy"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = "none";
+                    const parent = target.parentElement;
+                    if (parent) {
+                      parent.innerHTML = '<div class="flex h-full items-center justify-center bg-muted"><span class="text-muted-foreground text-sm">Greška pri učitavanju</span></div>';
+                    }
+                  }}
                 />
               ) : (
-                <div className="flex h-full items-center justify-center bg-muted">
+                <div className="flex h-full items-center justify-center bg-muted text-sm text-muted-foreground">
                   <span className="text-muted-foreground">Nema slike</span>
                 </div>
               )}
             </div>
-            <CardContent className="p-4">
-              <h3 className="mb-1 line-clamp-2 font-semibold">{listing.title}</h3>
-              <p className="mb-2 text-sm text-muted-foreground">
+            <CardContent className="flex flex-1 flex-col p-3.5">
+              <h3 className="mb-1 line-clamp-2 min-h-[40px] font-semibold leading-tight transition-colors group-hover:text-primary">
+                {listing.title}
+              </h3>
+              <p className="mb-2 line-clamp-2 min-h-[28px] text-sm text-muted-foreground">
                 {listing.brand} {listing.model}
                 {listing.reference && ` • ${listing.reference}`}
               </p>
-              <div className="mb-2 text-2xl font-bold">
+              <div className="mb-2 text-lg font-semibold">
                 <PriceDisplay amountEurCents={listing.priceEurCents} />
               </div>
-              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                {listing.condition && <span>Stanje: {listing.condition}</span>}
-                {listing.year && <span>• {listing.year}</span>}
-                {listing.seller?.locationCity && (
-                  <span>• {listing.seller.locationCity}</span>
+              <div className="mt-auto flex flex-wrap items-center gap-2 pt-3 text-xs text-muted-foreground">
+                {listing.condition && (
+                  <Badge variant="secondary" className="text-[11px] uppercase tracking-wide">
+                    {listing.condition}
+                  </Badge>
+                )}
+                {listing.year && (
+                  <span>{listing.year}</span>
+                )}
+                {(listing.seller?.locationCity || listing.location) && (
+                  <span className="truncate">
+                    {listing.seller?.locationCity || listing.location}
+                  </span>
                 )}
               </div>
             </CardContent>

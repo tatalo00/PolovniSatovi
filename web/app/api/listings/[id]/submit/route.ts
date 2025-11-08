@@ -59,6 +59,14 @@ export async function POST(
       },
     });
 
+    await prisma.listingStatusAudit.create({
+      data: {
+        listingId: id,
+        userId,
+        status: "PENDING",
+      },
+    });
+
     logger.info("Listing submitted for approval", { listingId: id, userId });
 
     return NextResponse.json({ success: true });

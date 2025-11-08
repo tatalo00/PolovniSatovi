@@ -45,6 +45,7 @@ model User {
   reports       Report[] @relation("userReports")
   reviews       Review[] @relation("reviews")
   sellerReviews Review[] @relation("sellerReviews")
+  listingStatusAudits ListingStatusAudit[]
 }
 
 enum UserRole {
@@ -78,6 +79,9 @@ model Listing {
   currency     String       @default("EUR")
   boxPapers    String?
   description  String?
+  caseDiameterMm Int?
+  caseMaterial  String?
+  movement      String?
   location     String?
   status       ListingStatus @default(DRAFT)
   createdAt    DateTime     @default(now())
@@ -88,6 +92,7 @@ model Listing {
   favorites    Favorite[]
   reports      Report[]
   reviews      Review[]
+  statusAudits ListingStatusAudit[]
 
   @@index([brand])
   @@index([model])
@@ -103,6 +108,20 @@ enum ListingStatus {
   APPROVED
   REJECTED
   ARCHIVED
+  SOLD
+}
+
+model ListingStatusAudit {
+  id        String        @id @default(cuid())
+  listingId String
+  listing   Listing       @relation(fields: [listingId], references: [id])
+  userId    String
+  user      User          @relation(fields: [userId], references: [id])
+  status    ListingStatus
+  createdAt DateTime      @default(now())
+
+  @@index([listingId])
+  @@index([userId])
 }
 
 model ListingPhoto {

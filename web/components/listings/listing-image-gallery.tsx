@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -23,6 +23,7 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const mainImageRef = useRef<HTMLDivElement | null>(null);
 
   // Minimum swipe distance (in pixels)
   const minSwipeDistance = 50;
@@ -73,20 +74,36 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isLightboxOpen) return;
-
-      if (e.key === "ArrowLeft") {
-        handlePrevious();
-      } else if (e.key === "ArrowRight") {
-        handleNext();
-      } else if (e.key === "Escape") {
-        setIsLightboxOpen(false);
+      if (isLightboxOpen) {
+        if (e.key === "ArrowLeft") {
+          handlePrevious();
+        } else if (e.key === "ArrowRight") {
+          handleNext();
+        } else if (e.key === "Escape") {
+          setIsLightboxOpen(false);
+        }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isLightboxOpen, handlePrevious, handleNext]);
+
+  const handleKeyboardNavigate = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        handlePrevious();
+      } else if (event.key === "ArrowRight") {
+        event.preventDefault();
+        handleNext();
+      } else if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        handleImageClick();
+      }
+    },
+    [handleNext, handlePrevious]
+  );
 
   if (photos.length === 0) {
     return (
@@ -104,11 +121,17 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
         {/* Main Image */}
         <div className="relative group">
           <div
-            className="relative aspect-square w-full overflow-hidden rounded-lg bg-muted cursor-pointer"
+            ref={mainImageRef}
+            className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-muted cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:aspect-[3/2]"
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
             onClick={handleImageClick}
+            onKeyDown={handleKeyboardNavigate}
+            role="button"
+            tabIndex={0}
+            aria-label={`Otvori galeriju, slika ${currentIndex + 1} od ${photos.length}`}
+            aria-haspopup="dialog"
           >
             <Image
               src={currentPhoto.url}
@@ -116,7 +139,7 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-105"
               priority={currentIndex === 0}
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 66vw, 50vw"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 60vw"
             />
             
             {/* Image Counter */}
@@ -184,7 +207,7 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
 
         {/* Thumbnail Strip */}
         {photos.length > 1 && (
-          <div className="hidden md:grid grid-cols-4 gap-2">
+          <div className="hidden md:grid grid-cols-5 gap-2">
             {photos.map((photo, index) => (
               <button
                 key={photo.id}

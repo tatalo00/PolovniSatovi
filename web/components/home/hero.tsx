@@ -14,7 +14,7 @@ export function Hero() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      router.push(`/listings?search=${encodeURIComponent(searchQuery.trim())}`);
+      router.push(`/listings?q=${encodeURIComponent(searchQuery.trim())}`);
     } else {
       router.push("/listings");
     }
@@ -51,10 +51,10 @@ export function Hero() {
 
           <div className="flex flex-wrap justify-center gap-4">
             <Button asChild variant="outline" size="lg">
-              <Link href="/listings">Pregledaj Sve Oglase</Link>
+              <Link href="/listings">Pregledaj sve oglase</Link>
             </Button>
             <Button asChild size="lg">
-              <Link href="/sell">Prodaj Svoj Sat</Link>
+              <Link href="/sell">Prodaj svoj sat</Link>
             </Button>
           </div>
         </div>

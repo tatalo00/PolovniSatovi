@@ -127,6 +127,8 @@ export function AdminListingQueue({ listings, currentStatus }: AdminListingQueue
             <SelectItem value="APPROVED">Odobreni</SelectItem>
             <SelectItem value="REJECTED">Odbijeni</SelectItem>
             <SelectItem value="DRAFT">Nacrti</SelectItem>
+            <SelectItem value="SOLD">Prodati</SelectItem>
+            <SelectItem value="ARCHIVED">Arhivirani</SelectItem>
           </SelectContent>
         </Select>
       </div>

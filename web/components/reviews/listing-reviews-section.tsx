@@ -10,6 +10,7 @@ import { SellerRatingSummary } from "./seller-rating-summary";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface ListingReviewsSectionProps {
   listingId: string;
@@ -172,13 +173,25 @@ export function ListingReviewsSection({
           totalReviews={totalReviews}
         />
 
-        {reviews.length > 0 && (
+        {reviews.length > 0 ? (
           <ReviewList
             reviews={reviews}
             currentUserId={currentUserId}
             onEdit={handleEditReview}
             onDelete={handleDeleteClick}
           />
+        ) : (
+          <div className="py-8 text-center">
+            <EmptyState
+              iconType="reviews"
+              title="Nema ocena još"
+              description={
+                session && sellerId !== currentUserId
+                  ? "Budite prvi koji će oceniti ovog prodavca. Vaša ocena pomaže drugim kupcima."
+                  : "Još nema ocena za ovog prodavca."
+              }
+            />
+          </div>
         )}
         <ConfirmDialog
           open={deleteConfirmOpen}
@@ -190,12 +203,6 @@ export function ListingReviewsSection({
           variant="destructive"
           onConfirm={handleDeleteReview}
         />
-
-        {!session && (
-          <p className="text-sm text-muted-foreground text-center">
-            Prijavite se da biste ocenili prodavca
-          </p>
-        )}
       </CardContent>
     </Card>
   );

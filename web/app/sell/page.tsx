@@ -13,7 +13,7 @@ export default async function SellPage() {
       <div className="mx-auto max-w-4xl">
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
-            Prodajte Svoj Sat
+            Prodajte svoj sat
           </h1>
           <p className="text-muted-foreground mt-4 text-lg">
             Bilo koji registrovan korisnik može da kreira oglas i proda svoj sat. Brzo i jednostavno!
@@ -52,7 +52,7 @@ export default async function SellPage() {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground">
-                Kupci vas mogu kontaktirati direktno putem emaila kada zainteresovani za vaš sat.
+                Kupci vas mogu kontaktirati direktno putem poruka kada su zainteresovani za Vaš sat.
               </p>
             </CardContent>
           </Card>

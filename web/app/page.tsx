@@ -1,40 +1,33 @@
 import { prisma } from "@/lib/prisma";
 import { Hero } from "@/components/home/hero";
-import { FeaturedListings } from "@/components/home/featured-listings";
-import { Categories } from "@/components/home/categories";
+import { PopularBrands } from "@/components/home/popular-brands";
+import { RecentListings } from "@/components/home/recent-listings";
 import { Card, CardContent } from "@/components/ui/card";
+import { POPULAR_BRAND_NAMES } from "@/lib/brands";
 
 // Force dynamic rendering to avoid build-time database queries
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
   // Fetch data with error handling
-  let featuredListings: any[] = [];
+  let recentListings: any[] = [];
   let brands: any[] = [];
   let totalListings = 0;
   let totalSellers = 0;
 
   try {
-    // Fetch featured listings (recent approved listings)
-    featuredListings = await prisma.listing.findMany({
+    recentListings = await prisma.listing.findMany({
       where: { status: "APPROVED" },
       include: {
         photos: {
           orderBy: { order: "asc" },
           take: 1,
         },
-        seller: {
-          select: {
-            name: true,
-            locationCity: true,
-          },
-        },
       },
       orderBy: { createdAt: "desc" },
-      take: 8,
+      take: 12,
     });
 
-    // Get unique brands for categories
     brands = await prisma.listing.findMany({
       where: { status: "APPROVED" },
       select: { brand: true },
@@ -42,7 +35,6 @@ export default async function HomePage() {
       orderBy: { brand: "asc" },
     });
 
-    // Get statistics
     [totalListings, totalSellers] = await Promise.all([
       prisma.listing.count({
         where: { status: "APPROVED" },
@@ -62,17 +54,23 @@ export default async function HomePage() {
     // Continue with empty data - page will still render
   }
 
+  const brandCounts = new Map<string, number>();
+  for (const listing of recentListings) {
+    if (!listing.brand) continue;
+    const key = listing.brand.trim();
+    brandCounts.set(key, (brandCounts.get(key) ?? 0) + 1);
+  }
+
+  const topBrands = Array.from(brandCounts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([name]) => name);
+
   return (
     <main>
       <Hero />
-
-      {featuredListings.length > 0 && (
-        <FeaturedListings listings={featuredListings} />
-      )}
-
-      {brands.length > 0 && (
-        <Categories brands={brands.map((b) => b.brand)} />
-      )}
+      <PopularBrands highlight={topBrands} />
+      <RecentListings listings={recentListings} />
 
       {/* Statistics Section */}
       <section className="py-12">

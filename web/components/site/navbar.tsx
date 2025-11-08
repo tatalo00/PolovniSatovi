@@ -27,15 +27,25 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { CurrencySwitcher } from "@/components/currency/currency-switcher";
 import { MessagesNavLink } from "@/components/messages/messages-nav-link";
+import { LanguageSwitcher } from "@/components/site/language-switcher";
 
 function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
   const pathname = usePathname();
-  const isActive = pathname === href;
+  const isActive = pathname === href || (href !== "/" && pathname.startsWith(href));
   return (
-    <Link href={href} className={isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"}>
+    <Link 
+      href={href} 
+      className={`transition-colors ${
+        isActive 
+          ? "text-foreground font-medium" 
+          : "text-muted-foreground hover:text-foreground"
+      }`}
+    >
       {children}
+      {isActive && (
+        <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary" />
+      )}
     </Link>
   );
 }
@@ -60,15 +70,19 @@ export function Navbar() {
           </Link>
           <nav className="hidden md:block">
             <NavigationMenu>
-              <NavigationMenuList>
+              <NavigationMenuList className="gap-6">
                 <NavigationMenuItem>
                   <NavigationMenuLink asChild>
-                    <NavLink href="/listings">Oglasi</NavLink>
+                    <div className="relative">
+                      <NavLink href="/listings">Oglasi</NavLink>
+                    </div>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
                 <NavigationMenuItem>
                   <NavigationMenuLink asChild>
-                    <NavLink href="/sell">Prodaj</NavLink>
+                    <div className="relative">
+                      <NavLink href="/sell">Prodaj</NavLink>
+                    </div>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
               </NavigationMenuList>
@@ -77,7 +91,7 @@ export function Navbar() {
         </div>
 
         <div className="hidden items-center gap-2 md:flex">
-          <CurrencySwitcher className="w-20" />
+          <LanguageSwitcher className="w-36" />
           {isLoggedIn ? (
             <>
               <MessagesNavLink />
@@ -130,7 +144,7 @@ export function Navbar() {
         </div>
 
         <div className="md:hidden flex items-center gap-2">
-          <CurrencySwitcher className="w-20" />
+          <LanguageSwitcher className="w-full max-w-[160px]" />
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" aria-label="Otvori meni" className="h-10 w-10">

@@ -31,10 +31,36 @@ const listingSchema = z.object({
   title: z.string().min(5, "Naziv mora imati najmanje 5 karaktera"),
   brand: z.string().min(2, "Marka je obavezna"),
   model: z.string().min(2, "Model je obavezan"),
-  reference: z.string().optional(),
-  year: z.string().optional(),
+  reference: z
+    .string()
+    .optional()
+    .refine(
+      (value) => !value || /^[A-Za-z0-9\-./]{2,30}$/.test(value.trim()),
+      "Referenca može sadržati samo slova, brojeve i - . / (2-30 karaktera)"
+    ),
+  year: z
+    .string()
+    .optional()
+    .refine((value) => {
+      if (!value) return true;
+      const parsed = parseInt(value, 10);
+      const currentYear = new Date().getFullYear() + 1;
+      return parsed >= 1900 && parsed <= currentYear;
+    }, "Godina mora biti između 1900. i sledeće kalendarske godine"),
+  caseDiameterMm: z
+    .string()
+    .optional()
+    .refine(
+      (value) => !value || /^\d{1,3}$/.test(value),
+      "Prečnik mora biti broj (maks. 3 cifre)"
+    ),
+  caseMaterial: z.string().optional(),
+  movement: z.string().optional(),
   condition: z.string().min(1, "Stanje je obavezno"),
-  priceEurCents: z.string().regex(/^\d+(\.\d{1,2})?$/, "Cena mora biti validan broj"),
+  priceEurCents: z
+    .string()
+    .regex(/^\d+(\.\d{1,2})?$/, "Cena mora biti validan broj")
+    .refine((value) => parseFloat(value) > 0, "Cena mora biti veća od 0"),
   currency: z.string(),
   boxPapers: z.string().optional(),
   description: z.string().optional(),
@@ -67,6 +93,11 @@ export function ListingForm({ listing }: ListingFormProps) {
           model: listing.model,
           reference: listing.reference || "",
           year: listing.year?.toString() || "",
+          caseDiameterMm: listing.caseDiameterMm
+            ? listing.caseDiameterMm.toString()
+            : "",
+          caseMaterial: listing.caseMaterial || "",
+          movement: listing.movement || "",
           condition: listing.condition,
           priceEurCents: (listing.priceEurCents / 100).toFixed(2),
           currency: listing.currency || "EUR",
@@ -76,6 +107,9 @@ export function ListingForm({ listing }: ListingFormProps) {
         }
       : {
           currency: "EUR",
+          caseDiameterMm: "",
+          caseMaterial: "",
+          movement: "",
         },
   });
 
@@ -87,8 +121,21 @@ export function ListingForm({ listing }: ListingFormProps) {
 
       const payload = {
         ...data,
+        title: data.title.trim(),
+        brand: data.brand.trim(),
+        model: data.model.trim(),
+        reference: data.reference?.trim() || undefined,
         priceEurCents,
-        year: data.year ? parseInt(data.year) : null,
+        year: data.year ? parseInt(data.year, 10) : null,
+        caseDiameterMm: data.caseDiameterMm
+          ? parseInt(data.caseDiameterMm, 10)
+          : null,
+        caseMaterial: data.caseMaterial?.trim()
+          ? data.caseMaterial.trim()
+          : null,
+        movement: data.movement?.trim() ? data.movement.trim() : null,
+        description: data.description?.trim() || undefined,
+        location: data.location?.trim() || undefined,
         photos,
       };
 
@@ -229,6 +276,44 @@ export function ListingForm({ listing }: ListingFormProps) {
                   type="number"
                   {...register("year")}
                   placeholder="2018"
+                  disabled={loading}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="space-y-2">
+                <Label htmlFor="caseDiameterMm">Prečnik kućišta (mm)</Label>
+                <Input
+                  id="caseDiameterMm"
+                  type="number"
+                  min={0}
+                  max={70}
+                  {...register("caseDiameterMm")}
+                  placeholder="41"
+                  disabled={loading}
+                />
+                {errors.caseDiameterMm && (
+                  <p className="text-sm text-destructive">
+                    {errors.caseDiameterMm.message}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="caseMaterial">Materijal kućišta</Label>
+                <Input
+                  id="caseMaterial"
+                  {...register("caseMaterial")}
+                  placeholder="Nerđajući čelik, titanijum..."
+                  disabled={loading}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="movement">Mehanizam</Label>
+                <Input
+                  id="movement"
+                  {...register("movement")}
+                  placeholder="Automatski, kvarc, ručni navoj..."
                   disabled={loading}
                 />
               </div>

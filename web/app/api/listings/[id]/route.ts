@@ -1,6 +1,7 @@
 import "server-only";
 
 import { NextResponse } from "next/server";
+import { ListingStatus } from "@prisma/client";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
@@ -12,6 +13,9 @@ const listingUpdateSchema = z.object({
   model: z.string().min(2).optional(),
   reference: z.string().optional(),
   year: z.number().nullable().optional(),
+  caseDiameterMm: z.number().int().positive().nullable().optional(),
+  caseMaterial: z.string().optional(),
+  movement: z.string().optional(),
   condition: z.string().min(1).optional(),
   priceEurCents: z.number().int().positive().optional(),
   currency: z.string().optional(),
@@ -19,6 +23,7 @@ const listingUpdateSchema = z.object({
   description: z.string().optional(),
   location: z.string().optional(),
   photos: z.array(z.string()).optional(),
+  status: z.nativeEnum(ListingStatus).optional(),
 });
 
 // GET - Get single listing
@@ -73,6 +78,7 @@ export async function PATCH(
   try {
     const user = await requireAuth();
     const userId = (user as any).id;
+    const userRole = (user as any).role;
     const { id } = await params;
 
     // Check if listing exists and belongs to user
@@ -88,7 +94,7 @@ export async function PATCH(
       );
     }
 
-    if (listing.sellerId !== userId && (user as any).role !== "ADMIN") {
+    if (listing.sellerId !== userId && userRole !== "ADMIN") {
       return NextResponse.json(
         { error: "Nemate dozvolu za izmenu ovog oglasa" },
         { status: 403 }
@@ -114,12 +120,65 @@ export async function PATCH(
     if (data.model !== undefined) updateData.model = data.model;
     if (data.reference !== undefined) updateData.reference = data.reference || null;
     if (data.year !== undefined) updateData.year = data.year || null;
+    if (data.caseDiameterMm !== undefined)
+      updateData.caseDiameterMm = data.caseDiameterMm || null;
+    if (data.caseMaterial !== undefined)
+      updateData.caseMaterial = data.caseMaterial?.trim() || null;
+    if (data.movement !== undefined)
+      updateData.movement = data.movement?.trim() || null;
     if (data.condition !== undefined) updateData.condition = data.condition;
     if (data.priceEurCents !== undefined) updateData.priceEurCents = data.priceEurCents;
     if (data.currency !== undefined) updateData.currency = data.currency;
     if (data.boxPapers !== undefined) updateData.boxPapers = data.boxPapers || null;
     if (data.description !== undefined) updateData.description = data.description || null;
     if (data.location !== undefined) updateData.location = data.location || null;
+
+    if (data.status !== undefined) {
+      const allowedStatuses =
+        userRole === "ADMIN"
+          ? Object.values(ListingStatus)
+          : [ListingStatus.APPROVED, ListingStatus.SOLD];
+
+      if (!allowedStatuses.includes(data.status)) {
+        return NextResponse.json(
+          { error: "Nedozvoljena promena statusa" },
+          { status: 400 }
+        );
+      }
+
+      if (
+        userRole !== "ADMIN" &&
+        data.status === ListingStatus.SOLD &&
+        listing.status !== ListingStatus.APPROVED
+      ) {
+        return NextResponse.json(
+          { error: "Oglas se može označiti kao prodat samo ako je prethodno bio aktivan" },
+          { status: 400 }
+        );
+      }
+
+      if (
+        userRole !== "ADMIN" &&
+        data.status === ListingStatus.APPROVED &&
+        listing.status !== ListingStatus.SOLD
+      ) {
+        return NextResponse.json(
+          { error: "Oglas se može ponovo aktivirati samo ako je prethodno bio označen kao prodat" },
+          { status: 400 }
+        );
+      }
+
+      if (listing.status !== data.status) {
+        updateData.status = data.status;
+        await prisma.listingStatusAudit.create({
+          data: {
+            listingId: id,
+            userId,
+            status: data.status,
+          },
+        });
+      }
+    }
 
     // Update photos if provided
     if (data.photos !== undefined) {
@@ -135,6 +194,10 @@ export async function PATCH(
           order: index,
         })),
       };
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json(listing);
     }
 
     const updatedListing = await prisma.listing.update({
