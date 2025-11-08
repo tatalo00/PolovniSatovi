@@ -138,8 +138,13 @@ const buildWhereClause = (filters: NormalizedParams): Prisma.ListingWhereInput =
   }
 
   if (filters.loc) {
+    const existingAnd = Array.isArray(where.AND)
+      ? where.AND
+      : where.AND
+      ? [where.AND]
+      : [];
     where.AND = [
-      ...(where.AND ?? []),
+      ...existingAnd,
       {
         OR: [
           { location: { contains: filters.loc, mode: "insensitive" } },

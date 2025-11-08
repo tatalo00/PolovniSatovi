@@ -105,8 +105,14 @@ export async function GET(request: NextRequest) {
     }
 
     if (loc) {
+      const existingAnd = Array.isArray(where.AND)
+        ? where.AND
+        : where.AND
+        ? [where.AND]
+        : [];
+
       where.AND = [
-        ...(where.AND ?? []),
+        ...existingAnd,
         {
           OR: [
             { location: { contains: loc, mode: "insensitive" } },
