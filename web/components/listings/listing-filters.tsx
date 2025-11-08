@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useNavigationFeedback } from "@/components/providers/navigation-feedback-provider";
 
 const CONDITION_OPTIONS = [
   { value: "all", label: "Sve" },
@@ -78,7 +79,9 @@ const parseFiltersFromRecord = (
   loc: params.loc ?? params.location ?? "",
 });
 
-const parseFiltersFromUrl = (params: ReadonlyURLSearchParams): FilterState => ({
+const parseFiltersFromUrl = (
+  params: ReadonlyURLSearchParams | URLSearchParams,
+): FilterState => ({
   q: params.get("q") ?? params.get("search") ?? "",
   brand: params.get("brand") ?? "",
   model: params.get("model") ?? "",
@@ -102,8 +105,9 @@ const sanitizeFilters = (state: FilterState): FilterState => {
 
 export function ListingFilters({ popularBrands, searchParams }: ListingFiltersProps) {
   const router = useRouter();
+  const { start: startNavigation } = useNavigationFeedback();
   const currentParams = useSearchParams();
-  const currentParamsString = currentParams.toString();
+  const currentParamsString = currentParams?.toString() ?? "";
 
   const initialFilters = useMemo(
     () => parseFiltersFromRecord(searchParams),
@@ -126,10 +130,10 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
   const modelBlurTimeout = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    const nextFilters = parseFiltersFromUrl(currentParams);
+    const nextFilters = parseFiltersFromUrl(new URLSearchParams(currentParamsString));
     setFilters(nextFilters);
     setUrlFilters(nextFilters);
-  }, [currentParams, currentParamsString]);
+  }, [currentParamsString]);
 
   useEffect(() => {
     const query = filters.brand.trim();
@@ -157,10 +161,16 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
         }
         const data: string[] = await response.json();
         setBrandSuggestions(uniqueList(data));
-      } catch (error: any) {
-        if (error?.name !== "AbortError") {
-          console.error("Brand suggestions error:", error);
+      } catch (error: unknown) {
+        if (
+          error &&
+          typeof error === "object" &&
+          "name" in error &&
+          (error as { name?: string }).name === "AbortError"
+        ) {
+          return;
         }
+        console.error("Brand suggestions error:", error);
       } finally {
         setBrandLoading(false);
       }
@@ -205,10 +215,16 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
         }
         const data: string[] = await response.json();
         setModelSuggestions(uniqueList(data));
-      } catch (error: any) {
-        if (error?.name !== "AbortError") {
-          console.error("Model suggestions error:", error);
+      } catch (error: unknown) {
+        if (
+          error &&
+          typeof error === "object" &&
+          "name" in error &&
+          (error as { name?: string }).name === "AbortError"
+        ) {
+          return;
         }
+        console.error("Model suggestions error:", error);
       } finally {
         setModelLoading(false);
       }
@@ -268,18 +284,20 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
       const queryString = params.toString();
       setFilters(filtersToApply);
       setUrlFilters(filtersToApply);
+      startNavigation({ immediate: true });
       router.replace(queryString ? `/listings?${queryString}` : "/listings", {
         scroll: false,
       });
     },
-    [currentParamsString, filters, router]
+    [currentParamsString, filters, router, startNavigation]
   );
 
   const clearFilters = useCallback(() => {
     setFilters(emptyFilters);
     setUrlFilters(emptyFilters);
+    startNavigation({ immediate: true });
     router.replace("/listings", { scroll: false });
-  }, [router]);
+  }, [router, startNavigation]);
 
   const handleBrandFocus = () => {
     if (brandBlurTimeout.current) {

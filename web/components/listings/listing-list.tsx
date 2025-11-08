@@ -176,7 +176,7 @@ export function ListingList({ listings, showActions = false }: ListingListProps)
                   asChild
                   className="flex-1"
                 >
-                  <Link href={`/listing/${listing.id}`}>
+                  <Link href={`/dashboard/listings/${listing.id}`}>
                     <Eye className="mr-2 h-4 w-4" />
                     Pregled
                   </Link>

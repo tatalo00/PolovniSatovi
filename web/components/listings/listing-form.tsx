@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
@@ -26,6 +26,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ImageUpload } from "@/components/ui/image-upload";
+import {
+  MIN_LISTING_PHOTOS,
+  MAX_LISTING_PHOTOS,
+} from "@/lib/listing-constants";
 
 const listingSchema = z.object({
   title: z.string().min(5, "Naziv mora imati najmanje 5 karaktera"),
@@ -82,7 +86,7 @@ export function ListingForm({ listing }: ListingFormProps) {
     register,
     handleSubmit,
     formState: { errors },
-    setValue,
+    control,
     watch,
   } = useForm<ListingFormData>({
     resolver: zodResolver(listingSchema),
@@ -110,10 +114,16 @@ export function ListingForm({ listing }: ListingFormProps) {
           caseDiameterMm: "",
           caseMaterial: "",
           movement: "",
+          condition: "",
+          boxPapers: "",
         },
   });
 
   const onSubmit = async (data: ListingFormData) => {
+    if (photos.length < MIN_LISTING_PHOTOS) {
+      toast.error(`Oglas mora imati najmanje ${MIN_LISTING_PHOTOS} fotografije`);
+      return;
+    }
     setLoading(true);
     try {
       const priceInEur = parseFloat(data.priceEurCents);
@@ -132,8 +142,8 @@ export function ListingForm({ listing }: ListingFormProps) {
           : null,
         caseMaterial: data.caseMaterial?.trim()
           ? data.caseMaterial.trim()
-          : null,
-        movement: data.movement?.trim() ? data.movement.trim() : null,
+          : undefined,
+        movement: data.movement?.trim() ? data.movement.trim() : undefined,
         description: data.description?.trim() || undefined,
         location: data.location?.trim() || undefined,
         photos,
@@ -169,8 +179,8 @@ export function ListingForm({ listing }: ListingFormProps) {
   const handleSubmitForApproval = async () => {
     if (!listing) return;
 
-    if (!photos || photos.length === 0) {
-      toast.error("Oglas mora imati najmanje jednu fotografiju");
+    if (!photos || photos.length < MIN_LISTING_PHOTOS) {
+      toast.error(`Oglas mora imati najmanje ${MIN_LISTING_PHOTOS} fotografije`);
       return;
     }
 
@@ -328,23 +338,29 @@ export function ListingForm({ listing }: ListingFormProps) {
                 <Label htmlFor="condition">
                   Stanje <span className="text-destructive">*</span>
                 </Label>
-                <Select
-                  defaultValue={listing?.condition || undefined}
-                  onValueChange={(value) => setValue("condition", value)}
-                  disabled={loading}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Izaberite stanje" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="New">Novo</SelectItem>
-                    <SelectItem value="Like New">Kao novo</SelectItem>
-                    <SelectItem value="Excellent">Odlično</SelectItem>
-                    <SelectItem value="Very Good">Vrlo dobro</SelectItem>
-                    <SelectItem value="Good">Dobro</SelectItem>
-                    <SelectItem value="Fair">Zadovoljavajuće</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Controller
+                  control={control}
+                  name="condition"
+                  render={({ field }) => (
+                    <Select
+                      value={field.value}
+                      onValueChange={(value) => field.onChange(value)}
+                      disabled={loading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Izaberite stanje" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="New">Novo</SelectItem>
+                        <SelectItem value="Like New">Kao novo</SelectItem>
+                        <SelectItem value="Excellent">Odlično</SelectItem>
+                        <SelectItem value="Very Good">Vrlo dobro</SelectItem>
+                        <SelectItem value="Good">Dobro</SelectItem>
+                        <SelectItem value="Fair">Zadovoljavajuće</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
                 {errors.condition && (
                   <p className="text-sm text-destructive">{errors.condition.message}</p>
                 )}
@@ -352,21 +368,27 @@ export function ListingForm({ listing }: ListingFormProps) {
 
               <div className="space-y-2">
                 <Label htmlFor="boxPapers">Box i papiri</Label>
-                <Select
-                  defaultValue={listing?.boxPapers || undefined}
-                  onValueChange={(value) => setValue("boxPapers", value || undefined)}
-                  disabled={loading}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Izaberite" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Full Set">Komplet (box + papiri)</SelectItem>
-                    <SelectItem value="Box Only">Samo box</SelectItem>
-                    <SelectItem value="Papers Only">Samo papiri</SelectItem>
-                    <SelectItem value="No Box or Papers">Nema boxa ni papira</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Controller
+                  control={control}
+                  name="boxPapers"
+                  render={({ field }) => (
+                    <Select
+                      value={field.value || undefined}
+                      onValueChange={(value) => field.onChange(value || "")}
+                      disabled={loading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Izaberite" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Full Set">Komplet (box + papiri)</SelectItem>
+                        <SelectItem value="Box Only">Samo box</SelectItem>
+                        <SelectItem value="Papers Only">Samo papiri</SelectItem>
+                        <SelectItem value="No Box or Papers">Nema boxa ni papira</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
             </div>
 
@@ -398,9 +420,12 @@ export function ListingForm({ listing }: ListingFormProps) {
             <ImageUpload
               value={photos}
               onChange={setPhotos}
-              maxImages={10}
+              maxImages={MAX_LISTING_PHOTOS}
               folder="listings"
             />
+            <p className="text-sm text-muted-foreground">
+              Dodajte najmanje {MIN_LISTING_PHOTOS} kvalitetne fotografije (maksimalno {MAX_LISTING_PHOTOS}).
+            </p>
             <p className="text-xs text-muted-foreground">
               Prva fotografija će biti glavna fotografija oglasa
             </p>

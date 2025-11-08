@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/site/navbar";
 import { Footer } from "@/components/site/footer";
 import { Providers } from "@/components/providers/session-provider";
 import { PageViewTracker } from "@/components/analytics/page-view-tracker";
+import { NavigationFeedbackProvider } from "@/components/providers/navigation-feedback-provider";
+import { PageTransitionWrapper } from "@/components/providers/page-transition-wrapper";
 import { Toaster } from "sonner";
 
 const geistSans = Geist({
@@ -36,26 +39,30 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased flex min-h-screen flex-col bg-background`}
       >
         <Providers>
-          <PageViewTracker />
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
-          <Toaster 
-            position="bottom-center"
-            expand={false}
-            richColors
-            closeButton
-            visibleToasts={3}
-            toastOptions={{
-              duration: 4000,
-              classNames: {
-                toast: "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
-                description: "group-[.toast]:text-muted-foreground",
-                actionButton: "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
-                cancelButton: "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
-              },
-            }}
-          />
+          <Suspense fallback={null}>
+            <NavigationFeedbackProvider>
+              <PageViewTracker />
+              <Navbar />
+              <PageTransitionWrapper>{children}</PageTransitionWrapper>
+              <Footer />
+              <Toaster 
+                position="bottom-center"
+                expand={false}
+                richColors
+                closeButton
+                visibleToasts={3}
+                toastOptions={{
+                  duration: 4000,
+                  classNames: {
+                    toast: "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
+                    description: "group-[.toast]:text-muted-foreground",
+                    actionButton: "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
+                    cancelButton: "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
+                  },
+                }}
+              />
+            </NavigationFeedbackProvider>
+          </Suspense>
         </Providers>
       </body>
     </html>

@@ -17,13 +17,14 @@ function isListingStatus(value: string): value is ListingStatus {
 export default async function AdminListingsPage({
   searchParams,
 }: {
-  searchParams?: { status?: string | string[] };
+  searchParams?: Promise<{ status?: string | string[] }>;
 }) {
   await requireAdmin();
 
-  const rawStatus = Array.isArray(searchParams?.status)
-    ? searchParams?.status[0]
-    : searchParams?.status;
+  const resolvedParams = searchParams ? await searchParams : undefined;
+  const rawStatus = Array.isArray(resolvedParams?.status)
+    ? resolvedParams.status[0]
+    : resolvedParams?.status;
   const normalizedStatus =
     typeof rawStatus === "string" ? rawStatus.toUpperCase() : undefined;
   const status: ListingStatus = normalizedStatus && isListingStatus(normalizedStatus)

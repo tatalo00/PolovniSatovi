@@ -28,10 +28,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MessagesNavLink } from "@/components/messages/messages-nav-link";
-import { LanguageSwitcher } from "@/components/site/language-switcher";
 
 function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "/";
   const isActive = pathname === href || (href !== "/" && pathname.startsWith(href));
   return (
     <Link 
@@ -52,7 +51,6 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
 
 export function Navbar() {
   const { data: session, status } = useSession();
-  const pathname = usePathname();
 
   const isLoggedIn = status === "authenticated";
   const user = session?.user;
@@ -91,7 +89,6 @@ export function Navbar() {
         </div>
 
         <div className="hidden items-center gap-2 md:flex">
-          <LanguageSwitcher className="w-36" />
           {isLoggedIn ? (
             <>
               <MessagesNavLink />
@@ -103,7 +100,8 @@ export function Navbar() {
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                     <Avatar className="h-8 w-8">
                       <AvatarFallback>
-                        {user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || <User className="h-4 w-4" />}
+                        {user?.name?.charAt(0).toUpperCase() ||
+                          user?.email?.charAt(0).toUpperCase() || <User className="h-4 w-4" />}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -119,15 +117,16 @@ export function Navbar() {
                   <DropdownMenuItem asChild>
                     <Link href="/dashboard">Dashboard</Link>
                   </DropdownMenuItem>
-                  {(user as any)?.role === "ADMIN" && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard/wishlist">Lista želja</Link>
+                  </DropdownMenuItem>
+                  {session?.user && "role" in session.user && session.user.role === "ADMIN" && (
                     <DropdownMenuItem asChild>
                       <Link href="/admin">Admin Panel</Link>
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut}>
-                    Odjavi se
-                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleSignOut}>Odjavi se</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </>
@@ -144,7 +143,6 @@ export function Navbar() {
         </div>
 
         <div className="md:hidden flex items-center gap-2">
-          <LanguageSwitcher className="w-full max-w-[160px]" />
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" aria-label="Otvori meni" className="h-10 w-10">
@@ -162,7 +160,8 @@ export function Navbar() {
                   <>
                     <NavLink href="/dashboard/messages">Poruke</NavLink>
                     <NavLink href="/dashboard">Dashboard</NavLink>
-                    {(user as any)?.role === "ADMIN" && (
+                    <NavLink href="/dashboard/wishlist">Lista želja</NavLink>
+                    {session?.user && "role" in session.user && session.user.role === "ADMIN" && (
                       <NavLink href="/admin">Admin Panel</NavLink>
                     )}
                     <div className="pt-4 border-t">

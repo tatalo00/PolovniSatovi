@@ -6,6 +6,10 @@ import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
+import {
+  MIN_LISTING_PHOTOS,
+  MAX_LISTING_PHOTOS,
+} from "@/lib/listing-constants";
 
 const listingCreateSchema = z.object({
   title: z.string().min(5, "Naziv mora imati najmanje 5 karaktera"),
@@ -22,7 +26,10 @@ const listingCreateSchema = z.object({
   boxPapers: z.string().optional(),
   description: z.string().optional(),
   location: z.string().optional(),
-  photos: z.array(z.string()).min(0),
+  photos: z
+    .array(z.string().url())
+    .min(MIN_LISTING_PHOTOS, `Oglas mora imati najmanje ${MIN_LISTING_PHOTOS} fotografije`)
+    .max(MAX_LISTING_PHOTOS, `Oglas može imati najviše ${MAX_LISTING_PHOTOS} fotografija`),
 });
 
 // GET - List all listings (with filters for approved only)
@@ -176,10 +183,12 @@ export async function POST(request: Request) {
     const validation = listingCreateSchema.safeParse(body);
 
     if (validation.success == false) {
-      return NextResponse.json(
-        { error: validation.error.issues[0].message },
-        { status: 400 }
-      );
+      const issue = validation.error.issues[0];
+      const message =
+        issue.code === "invalid_type" && "received" in issue && issue.received === "null"
+          ? "Molimo popunite sva obavezna polja"
+          : issue.message;
+      return NextResponse.json({ error: message }, { status: 400 });
     }
 
     const data = validation.data;
@@ -232,6 +241,14 @@ export async function POST(request: Request) {
         { error: "Morate biti prijavljeni" },
         { status: 401 }
       );
+    }
+    if (error instanceof z.ZodError) {
+      const issue = error.issues[0];
+      const message =
+        issue.code === "invalid_type" && "received" in issue && issue.received === "null"
+          ? "Molimo popunite sva obavezna polja"
+          : issue.message;
+      return NextResponse.json({ error: message }, { status: 400 });
     }
     return NextResponse.json(
       { error: error.message || "Došlo je do greške pri kreiranju oglasa" },

@@ -11,6 +11,7 @@ import { ListingReviewsSection } from "@/components/reviews/listing-reviews-sect
 import { ListingSpecsTable } from "@/components/listings/listing-specs-table";
 import { ListingContactCard } from "@/components/listings/listing-contact-card";
 import { ListingStickyCTA } from "@/components/listings/listing-sticky-cta";
+import { WishlistButton } from "@/components/listings/wishlist-button";
 
 // Force dynamic rendering to avoid build-time database queries
 export const dynamic = 'force-dynamic';
@@ -122,6 +123,21 @@ export default async function ListingPage({ params }: ListingPageProps) {
   }
 
   const session = await auth();
+  const viewerId = session?.user?.id;
+
+  let isFavorited = false;
+  if (viewerId) {
+    const favorite = await prisma.favorite.findUnique({
+      where: {
+        userId_listingId: {
+          userId: viewerId,
+          listingId: id,
+        },
+      },
+      select: { id: true },
+    });
+    isFavorited = Boolean(favorite);
+  }
   const isSold = listing.status === "SOLD";
   const conditionLabels: Record<string, string> = {
     New: "Novo",
@@ -271,6 +287,13 @@ export default async function ListingPage({ params }: ListingPageProps) {
                   <Badge variant="outline" className="border-destructive/30 bg-destructive/10 text-destructive">
                     PRODATO
                   </Badge>
+                )}
+                {!isOwner && (
+                  <WishlistButton
+                    listingId={listing.id}
+                    initialIsFavorite={isFavorited}
+                    className="ml-auto h-10 w-10 bg-background/90 shadow-sm"
+                  />
                 )}
               </div>
               <p className="text-muted-foreground">

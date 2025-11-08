@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -37,11 +37,16 @@ interface AdminListingQueueProps {
 export function AdminListingQueue({ listings, currentStatus }: AdminListingQueueProps) {
   const router = useRouter();
   const [processing, setProcessing] = useState<string | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState(currentStatus);
   const [approveConfirmOpen, setApproveConfirmOpen] = useState(false);
   const [listingToApprove, setListingToApprove] = useState<string | null>(null);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [listingToReject, setListingToReject] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+
+  useEffect(() => {
+    setSelectedStatus(currentStatus);
+  }, [currentStatus]);
 
   const handleApproveClick = (listingId: string) => {
     setListingToApprove(listingId);
@@ -112,13 +117,15 @@ export function AdminListingQueue({ listings, currentStatus }: AdminListingQueue
   };
 
   const handleStatusChange = (status: string) => {
-    router.push(`/admin/listings?status=${status}`);
+    setSelectedStatus(status);
+    router.push(`/admin/listings?status=${status}`, { scroll: false });
+    router.refresh();
   };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <Select value={currentStatus} onValueChange={handleStatusChange}>
+        <Select value={selectedStatus} onValueChange={handleStatusChange}>
           <SelectTrigger className="w-[200px]">
             <SelectValue />
           </SelectTrigger>
@@ -208,7 +215,7 @@ export function AdminListingQueue({ listings, currentStatus }: AdminListingQueue
                     </div>
 
                     {/* Actions */}
-                    {currentStatus === "PENDING" && (
+                    {selectedStatus === "PENDING" && (
                       <div className="mt-4 flex gap-2">
                         <Button
                           size="sm"
@@ -232,7 +239,7 @@ export function AdminListingQueue({ listings, currentStatus }: AdminListingQueue
                           variant="outline"
                           asChild
                         >
-                          <Link href={`/listing/${listing.id}`}>
+                          <Link href={`/admin/listings/${listing.id}`}>
                             <Eye className="mr-2 h-4 w-4" />
                             Pregled
                           </Link>

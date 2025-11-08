@@ -3,16 +3,19 @@
 import { useRouter } from "next/navigation";
 import { ListingGrid } from "./listing-grid";
 import { ActiveFilters } from "./active-filters";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import type { ListingSummary } from "@/types/listing";
+import { useNavigationFeedback } from "@/components/providers/navigation-feedback-provider";
 
 interface ListingContentProps {
-  listings: any[];
+  listings: ListingSummary[];
   total: number;
   currentPage: number;
   totalPages: number;
   searchParams: Record<string, string | undefined>;
   columns: number;
   perPage: number;
+  initialFavoriteIds?: string[];
 }
 
 export function ListingContent({
@@ -23,13 +26,41 @@ export function ListingContent({
   searchParams,
   columns,
   perPage,
+  initialFavoriteIds = [],
 }: ListingContentProps) {
   const router = useRouter();
-  const search = useMemo(() => {
-    if (typeof window === "undefined") return "";
-    return window.location.search;
-  }, [searchParams]);
+  const { start: startNavigation } = useNavigationFeedback();
+  const search = typeof window !== "undefined" ? window.location.search : "";
   const scrollUpdateRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(
+    () => new Set(initialFavoriteIds)
+  );
+
+  const handleFavoriteToggle = useCallback((listingId: string, nextValue: boolean) => {
+    setFavoriteIds((prev) => {
+      const updated = new Set(prev);
+      if (nextValue) {
+        updated.add(listingId);
+      } else {
+        updated.delete(listingId);
+      }
+      return updated;
+    });
+  }, []);
+
+  const buildSearchParams = useCallback(() => {
+    const params = new URLSearchParams();
+    Object.entries(searchParams).forEach(([key, value]) => {
+      if (typeof value === "string") {
+        params.set(key, value);
+      }
+    });
+    return params;
+  }, [searchParams]);
+
+  const deferredListings = useDeferredValue(listings);
+  const favoriteIdSnapshot = useMemo(() => new Set(favoriteIds), [favoriteIds]);
+  const deferredScrollKey = useDeferredValue(search);
 
   const saveScrollPosition = useCallback((position: number) => {
     if (typeof window === "undefined") return;
@@ -88,27 +119,29 @@ export function ListingContent({
   }, [saveScrollPosition]);
 
   const handleSortChange = (sort: string) => {
-    const params = new URLSearchParams(searchParams as any);
+    const params = buildSearchParams();
     params.set("sort", sort);
     params.delete("page");
     const queryString = params.toString();
+    startNavigation({ immediate: true });
     router.replace(queryString ? `/listings?${queryString}` : "/listings", {
       scroll: false,
     });
   };
 
   const handleColumnsChange = (columnCount: number) => {
-    const params = new URLSearchParams(searchParams as any);
+    const params = buildSearchParams();
     params.set("cols", columnCount.toString());
     params.delete("page");
     const queryString = params.toString();
+    startNavigation({ immediate: true });
     router.replace(queryString ? `/listings?${queryString}` : "/listings", {
       scroll: false,
     });
   };
 
   const buildPageUrl = (page: number) => {
-    const params = new URLSearchParams(searchParams as any);
+    const params = buildSearchParams();
     params.set("page", page.toString());
     return `/listings?${params.toString()}`;
   };
@@ -162,7 +195,13 @@ export function ListingContent({
         </div>
       </div>
 
-      <ListingGrid listings={listings} columns={columns} scrollKey={search} />
+      <ListingGrid
+        listings={deferredListings}
+        columns={columns}
+        scrollKey={deferredScrollKey}
+        favoriteIds={favoriteIdSnapshot}
+        onToggleFavorite={handleFavoriteToggle}
+      />
 
       {totalPages > 1 && (
         <div className="mt-8 flex justify-center gap-2">

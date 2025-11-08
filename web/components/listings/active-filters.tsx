@@ -1,9 +1,11 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigationFeedback } from "@/components/providers/navigation-feedback-provider";
 
 interface ActiveFiltersProps {
   searchParams: Record<string, string | undefined>;
@@ -21,82 +23,88 @@ const conditionLabels: Record<string, string> = {
 export function ActiveFilters({ searchParams }: ActiveFiltersProps) {
   const router = useRouter();
   const currentParams = useSearchParams();
+  const currentParamsString = currentParams?.toString() ?? "";
+  const { start: startNavigation } = useNavigationFeedback();
 
-  const activeFilters: Array<{ key: string; label: string; value: string }> = [];
+  const activeFilters = useMemo(() => {
+    const result: Array<{ key: string; label: string; value: string }> = [];
 
-  const q = searchParams.q ?? searchParams.search;
-  const brand = searchParams.brand;
-  const model = searchParams.model;
-  const cond = searchParams.cond ?? searchParams.condition;
-  const min = searchParams.min ?? searchParams.minPrice;
-  const max = searchParams.max ?? searchParams.maxPrice;
-  const loc = searchParams.loc ?? searchParams.location;
-  const year = searchParams.year;
+    const q = searchParams.q ?? searchParams.search;
+    const brand = searchParams.brand;
+    const model = searchParams.model;
+    const cond = searchParams.cond ?? searchParams.condition;
+    const min = searchParams.min ?? searchParams.minPrice;
+    const max = searchParams.max ?? searchParams.maxPrice;
+    const loc = searchParams.loc ?? searchParams.location;
+    const year = searchParams.year;
 
-  if (q) {
-    activeFilters.push({
-      key: "q",
-      label: "Pretraga",
-      value: q,
-    });
-  }
+    if (q) {
+      result.push({
+        key: "q",
+        label: "Pretraga",
+        value: q,
+      });
+    }
 
-  if (brand) {
-    activeFilters.push({
-      key: "brand",
-      label: "Marka",
-      value: brand,
-    });
-  }
+    if (brand) {
+      result.push({
+        key: "brand",
+        label: "Marka",
+        value: brand,
+      });
+    }
 
-  if (model) {
-    activeFilters.push({
-      key: "model",
-      label: "Model",
-      value: model,
-    });
-  }
+    if (model) {
+      result.push({
+        key: "model",
+        label: "Model",
+        value: model,
+      });
+    }
 
-  if (cond) {
-    activeFilters.push({
-      key: "condition",
-      label: "Stanje",
-      value: conditionLabels[cond] || cond,
-    });
-  }
+    if (cond) {
+      result.push({
+        key: "condition",
+        label: "Stanje",
+        value: conditionLabels[cond] || cond,
+      });
+    }
 
-  if (min || max) {
-    const priceLabel =
-      min && max
-        ? `${min} - ${max} EUR`
-        : min
-        ? `Od ${min} EUR`
-        : `Do ${max} EUR`;
-    activeFilters.push({
-      key: "price",
-      label: "Cena",
-      value: priceLabel,
-    });
-  }
+    if (min || max) {
+      const priceLabel =
+        min && max
+          ? `${min} - ${max} EUR`
+          : min
+          ? `Od ${min} EUR`
+          : `Do ${max} EUR`;
+      result.push({
+        key: "price",
+        label: "Cena",
+        value: priceLabel,
+      });
+    }
 
-  if (year) {
-    activeFilters.push({
-      key: "year",
-      label: "Godina",
-      value: year,
-    });
-  }
+    if (year) {
+      result.push({
+        key: "year",
+        label: "Godina",
+        value: year,
+      });
+    }
 
-  if (loc) {
-    activeFilters.push({
-      key: "loc",
-      label: "Lokacija",
-      value: loc,
-    });
-  }
+    if (loc) {
+      result.push({
+        key: "loc",
+        label: "Lokacija",
+        value: loc,
+      });
+    }
 
-  const removeFilter = (keyToRemove: string) => {
-    const params = new URLSearchParams(currentParams.toString());
+    return result;
+  }, [searchParams]);
+
+  const removeFilter = useCallback((keyToRemove: string) => {
+    const params = new URLSearchParams(currentParamsString);
     
     if (keyToRemove === "price") {
       params.delete("min");
@@ -118,14 +126,16 @@ export function ActiveFilters({ searchParams }: ActiveFiltersProps) {
     
     params.delete("page"); // Reset to page 1 when filter changes
     const queryString = params.toString();
+    startNavigation({ immediate: true });
     router.replace(queryString ? `/listings?${queryString}` : "/listings", {
       scroll: false,
     });
-  };
+  }, [currentParamsString, router, startNavigation]);
 
-  const clearAllFilters = () => {
+  const clearAllFilters = useCallback(() => {
+    startNavigation({ immediate: true });
     router.replace("/listings", { scroll: false });
-  };
+  }, [router, startNavigation]);
 
   if (activeFilters.length === 0) {
     return null;

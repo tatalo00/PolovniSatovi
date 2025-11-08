@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ListingFilters } from "@/components/listings/listing-filters";
 import { ListingContent } from "@/components/listings/listing-content";
+import { auth } from "@/auth";
 
 // Force dynamic rendering to avoid build-time database queries
 export const dynamic = 'force-dynamic';
@@ -10,6 +11,23 @@ export const metadata = {
   title: "Oglasi",
   description: "Pretražite ponudu polovnih i vintage satova",
 };
+
+type ListingWithSeller = Prisma.ListingGetPayload<{
+  include: {
+    photos: {
+      orderBy: { order: "asc" };
+      take: 1;
+    };
+    seller: {
+      select: {
+        name: true;
+        email: true;
+        locationCity: true;
+        locationCountry: true;
+      };
+    };
+  };
+}>;
 
 interface IncomingSearchParams {
   q?: string;
@@ -191,6 +209,7 @@ export default async function ListingsPage({
 }) {
   const params = await searchParams;
   const normalizedParams = normalizeSearchParams(params);
+  const session = await auth();
 
   const columns = (() => {
     const parsed = parseInt(normalizedParams.cols ?? "3", 10);
@@ -208,10 +227,11 @@ export default async function ListingsPage({
   const where = buildWhereClause(normalizedParams);
   const orderBy = resolveOrderBy(normalizedParams.sort);
 
-  let listings: any[] = [];
+  let listings: ListingWithSeller[] = [];
   let total = 0;
   let totalPages = 0;
   let popularBrands: string[] = [];
+  let favoriteIds: string[] = [];
 
   try {
     [listings, total, popularBrands] = await Promise.all([
@@ -246,8 +266,20 @@ export default async function ListingsPage({
     ]);
 
     totalPages = Math.ceil(total / limit);
-  } catch (error: any) {
+  } catch (error) {
     console.error("Database error on listings page:", error);
+  }
+
+  if (session?.user?.id) {
+    try {
+      const favorites = await prisma.favorite.findMany({
+        where: { userId: session.user.id },
+        select: { listingId: true },
+      });
+      favoriteIds = favorites.map((favorite) => favorite.listingId);
+    } catch (error) {
+      console.error("Failed to load favorites", error);
+    }
   }
 
   const clientSearchParams: Record<string, string | undefined> = {
@@ -286,6 +318,7 @@ export default async function ListingsPage({
             searchParams={clientSearchParams}
             columns={columns}
             perPage={limit}
+            initialFavoriteIds={favoriteIds}
           />
         </div>
       </div>

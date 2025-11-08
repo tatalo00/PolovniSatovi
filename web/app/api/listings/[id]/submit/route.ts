@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { MIN_LISTING_PHOTOS } from "@/lib/listing-constants";
 
 // POST - Submit listing for approval
 export async function POST(
@@ -44,9 +45,11 @@ export async function POST(
       );
     }
 
-    if (!listing.photos || listing.photos.length === 0) {
+    if (!listing.photos || listing.photos.length < MIN_LISTING_PHOTOS) {
       return NextResponse.json(
-        { error: "Oglas mora imati najmanje jednu fotografiju" },
+        {
+          error: `Oglas mora imati najmanje ${MIN_LISTING_PHOTOS} fotografije pre slanja na odobrenje`,
+        },
         { status: 400 }
       );
     }
