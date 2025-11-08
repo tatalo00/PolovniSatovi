@@ -1,7 +1,7 @@
 import "server-only";
 
 import { NextRequest, NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
+import { ListingStatus, Prisma } from "@prisma/client";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
@@ -29,7 +29,14 @@ const listingCreateSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const status = searchParams.get("status") ?? "APPROVED";
+    const rawStatus = searchParams.get("status");
+
+    const isListingStatus = (value: string): value is ListingStatus => {
+      return Object.values(ListingStatus).includes(value as ListingStatus);
+    };
+
+    const status: ListingStatus =
+      rawStatus && isListingStatus(rawStatus) ? rawStatus : "APPROVED";
     const q = searchParams.get("q") ?? searchParams.get("search") ?? undefined;
     const brand = searchParams.get("brand") ?? undefined;
     const model = searchParams.get("model") ?? undefined;
