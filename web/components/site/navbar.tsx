@@ -4,12 +4,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { Menu, User } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
+  NavigationMenuContent,
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
+  NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
 import {
   Sheet,
@@ -28,6 +31,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MessagesNavLink } from "@/components/messages/messages-nav-link";
+import { cn } from "@/lib/utils";
+
+type TopBrandGroups = {
+  men: string[];
+  women: string[];
+};
 
 function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
   const pathname = usePathname() ?? "/";
@@ -54,9 +63,82 @@ export function Navbar() {
 
   const isLoggedIn = status === "authenticated";
   const user = session?.user;
+  const pathname = usePathname() ?? "/";
+
+  const [topBrandGroups, setTopBrandGroups] = useState<TopBrandGroups>({
+    men: [],
+    women: [],
+  });
+  const [brandsLoading, setBrandsLoading] = useState(false);
+  const [brandsError, setBrandsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const controller = new AbortController();
+
+    const loadBrands = async () => {
+      setBrandsLoading(true);
+      try {
+        const response = await fetch("/api/brands/top", { signal: controller.signal });
+        if (!response.ok) {
+          throw new Error(`Status ${response.status}`);
+        }
+        const data = (await response.json()) as Partial<TopBrandGroups>;
+        if (!cancelled) {
+          setTopBrandGroups({
+            men: Array.isArray(data.men) ? data.men : [],
+            women: Array.isArray(data.women) ? data.women : [],
+          });
+          setBrandsError(null);
+        }
+      } catch (error: unknown) {
+        if (
+          error &&
+          typeof error === "object" &&
+          "name" in error &&
+          (error as { name?: string }).name === "AbortError"
+        ) {
+          return;
+        }
+        if (!cancelled) {
+          setBrandsError(error instanceof Error ? error.message : "Nepoznata greška");
+        }
+      } finally {
+        if (!cancelled) {
+          setBrandsLoading(false);
+        }
+      }
+    };
+
+    loadBrands();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, []);
+
+  const menBrands = useMemo(
+    () => topBrandGroups.men.slice(0, 10),
+    [topBrandGroups.men]
+  );
+  const womenBrands = useMemo(
+    () => topBrandGroups.women.slice(0, 10),
+    [topBrandGroups.women]
+  );
+
+  const isListingsActive = pathname === "/listings" || pathname.startsWith("/listings/");
 
   const handleSignOut = async () => {
     await signOut({ callbackUrl: "/" });
+  };
+
+  const buildListingHref = (gender: "male" | "female", brand?: string) => {
+    const params = new URLSearchParams({ gender });
+    if (brand) {
+      params.set("brand", brand);
+    }
+    return `/listings?${params.toString()}`;
   };
 
   return (
@@ -70,11 +152,94 @@ export function Navbar() {
             <NavigationMenu>
               <NavigationMenuList className="gap-6">
                 <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <div className="relative">
-                      <NavLink href="/listings">Oglasi</NavLink>
+                  <NavigationMenuTrigger
+                    className={cn(
+                      "bg-transparent px-0 py-0 text-base font-normal text-muted-foreground hover:bg-transparent hover:text-foreground focus:bg-transparent focus:text-foreground focus-visible:outline-none focus-visible:ring-0 data-[state=open]:text-foreground",
+                      isListingsActive && "text-foreground font-medium"
+                    )}
+                  >
+                    <span className="relative flex items-center gap-1">
+                      Oglasi
+                      {isListingsActive && (
+                        <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary" />
+                      )}
+                    </span>
+                  </NavigationMenuTrigger>
+                  <NavigationMenuContent className="md:w-[560px]">
+                    <div className="rounded-md border bg-popover p-4 shadow-lg md:p-6">
+                      <div className="grid gap-6 md:grid-cols-2">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            Muški satovi
+                          </p>
+                          <div className="mt-3 space-y-1.5">
+                            {brandsLoading ? (
+                              <span className="text-sm text-muted-foreground">Učitavanje...</span>
+                            ) : menBrands.length > 0 ? (
+                              menBrands.map((brand) => (
+                                <NavigationMenuLink asChild key={`men-${brand}`}>
+                                  <Link
+                                    href={buildListingHref("male", brand)}
+                                    className="flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+                                  >
+                                    <span>{brand}</span>
+                                  </Link>
+                                </NavigationMenuLink>
+                              ))
+                            ) : (
+                              <span className="text-sm text-muted-foreground">
+                                {brandsError ? "Nije moguće učitati brendove" : "Nema dostupnih brendova"}
+                              </span>
+                            )}
+                          </div>
+                          <NavigationMenuLink asChild>
+                            <Link
+                              href={buildListingHref("male")}
+                              className="mt-3 inline-flex text-sm font-medium text-primary hover:underline"
+                            >
+                              Pogledaj sve muške oglase
+                            </Link>
+                          </NavigationMenuLink>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            Ženski satovi
+                          </p>
+                          <div className="mt-3 space-y-1.5">
+                            {brandsLoading ? (
+                              <span className="text-sm text-muted-foreground">Učitavanje...</span>
+                            ) : womenBrands.length > 0 ? (
+                              womenBrands.map((brand) => (
+                                <NavigationMenuLink asChild key={`women-${brand}`}>
+                                  <Link
+                                    href={buildListingHref("female", brand)}
+                                    className="flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+                                  >
+                                    <span>{brand}</span>
+                                  </Link>
+                                </NavigationMenuLink>
+                              ))
+                            ) : (
+                              <span className="text-sm text-muted-foreground">
+                                {brandsError ? "Nije moguće učitati brendove" : "Nema dostupnih brendova"}
+                              </span>
+                            )}
+                          </div>
+                          <NavigationMenuLink asChild>
+                            <Link
+                              href={buildListingHref("female")}
+                              className="mt-3 inline-flex text-sm font-medium text-primary hover:underline"
+                            >
+                              Pogledaj sve ženske oglase
+                            </Link>
+                          </NavigationMenuLink>
+                        </div>
+                      </div>
+                      <p className="mt-4 text-xs text-muted-foreground">
+                        Muški i ženski izbor uključuje i uniseks modele pa dobijate širu ponudu.
+                      </p>
                     </div>
-                  </NavigationMenuLink>
+                  </NavigationMenuContent>
                 </NavigationMenuItem>
                 <NavigationMenuItem>
                   <NavigationMenuLink asChild>

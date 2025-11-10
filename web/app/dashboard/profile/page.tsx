@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
+
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { ProfileForm } from "@/components/user/profile-form";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { VerificationStatusCard } from "@/components/user/verification-status-card";
 
 export const metadata = {
   title: "Moj Profil",
@@ -16,7 +18,7 @@ export default async function ProfilePage() {
     redirect("/auth/signin");
   }
 
-  const userId = (session.user as any).id;
+  const userId = session.user.id;
 
   // Fetch user profile
   const userProfile = await prisma.user.findUnique({
@@ -27,6 +29,19 @@ export default async function ProfilePage() {
       locationCountry: true,
       locationCity: true,
       createdAt: true,
+      isVerified: true,
+      verification: {
+        select: {
+          id: true,
+          status: true,
+          diditSessionUrl: true,
+          diditVerificationId: true,
+          rejectionReason: true,
+          statusDetail: true,
+          updatedAt: true,
+          createdAt: true,
+        },
+      },
       _count: {
         select: {
           listings: true,
@@ -57,6 +72,24 @@ export default async function ProfilePage() {
               locationCountry: userProfile.locationCountry,
               locationCity: userProfile.locationCity,
             }}
+          />
+
+          <VerificationStatusCard
+            isVerified={userProfile.isVerified}
+            verification={
+              userProfile.verification
+                ? {
+                    id: userProfile.verification.id,
+                    status: userProfile.verification.status,
+                    diditSessionUrl: userProfile.verification.diditSessionUrl,
+                    diditVerificationId: userProfile.verification.diditVerificationId,
+                    rejectionReason: userProfile.verification.rejectionReason,
+                    statusDetail: userProfile.verification.statusDetail,
+                    updatedAt: userProfile.verification.updatedAt?.toISOString() ?? null,
+                    createdAt: userProfile.verification.createdAt?.toISOString() ?? null,
+                  }
+                : null
+            }
           />
 
           <Card>

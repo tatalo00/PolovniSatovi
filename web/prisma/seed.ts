@@ -294,6 +294,7 @@ async function main() {
           sellerId: seller.id,
           status: "APPROVED",
           currency: "EUR",
+          gender: (data as { gender?: "MALE" | "FEMALE" | "UNISEX" }).gender ?? "UNISEX",
           ...data,
         },
       });

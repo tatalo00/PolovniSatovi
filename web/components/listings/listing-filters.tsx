@@ -36,7 +36,14 @@ const CONDITION_OPTIONS = [
   { value: "Fair", label: "Zadovoljavajuće" },
 ];
 
-const FILTER_KEYS = ["q", "brand", "model", "min", "max", "year", "cond", "loc"] as const;
+const GENDER_OPTIONS = [
+  { value: "all", label: "Svi" },
+  { value: "male", label: "Muški i uniseks" },
+  { value: "female", label: "Ženski i uniseks" },
+  { value: "unisex", label: "Uniseks" },
+] as const;
+
+const FILTER_KEYS = ["q", "brand", "model", "min", "max", "year", "cond", "loc", "gender"] as const;
 type FilterKey = (typeof FILTER_KEYS)[number];
 
 type FilterState = Record<FilterKey, string>;
@@ -50,6 +57,7 @@ const emptyFilters: FilterState = {
   year: "",
   cond: "",
   loc: "",
+  gender: "",
 };
 
 interface ListingFiltersProps {
@@ -77,6 +85,7 @@ const parseFiltersFromRecord = (
   year: params.year ?? "",
   cond: params.cond ?? params.condition ?? "",
   loc: params.loc ?? params.location ?? "",
+  gender: params.gender ?? "",
 });
 
 const parseFiltersFromUrl = (
@@ -90,6 +99,7 @@ const parseFiltersFromUrl = (
   year: params.get("year") ?? "",
   cond: params.get("cond") ?? params.get("condition") ?? "",
   loc: params.get("loc") ?? params.get("location") ?? "",
+  gender: params.get("gender") ?? "",
 });
 
 const areFiltersEqual = (a: FilterState, b: FilterState) =>
@@ -269,6 +279,7 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
         "condition",
         "loc",
         "location",
+        "gender",
         "page",
       ].forEach((key) => params.delete(key));
 
@@ -280,6 +291,7 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
       if (filtersToApply.year) params.set("year", filtersToApply.year);
       if (filtersToApply.cond) params.set("cond", filtersToApply.cond);
       if (filtersToApply.loc) params.set("loc", filtersToApply.loc);
+      if (filtersToApply.gender) params.set("gender", filtersToApply.gender);
 
       const queryString = params.toString();
       setFilters(filtersToApply);
@@ -534,6 +546,30 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
               <SelectContent>
                 {CONDITION_OPTIONS.map((option) => (
                   <SelectItem key={option.value || "all"} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="listings-gender">Namenjeno</Label>
+            <Select
+              value={filters.gender || "all"}
+              onValueChange={(value) => {
+                const normalized = value === "all" ? "" : value;
+                const next: FilterState = { ...filters, gender: normalized };
+                setFilters(next);
+                applyFilters(next);
+              }}
+            >
+              <SelectTrigger id="listings-gender">
+                <SelectValue placeholder="Sve" />
+              </SelectTrigger>
+              <SelectContent>
+                {GENDER_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>
                 ))}

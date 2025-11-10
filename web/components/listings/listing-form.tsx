@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,94 +29,106 @@ import {
   MIN_LISTING_PHOTOS,
   MAX_LISTING_PHOTOS,
 } from "@/lib/listing-constants";
+import {
+  listingFormSchema,
+  type ListingFormSchema,
+  CONDITION_VALUES,
+  BOX_PAPERS_VALUES,
+  SUPPORTED_CURRENCIES,
+  GENDER_VALUES,
+} from "@/lib/validation/listing";
 
-const listingSchema = z.object({
-  title: z.string().min(5, "Naziv mora imati najmanje 5 karaktera"),
-  brand: z.string().min(2, "Marka je obavezna"),
-  model: z.string().min(2, "Model je obavezan"),
-  reference: z
-    .string()
-    .optional()
-    .refine(
-      (value) => !value || /^[A-Za-z0-9\-./]{2,30}$/.test(value.trim()),
-      "Referenca može sadržati samo slova, brojeve i - . / (2-30 karaktera)"
-    ),
-  year: z
-    .string()
-    .optional()
-    .refine((value) => {
-      if (!value) return true;
-      const parsed = parseInt(value, 10);
-      const currentYear = new Date().getFullYear() + 1;
-      return parsed >= 1900 && parsed <= currentYear;
-    }, "Godina mora biti između 1900. i sledeće kalendarske godine"),
-  caseDiameterMm: z
-    .string()
-    .optional()
-    .refine(
-      (value) => !value || /^\d{1,3}$/.test(value),
-      "Prečnik mora biti broj (maks. 3 cifre)"
-    ),
-  caseMaterial: z.string().optional(),
-  movement: z.string().optional(),
-  condition: z.string().min(1, "Stanje je obavezno"),
-  priceEurCents: z
-    .string()
-    .regex(/^\d+(\.\d{1,2})?$/, "Cena mora biti validan broj")
-    .refine((value) => parseFloat(value) > 0, "Cena mora biti veća od 0"),
-  currency: z.string(),
-  boxPapers: z.string().optional(),
-  description: z.string().optional(),
-  location: z.string().optional(),
-});
+type ListingFormData = ListingFormSchema;
 
-type ListingFormData = z.infer<typeof listingSchema>;
+type EditableListing = {
+  id: string;
+  title: string;
+  brand: string;
+  model: string;
+  reference: string | null;
+  year: number | null;
+  caseDiameterMm: number | null;
+  caseMaterial: string | null;
+  movement: string | null;
+  condition: (typeof CONDITION_VALUES)[number];
+  gender: (typeof GENDER_VALUES)[number];
+  priceEurCents: number;
+  currency: (typeof SUPPORTED_CURRENCIES)[number];
+  boxPapers: (typeof BOX_PAPERS_VALUES)[number] | null;
+  description: string | null;
+  location: string | null;
+  status?: string;
+  photos: Array<{ url: string }>;
+};
 
 interface ListingFormProps {
-  listing?: any;
+  listing?: EditableListing;
 }
 
 export function ListingForm({ listing }: ListingFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [photos, setPhotos] = useState<string[]>(listing?.photos?.map((p: any) => p.url) || []);
+  const [photos, setPhotos] = useState<string[]>(listing?.photos?.map((p) => p.url) || []);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    control,
-    watch,
-  } = useForm<ListingFormData>({
-    resolver: zodResolver(listingSchema),
-    defaultValues: listing
-      ? {
-          title: listing.title,
-          brand: listing.brand,
-          model: listing.model,
-          reference: listing.reference || "",
-          year: listing.year?.toString() || "",
-          caseDiameterMm: listing.caseDiameterMm
-            ? listing.caseDiameterMm.toString()
-            : "",
-          caseMaterial: listing.caseMaterial || "",
-          movement: listing.movement || "",
-          condition: listing.condition,
-          priceEurCents: (listing.priceEurCents / 100).toFixed(2),
-          currency: listing.currency || "EUR",
-          boxPapers: listing.boxPapers || "",
-          description: listing.description || "",
-          location: listing.location || "",
-        }
-      : {
-          currency: "EUR",
-          caseDiameterMm: "",
-          caseMaterial: "",
-          movement: "",
-          condition: "",
-          boxPapers: "",
-        },
-  });
+const CONDITION_LABELS: Record<(typeof CONDITION_VALUES)[number], string> = {
+  New: "Novo",
+  "Like New": "Kao novo",
+  Excellent: "Odlično",
+  "Very Good": "Vrlo dobro",
+  Good: "Dobro",
+  Fair: "Zadovoljavajuće",
+};
+
+const BOX_PAPERS_LABELS: Record<(typeof BOX_PAPERS_VALUES)[number], string> = {
+  "Full Set": "Komplet (box + papiri)",
+  "Box Only": "Samo box",
+  "Papers Only": "Samo papiri",
+  "No Box or Papers": "Nema boxa ni papira",
+};
+
+const GENDER_LABELS: Record<(typeof GENDER_VALUES)[number], string> = {
+  MALE: "Muški",
+  FEMALE: "Ženski",
+  UNISEX: "Uniseks",
+};
+
+const {
+  register,
+  handleSubmit,
+  formState: { errors },
+  control,
+} = useForm<ListingFormData>({
+  resolver: zodResolver(listingFormSchema),
+  defaultValues: listing
+    ? {
+        title: listing.title,
+        brand: listing.brand,
+        model: listing.model,
+        reference: listing.reference || "",
+        year: listing.year?.toString() || "",
+        caseDiameterMm: listing.caseDiameterMm
+          ? listing.caseDiameterMm.toString()
+          : "",
+        caseMaterial: listing.caseMaterial || "",
+        movement: listing.movement || "",
+        condition: (listing.condition as ListingFormData["condition"]) ?? CONDITION_VALUES[0],
+        gender: (listing.gender as ListingFormData["gender"]) ?? "UNISEX",
+        priceEurCents: (listing.priceEurCents / 100).toFixed(2),
+        currency: (listing.currency as ListingFormData["currency"]) ?? SUPPORTED_CURRENCIES[0],
+        boxPapers: (listing.boxPapers as ListingFormData["boxPapers"]) ?? undefined,
+        description: listing.description || "",
+        location: listing.location || "",
+      }
+    : {
+        currency: SUPPORTED_CURRENCIES[0],
+        caseDiameterMm: "",
+        caseMaterial: "",
+        movement: "",
+        condition: CONDITION_VALUES[0],
+        gender: "UNISEX",
+        boxPapers: undefined,
+      },
+});
 
   const onSubmit = async (data: ListingFormData) => {
     if (photos.length < MIN_LISTING_PHOTOS) {
@@ -146,6 +157,7 @@ export function ListingForm({ listing }: ListingFormProps) {
         movement: data.movement?.trim() ? data.movement.trim() : undefined,
         description: data.description?.trim() || undefined,
         location: data.location?.trim() || undefined,
+        boxPapers: data.boxPapers ?? undefined,
         photos,
       };
 
@@ -277,6 +289,9 @@ export function ListingForm({ listing }: ListingFormProps) {
                   placeholder="116610LN"
                   disabled={loading}
                 />
+                {errors.reference && (
+                  <p className="text-sm text-destructive">{errors.reference.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -288,6 +303,9 @@ export function ListingForm({ listing }: ListingFormProps) {
                   placeholder="2018"
                   disabled={loading}
                 />
+                {errors.year && (
+                  <p className="text-sm text-destructive">{errors.year.message}</p>
+                )}
               </div>
             </div>
 
@@ -317,6 +335,9 @@ export function ListingForm({ listing }: ListingFormProps) {
                   placeholder="Nerđajući čelik, titanijum..."
                   disabled={loading}
                 />
+              {errors.caseMaterial && (
+                <p className="text-sm text-destructive">{errors.caseMaterial.message}</p>
+              )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="movement">Mehanizam</Label>
@@ -326,6 +347,9 @@ export function ListingForm({ listing }: ListingFormProps) {
                   placeholder="Automatski, kvarc, ručni navoj..."
                   disabled={loading}
                 />
+              {errors.movement && (
+                <p className="text-sm text-destructive">{errors.movement.message}</p>
+              )}
               </div>
             </div>
           </div>
@@ -333,7 +357,7 @@ export function ListingForm({ listing }: ListingFormProps) {
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Cena i stanje</h3>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-3">
               <div className="space-y-2">
                 <Label htmlFor="condition">
                   Stanje <span className="text-destructive">*</span>
@@ -344,19 +368,20 @@ export function ListingForm({ listing }: ListingFormProps) {
                   render={({ field }) => (
                     <Select
                       value={field.value}
-                      onValueChange={(value) => field.onChange(value)}
+                      onValueChange={(value) =>
+                        field.onChange(value as ListingFormData["condition"])
+                      }
                       disabled={loading}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Izaberite stanje" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="New">Novo</SelectItem>
-                        <SelectItem value="Like New">Kao novo</SelectItem>
-                        <SelectItem value="Excellent">Odlično</SelectItem>
-                        <SelectItem value="Very Good">Vrlo dobro</SelectItem>
-                        <SelectItem value="Good">Dobro</SelectItem>
-                        <SelectItem value="Fair">Zadovoljavajuće</SelectItem>
+                        {CONDITION_VALUES.map((condition) => (
+                          <SelectItem key={condition} value={condition}>
+                            {CONDITION_LABELS[condition]}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   )}
@@ -367,24 +392,60 @@ export function ListingForm({ listing }: ListingFormProps) {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="gender">
+                  Namenjeno <span className="text-destructive">*</span>
+                </Label>
+                <Controller
+                  control={control}
+                  name="gender"
+                  render={({ field }) => (
+                    <Select
+                      value={field.value}
+                      onValueChange={(value) =>
+                        field.onChange(value as ListingFormData["gender"])
+                      }
+                      disabled={loading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Izaberite namenu" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {GENDER_VALUES.map((gender) => (
+                          <SelectItem key={gender} value={gender}>
+                            {GENDER_LABELS[gender]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.gender && (
+                  <p className="text-sm text-destructive">{errors.gender.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="boxPapers">Box i papiri</Label>
                 <Controller
                   control={control}
                   name="boxPapers"
                   render={({ field }) => (
                     <Select
-                      value={field.value || undefined}
-                      onValueChange={(value) => field.onChange(value || "")}
+                      value={field.value ?? undefined}
+                      onValueChange={(value) =>
+                        field.onChange(value as ListingFormData["boxPapers"])
+                      }
                       disabled={loading}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Izaberite" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Full Set">Komplet (box + papiri)</SelectItem>
-                        <SelectItem value="Box Only">Samo box</SelectItem>
-                        <SelectItem value="Papers Only">Samo papiri</SelectItem>
-                        <SelectItem value="No Box or Papers">Nema boxa ni papira</SelectItem>
+                        {BOX_PAPERS_VALUES.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {BOX_PAPERS_LABELS[option]}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   )}
@@ -443,6 +504,9 @@ export function ListingForm({ listing }: ListingFormProps) {
                 rows={6}
                 disabled={loading}
               />
+              {errors.description && (
+                <p className="text-sm text-destructive">{errors.description.message}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -453,6 +517,9 @@ export function ListingForm({ listing }: ListingFormProps) {
                 placeholder="Beograd, Srbija"
                 disabled={loading}
               />
+              {errors.location && (
+                <p className="text-sm text-destructive">{errors.location.message}</p>
+              )}
             </div>
           </div>
         </CardContent>

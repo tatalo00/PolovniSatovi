@@ -20,6 +20,12 @@ const conditionLabels: Record<string, string> = {
   Fair: "Zadovoljavajuće",
 };
 
+const genderLabels: Record<string, string> = {
+  male: "Muški + uniseks",
+  female: "Ženski + uniseks",
+  unisex: "Uniseks",
+};
+
 export function ActiveFilters({ searchParams }: ActiveFiltersProps) {
   const router = useRouter();
   const currentParams = useSearchParams();
@@ -37,6 +43,7 @@ export function ActiveFilters({ searchParams }: ActiveFiltersProps) {
     const max = searchParams.max ?? searchParams.maxPrice;
     const loc = searchParams.loc ?? searchParams.location;
     const year = searchParams.year;
+    const gender = searchParams.gender;
 
     if (q) {
       result.push({
@@ -100,6 +107,15 @@ export function ActiveFilters({ searchParams }: ActiveFiltersProps) {
       });
     }
 
+    if (gender) {
+      const normalized = gender.toLowerCase();
+      result.push({
+        key: "gender",
+        label: "Namenjeno",
+        value: genderLabels[normalized] ?? gender,
+      });
+    }
+
     return result;
   }, [searchParams]);
 
@@ -120,6 +136,8 @@ export function ActiveFilters({ searchParams }: ActiveFiltersProps) {
     } else if (keyToRemove === "loc") {
       params.delete("loc");
       params.delete("location");
+    } else if (keyToRemove === "gender") {
+      params.delete("gender");
     } else {
       params.delete(keyToRemove);
     }

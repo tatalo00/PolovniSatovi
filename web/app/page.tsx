@@ -1,17 +1,21 @@
+import type { Listing, ListingPhoto } from "@prisma/client";
+
 import { prisma } from "@/lib/prisma";
 import { Hero } from "@/components/home/hero";
 import { PopularBrands } from "@/components/home/popular-brands";
 import { RecentListings } from "@/components/home/recent-listings";
 import { Card, CardContent } from "@/components/ui/card";
-import { POPULAR_BRAND_NAMES } from "@/lib/brands";
 
 // Force dynamic rendering to avoid build-time database queries
 export const dynamic = 'force-dynamic';
 
+type ListingWithPhoto = Listing & { photos: ListingPhoto[] };
+type BrandResult = { brand: string | null };
+
 export default async function HomePage() {
   // Fetch data with error handling
-  let recentListings: any[] = [];
-  let brands: any[] = [];
+  let recentListings: ListingWithPhoto[] = [];
+  let brands: BrandResult[] = [];
   let totalListings = 0;
   let totalSellers = 0;
 
@@ -49,7 +53,7 @@ export default async function HomePage() {
         },
       }),
     ]);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Database error on homepage:", error);
     // Continue with empty data - page will still render
   }
@@ -69,8 +73,8 @@ export default async function HomePage() {
   return (
     <main>
       <Hero />
-      <PopularBrands highlight={topBrands} />
       <RecentListings listings={recentListings} />
+      <PopularBrands highlight={topBrands} />
 
       {/* Statistics Section */}
       <section className="py-12">

@@ -1,17 +1,42 @@
 "use client";
 
 import Link from "next/link";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { AlertCircle, CheckCircle, XCircle, FileText } from "lucide-react";
+import { AlertCircle, FileText } from "lucide-react";
 import { PriceDisplay } from "@/components/currency/price-display";
+
+interface PendingListing {
+  id: string;
+  title: string;
+  brand: string;
+  model: string;
+  priceEurCents: number;
+  seller: {
+    name: string | null;
+    email: string;
+  };
+}
+
+interface RecentReport {
+  id: string;
+  reason: string;
+  listing: {
+    id: string;
+    title: string;
+  };
+  reporter: {
+    name: string | null;
+    email: string | null;
+  };
+}
 
 interface AdminDashboardProps {
   pendingCount: number;
   openReportsCount: number;
-  pendingListings: any[];
-  recentReports: any[];
+  pendingListings: PendingListing[];
+  recentReports: RecentReport[];
 }
 
 export function AdminDashboard({
@@ -20,11 +45,10 @@ export function AdminDashboard({
   pendingListings,
   recentReports,
 }: AdminDashboardProps) {
-
   return (
     <div className="space-y-6">
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Čekaju odobrenje</CardTitle>
@@ -58,9 +82,7 @@ export function AdminDashboard({
                 <Link href="/admin/listings">Pogledaj sve</Link>
               </Button>
             </div>
-            <CardDescription>
-              Najnoviji oglasi koji čekaju odobrenje
-            </CardDescription>
+            <CardDescription>Najnoviji oglasi koji čekaju odobrenje</CardDescription>
           </CardHeader>
           <CardContent>
             {pendingListings.length === 0 ? (
@@ -80,21 +102,16 @@ export function AdminDashboard({
                         {listing.title}
                       </Link>
                       <p className="text-sm text-muted-foreground">
-                        {listing.brand} {listing.model} • <PriceDisplay amountEurCents={listing.priceEurCents} />
+                        {listing.brand} {listing.model} •{" "}
+                        <PriceDisplay amountEurCents={listing.priceEurCents} />
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
                         Prodavac: {listing.seller.name || listing.seller.email}
                       </p>
                     </div>
                     <div className="flex gap-2 ml-4">
-                      <Button
-                        size="sm"
-                        variant="default"
-                        asChild
-                      >
-                        <Link href={`/admin/listings?status=PENDING#${listing.id}`}>
-                          Pregled
-                        </Link>
+                      <Button size="sm" variant="default" asChild>
+                        <Link href={`/admin/listings?status=PENDING#${listing.id}`}>Pregled</Link>
                       </Button>
                     </div>
                   </div>
@@ -113,9 +130,7 @@ export function AdminDashboard({
                 <Link href="/admin/reports">Pogledaj sve</Link>
               </Button>
             </div>
-            <CardDescription>
-              Najnovije prijave oglasa
-            </CardDescription>
+            <CardDescription>Najnovije prijave oglasa</CardDescription>
           </CardHeader>
           <CardContent>
             {recentReports.length === 0 ? (
@@ -134,21 +149,13 @@ export function AdminDashboard({
                       >
                         {report.listing.title}
                       </Link>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {report.reason}
-                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">{report.reason}</p>
                       <p className="text-xs text-muted-foreground mt-1">
                         Prijavio: {report.reporter.name || report.reporter.email}
                       </p>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      asChild
-                    >
-                      <Link href={`/admin/reports?status=OPEN#${report.id}`}>
-                        Pregled
-                      </Link>
+                    <Button size="sm" variant="outline" asChild>
+                      <Link href={`/admin/reports?status=OPEN#${report.id}`}>Pregled</Link>
                     </Button>
                   </div>
                 ))}

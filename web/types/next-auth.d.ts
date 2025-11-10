@@ -4,6 +4,7 @@ import "next-auth";
 declare module "next-auth" {
   interface User {
     role?: UserRole;
+    isVerified?: boolean;
   }
 
   interface Session {
@@ -13,6 +14,7 @@ declare module "next-auth" {
       name?: string | null;
       image?: string | null;
       role?: UserRole;
+      isVerified?: boolean;
     };
   }
 }

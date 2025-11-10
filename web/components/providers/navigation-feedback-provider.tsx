@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 
 const LOADING_PREFIX = "⌛ Učitavanje – ";
 const START_DELAY_MS = 150;
-const MIN_VISIBLE_MS = 400;
+const MIN_VISIBLE_MS = 1400;
 
 type StartOptions = {
   immediate?: boolean;

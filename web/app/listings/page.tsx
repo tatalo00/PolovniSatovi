@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Prisma, Gender } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ListingFilters } from "@/components/listings/listing-filters";
 import { ListingContent } from "@/components/listings/listing-content";
@@ -43,6 +43,7 @@ interface IncomingSearchParams {
   condition?: string;
   loc?: string;
   location?: string;
+  gender?: string;
   sort?: string;
   cols?: string;
   page?: string;
@@ -78,6 +79,10 @@ const normalizeSearchParams = (params: IncomingSearchParams): NormalizedParams =
 
   if (params.year && params.year.trim().length > 0) {
     normalized.year = params.year.trim();
+  }
+
+  if (params.gender && params.gender.trim().length > 0) {
+    normalized.gender = params.gender.trim();
   }
 
   const cond = params.cond ?? params.condition;
@@ -171,6 +176,15 @@ const buildWhereClause = (filters: NormalizedParams): Prisma.ListingWhereInput =
         ],
       },
     ];
+  }
+
+  if (filters.gender) {
+    const normalizedGender = filters.gender.trim().toUpperCase();
+    if (normalizedGender === Gender.MALE || normalizedGender === Gender.FEMALE) {
+      where.gender = { in: [normalizedGender as Gender, Gender.UNISEX] };
+    } else if (normalizedGender === Gender.UNISEX) {
+      where.gender = normalizedGender as Gender;
+    }
   }
 
   return where;

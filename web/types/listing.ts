@@ -6,6 +6,7 @@ export interface ListingSummary {
   reference: string | null;
   year: number | null;
   condition: string | null;
+  gender?: "MALE" | "FEMALE" | "UNISEX";
   priceEurCents: number;
   location: string | null;
   boxPapers?: string | null;
