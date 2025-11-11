@@ -31,6 +31,8 @@ export async function GET(request: NextRequest) {
     const max = searchParams.get("max") ?? searchParams.get("maxPrice") ?? undefined;
     const year = searchParams.get("year") ?? undefined;
     const loc = searchParams.get("loc") ?? searchParams.get("location") ?? undefined;
+    const box = searchParams.get("box") ?? undefined;
+    const verified = searchParams.get("verified") ?? undefined;
     const genderParam = searchParams.get("gender") ?? undefined;
     const pageParam = parseInt(searchParams.get("page") ?? "1", 10);
     const limitParam = parseInt(searchParams.get("limit") ?? "20", 10);
@@ -114,6 +116,32 @@ export async function GET(request: NextRequest) {
         where.gender = { in: [normalizedGender as Gender, Gender.UNISEX] };
       } else if (normalizedGender === Gender.UNISEX) {
         where.gender = { equals: Gender.UNISEX };
+      }
+    }
+
+    if (box) {
+      const normalizedBox = box.trim().toLowerCase();
+      if (normalizedBox === "full") {
+        where.boxPapers = { not: null };
+      }
+    }
+
+    if (verified) {
+      const normalizedVerified = verified.trim().toLowerCase();
+      if (["1", "true", "yes"].includes(normalizedVerified)) {
+        const existingAnd = Array.isArray(where.AND)
+          ? where.AND
+          : where.AND
+          ? [where.AND]
+          : [];
+        where.AND = [
+          ...existingAnd,
+          {
+            seller: {
+              isVerified: true,
+            },
+          },
+        ];
       }
     }
 

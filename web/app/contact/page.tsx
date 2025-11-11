@@ -17,10 +17,10 @@ export default function ContactPage() {
           <p>
             Najbrži način da stupite u kontakt sa nama je putem e-mail adrese{" "}
             <a
-              href="mailto:podrska@polovnisatovi.com"
+              href="mailto:info@polovnisatovi.net"
               className="font-medium text-foreground underline underline-offset-4"
             >
-              podrska@polovnisatovi.com
+              info@polovnisatovi.net
             </a>
             .
           </p>

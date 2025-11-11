@@ -55,8 +55,8 @@ AUTH_SECRET=your-random-secret-here-min-32-characters
 NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
-# Email (Resend)
-RESEND_API_KEY=re_xxxxx
+# Email (Brevo)
+BREVO_API_KEY=brevo_xxxxx
 ```
 
 ### Generating Secrets
@@ -74,7 +74,7 @@ Or use an online generator: https://generate-secret.vercel.app/32
 - **DATABASE_URL**: Use your Supabase connection string (port 5432 for direct connection)
 - **NEXTAUTH_URL**: Set this to your Vercel deployment URL (e.g., `https://polovnisatovi.vercel.app`)
 - **NEXT_PUBLIC_***: These are exposed to the browser - make sure they're safe to expose
-- **RESEND_API_KEY**: Get from Resend dashboard (see `docs/RESEND_SETUP.md`)
+- **BREVO_API_KEY**: Get from Brevo dashboard (see `docs/BREVO_SETUP.md`)
 
 ### Environment-Specific Variables
 
@@ -188,9 +188,9 @@ Make sure your Supabase Storage bucket is configured:
 ### Email Not Working
 
 **Solution:**
-1. Verify `RESEND_API_KEY` is set in Vercel
-2. Check Resend dashboard for email logs
-3. Verify domain is verified in Resend (for production)
+1. Verify `BREVO_API_KEY` is set in Vercel
+2. Check Brevo dashboard for email logs
+3. Verify domain is verified in Brevo (for production)
 
 ### Images Not Loading
 
@@ -209,7 +209,7 @@ Before deploying, ensure you have:
 - [ ] `AUTH_SECRET` - Same as NEXTAUTH_SECRET
 - [ ] `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
 - [ ] `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anon key
-- [ ] `RESEND_API_KEY` - Resend API key (optional but recommended)
+- [ ] `BREVO_API_KEY` - Brevo API key (optional but recommended)
 
 ## Additional Resources
 

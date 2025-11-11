@@ -6,18 +6,23 @@ interface DiditConfig {
   apiKey: string;
   baseUrl: string;
   webhookSecret: string;
+  workflowId: string;
+  defaultCallbackUrl?: string | null;
 }
 
-interface CreateVerificationSessionPayload {
+interface CreateVerificationLinkPayload {
   referenceId: string;
-  successRedirectUrl: string;
-  failureRedirectUrl: string;
+  workflowId?: string;
+  callbackUrl?: string | null;
+  vendorData?: string | null;
 }
 
-interface DiditSessionResponse {
+interface DiditLinkResponse {
   id: string;
-  status: string;
   url: string;
+  workflowId?: string | null;
+  qrCodeUrl?: string | null;
+  expiresAt?: string | null;
 }
 
 export class DiditClient {
@@ -26,8 +31,10 @@ export class DiditClient {
   constructor(config?: Partial<DiditConfig>) {
     const envConfig: DiditConfig = {
       apiKey: process.env.DIDIT_API_KEY ?? "",
-      baseUrl: process.env.DIDIT_BASE_URL ?? "https://api.getdidit.com",
+      baseUrl: process.env.DIDIT_BASE_URL ?? "https://verification.didit.me",
       webhookSecret: process.env.DIDIT_WEBHOOK_SECRET ?? "",
+      workflowId: process.env.DIDIT_WORKFLOW_ID ?? "",
+      defaultCallbackUrl: process.env.DIDIT_CALLBACK_URL ?? null,
     };
 
     this.config = {
@@ -42,25 +49,40 @@ export class DiditClient {
     if (!this.config.webhookSecret) {
       throw new Error("Missing DIDIT_WEBHOOK_SECRET environment variable");
     }
+
+    if (!this.config.workflowId) {
+      throw new Error("Missing DIDIT_WORKFLOW_ID environment variable");
+    }
   }
 
-  async createVerificationSession(
-    payload: CreateVerificationSessionPayload
-  ): Promise<DiditSessionResponse> {
-    const response = await fetch(`${this.config.baseUrl}/v1/verifications`, {
+  async createVerificationLink(
+    payload: CreateVerificationLinkPayload
+  ): Promise<DiditLinkResponse> {
+    const baseUrl = this.config.baseUrl.replace(/\/$/, "");
+
+    const requestBody: Record<string, unknown> = {
+      workflow_id: payload.workflowId ?? this.config.workflowId,
+      reference_id: payload.referenceId,
+    };
+
+    const callbackUrl =
+      payload.callbackUrl ?? this.config.defaultCallbackUrl ?? undefined;
+    if (callbackUrl) {
+      requestBody.callback = callbackUrl;
+    }
+
+    const vendorData = payload.vendorData ?? payload.referenceId;
+    if (vendorData) {
+      requestBody.vendor_data = vendorData;
+    }
+
+    const response = await fetch(`${baseUrl}/v2/session/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${this.config.apiKey}`,
+        "x-api-key": this.config.apiKey,
       },
-      body: JSON.stringify({
-        reference_id: payload.referenceId,
-        redirect_urls: {
-          success: payload.successRedirectUrl,
-          failure: payload.failureRedirectUrl,
-        },
-        verification_types: ["identity"],
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
@@ -68,7 +90,34 @@ export class DiditClient {
       throw new Error(`Didit create session failed: ${response.status} ${text}`);
     }
 
-    return response.json() as Promise<DiditSessionResponse>;
+    const data = (await response.json()) as {
+      id?: string;
+      session_id?: string;
+      workflow_id?: string;
+      session_url?: string;
+      url?: string;
+      qr_code?: { url?: string | null } | null;
+      qr_code_url?: string | null;
+      expires_at?: string | null;
+    };
+
+    const sessionUrl = data.session_url ?? data.url;
+    if (!sessionUrl) {
+      throw new Error("Didit create session failed: missing session URL in response");
+    }
+
+    const sessionId = data.id ?? data.session_id;
+    if (!sessionId) {
+      throw new Error("Didit create session failed: missing session identifier in response");
+    }
+
+    return {
+      id: sessionId,
+      url: sessionUrl,
+      workflowId: data.workflow_id ?? null,
+      qrCodeUrl: data.qr_code?.url ?? data.qr_code_url ?? null,
+      expiresAt: data.expires_at ?? null,
+    };
   }
 
   verifyWebhookSignature(signatureHeader: string | null, rawBody: string): boolean {

@@ -52,7 +52,7 @@ Visit `http://localhost:3000` and check:
 ### Forgot Password
 1. Go to `/auth/forgot-password`
 2. Enter your email
-3. Check email is sent (check Resend dashboard or logs)
+3. Check email is sent (check Brevo dashboard or logs)
 4. Click reset link in email
 5. Set new password
 6. Verify you can sign in with new password
@@ -321,7 +321,7 @@ Verify all required environment variables are set:
 - DATABASE_URL
 - AUTH_SECRET
 - AUTH_URL
-- RESEND_API_KEY
+- BREVO_API_KEY
 - NEXT_PUBLIC_SUPABASE_URL
 - NEXT_PUBLIC_SUPABASE_ANON_KEY
 ```

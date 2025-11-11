@@ -25,15 +25,15 @@ export async function POST(request: NextRequest) {
   }
 
   const origin = request.nextUrl.origin;
-  const successRedirectUrl =
-    process.env.DIDIT_SUCCESS_REDIRECT ?? `${origin}/dashboard/profile?verification=success`;
-  const failureRedirectUrl =
-    process.env.DIDIT_FAILURE_REDIRECT ?? `${origin}/dashboard/profile?verification=failed`;
+  const callbackUrl =
+    process.env.DIDIT_CALLBACK_URL ??
+    process.env.DIDIT_SUCCESS_REDIRECT ??
+    `${origin}/dashboard/profile?verification=success`;
 
-  const session = await getDiditClient().createVerificationSession({
+  const session = await getDiditClient().createVerificationLink({
     referenceId: userId,
-    successRedirectUrl,
-    failureRedirectUrl,
+    callbackUrl,
+    vendorData: userId,
   });
 
   await prisma.$transaction([

@@ -10,14 +10,16 @@ Configure the following variables (e.g. in `.env.local` or your deployment secre
 | --- | --- |
 | `DIDIT_API_KEY` | Server-side API key issued by Didit |
 | `DIDIT_BASE_URL` | Optional override for the Didit API base URL (`https://api.getdidit.com`) |
+| `DIDIT_WORKFLOW_ID` | Workflow ID for the hosted verification link (copy from the Didit dashboard) |
 | `DIDIT_WEBHOOK_SECRET` | Shared secret used to validate Didit webhook signatures (HMAC-SHA256) |
 | `DIDIT_SUCCESS_REDIRECT` | Optional success redirect URL after a completed session |
 | `DIDIT_FAILURE_REDIRECT` | Optional failure redirect URL if the session is canceled/failed |
+| `DIDIT_CALLBACK_URL` | Optional server-to-server callback URL Didit can ping once the workflow completes |
 
 ## Workflow overview
 
 1. **Dashboard alert** – unverified users see the `VerificationStatusCard` CTA on `/dashboard/profile`.
-2. **Session creation** – clicking “Započni verifikaciju” calls `POST /api/verification/session`, stores the Didit session metadata, and redirects the user to Didit.
+2. **Session creation** – clicking “Započni verifikaciju” calls `POST /api/verification/session`, which requests a hosted link from the Didit `/v2/session` endpoint (workflow-based), includes optional callback/vendor metadata, stores the response, and redirects the user to Didit.
 3. **Didit webhook** – `POST /api/verification/webhook` verifies the signature and updates the `UserVerification` record based on the reported status. No media is fetched or stored.
 4. **Automatic approval** – when Didit reports a successful verification, we mark `User.isVerified = true`. Failure/cancellation resets the flag to `false`.
 

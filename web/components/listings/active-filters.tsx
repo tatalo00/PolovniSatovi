@@ -26,6 +26,10 @@ const genderLabels: Record<string, string> = {
   unisex: "Uniseks",
 };
 
+const boxLabels: Record<string, string> = {
+  full: "Sa kutijom i papirima",
+};
+
 export function ActiveFilters({ searchParams }: ActiveFiltersProps) {
   const router = useRouter();
   const currentParams = useSearchParams();
@@ -44,6 +48,8 @@ export function ActiveFilters({ searchParams }: ActiveFiltersProps) {
     const loc = searchParams.loc ?? searchParams.location;
     const year = searchParams.year;
     const gender = searchParams.gender;
+    const box = searchParams.box;
+    const verified = searchParams.verified;
 
     if (q) {
       result.push({
@@ -116,6 +122,26 @@ export function ActiveFilters({ searchParams }: ActiveFiltersProps) {
       });
     }
 
+    if (box) {
+      const normalized = box.toLowerCase();
+      result.push({
+        key: "box",
+        label: "Dodatni uslovi",
+        value: boxLabels[normalized] ?? "Sa kutijom i papirima",
+      });
+    }
+
+    if (verified) {
+      const normalized = verified.toLowerCase();
+      if (["1", "true", "yes"].includes(normalized)) {
+        result.push({
+          key: "verified",
+          label: "Prodavac",
+          value: "Verifikovani",
+        });
+      }
+    }
+
     return result;
   }, [searchParams]);
 
@@ -138,6 +164,10 @@ export function ActiveFilters({ searchParams }: ActiveFiltersProps) {
       params.delete("location");
     } else if (keyToRemove === "gender") {
       params.delete("gender");
+    } else if (keyToRemove === "box") {
+      params.delete("box");
+    } else if (keyToRemove === "verified") {
+      params.delete("verified");
     } else {
       params.delete(keyToRemove);
     }

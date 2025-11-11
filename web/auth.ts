@@ -41,32 +41,63 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
 
         try {
-          const user = await prisma.user.findUnique({
-            where: { email: credentials.email as string },
-          });
-          const isVerified = user?.isVerified ?? false;
-
-          if (!user) {
-            return null;
-          }
-
-          const passwordHash = user.password ?? null;
-
-          if (!passwordHash) {
-            return null;
-          }
+          let user = null as
+            | ({
+                id: string;
+                email: string;
+                name: string | null;
+                image: string | null;
+                role: UserRole;
+                password: string | null;
+                isVerified?: boolean | null;
+              } | null);
 
           try {
-            const isPasswordValid = await bcrypt.compare(
-              credentials.password as string,
-              passwordHash
-            );
-
-            if (!isPasswordValid) {
-              return null;
-            }
+            user = await prisma.user.findUnique({
+              where: { email: credentials.email as string },
+              select: {
+                id: true,
+                email: true,
+                name: true,
+                image: true,
+                role: true,
+                password: true,
+                isVerified: true,
+              },
+            });
           } catch (error) {
-            console.error("Auth error:", error);
+            if (
+              error instanceof Prisma.PrismaClientKnownRequestError &&
+              error.code === "P2022"
+            ) {
+              user = await prisma.user.findUnique({
+                where: { email: credentials.email as string },
+                select: {
+                  id: true,
+                  email: true,
+                  name: true,
+                  image: true,
+                  role: true,
+                  password: true,
+                },
+              });
+            } else {
+              throw error;
+            }
+          }
+
+          const isVerified = user?.isVerified ?? false;
+
+          if (!user || !user.password) {
+            return null;
+          }
+
+          const isPasswordValid = await bcrypt.compare(
+            credentials.password as string,
+            user.password
+          );
+
+          if (!isPasswordValid) {
             return null;
           }
 
@@ -154,12 +185,32 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const extendedToken = token as ExtendedToken;
         session.user.id = token.sub ?? session.user.id;
         session.user.role = extendedToken.role;
-        const userRecord = token.sub
-          ? await prisma.user.findUnique({
+
+        let userRecord: { role: UserRole; isVerified?: boolean | null } | null = null;
+        if (token.sub) {
+          try {
+            userRecord = await prisma.user.findUnique({
               where: { id: token.sub },
               select: { isVerified: true, role: true },
-            })
-          : null;
+            });
+          } catch (error) {
+            if (
+              error instanceof Prisma.PrismaClientKnownRequestError &&
+              error.code === "P2022"
+            ) {
+              const fallback = await prisma.user.findUnique({
+                where: { id: token.sub },
+                select: { role: true },
+              });
+              if (fallback) {
+                userRecord = { role: fallback.role, isVerified: false };
+              }
+            } else {
+              throw error;
+            }
+          }
+        }
+
         session.user.isVerified =
           userRecord?.isVerified ?? extendedToken.isVerified ?? session.user.isVerified ?? false;
         session.user.role = userRecord?.role ?? extendedToken.role;

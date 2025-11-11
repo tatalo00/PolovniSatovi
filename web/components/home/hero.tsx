@@ -1,325 +1,579 @@
 "use client";
 
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, SlidersHorizontal } from "lucide-react";
+import {
+  ArrowRight,
+  CalendarClock,
+  Compass,
+  Heart,
+  MapPin,
+  Search,
+  ShieldCheck,
+  Watch,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useNavigationFeedback } from "@/components/providers/navigation-feedback-provider";
 
-const CONDITION_OPTIONS = [
-  { value: "all", label: "Sve" },
-  { value: "New", label: "Novo" },
-  { value: "Like New", label: "Kao novo" },
-  { value: "Excellent", label: "Odlično" },
-  { value: "Very Good", label: "Vrlo dobro" },
-  { value: "Good", label: "Dobro" },
-  { value: "Fair", label: "Zadovoljavajuće" },
-];
-
-const GENDER_OPTIONS = [
-  { value: "all", label: "Svi" },
-  { value: "male", label: "Muški i uniseks" },
-  { value: "female", label: "Ženski i uniseks" },
-  { value: "unisex", label: "Uniseks" },
-] as const;
-
-const INITIAL_FILTERS = {
-  brand: "",
-  model: "",
-  min: "",
-  max: "",
-  year: "",
-  cond: "all",
-  loc: "",
-  gender: "all",
+type FeaturedListing = {
+  id: string;
+  brand: string;
+  model: string;
+  title: string;
+  priceEurCents: number;
+  condition: string;
+  photoUrl?: string | null;
 };
 
-type FiltersState = typeof INITIAL_FILTERS;
+type HeroSuggestion = {
+  id: string;
+  label: string;
+  type: "brand" | "model";
+  secondary?: string | null;
+  avgPriceEurCents?: number | null;
+  listingsCount?: number | null;
+};
 
-export function Hero() {
+type QuickFilter = {
+  id: string;
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+  query?: Record<string, string>;
+  requiresLocation?: boolean;
+};
+
+export interface HeroProps {
+  featuredListings: FeaturedListing[];
+  totalListings: number;
+  totalSellers: number;
+  userLocation?: string | null;
+}
+
+const CAROUSEL_ROTATION_MS = 5000;
+const MAX_HISTORY = 8;
+
+const QUICK_FILTERS: QuickFilter[] = [
+  {
+    id: "under-500",
+    label: "Ispod €500",
+    description: "Pristupačni početni modeli",
+    icon: <Watch className="h-4 w-4" aria-hidden />,
+    query: { max: "500" },
+  },
+  {
+    id: "vintage",
+    label: "Vintage",
+    description: "Kolekcionarski klasici",
+    icon: <CalendarClock className="h-4 w-4" aria-hidden />,
+    query: { q: "vintage" },
+  },
+  {
+    id: "diver",
+    label: "Ronilački satovi",
+    description: "Otpornost i funkcionalnost",
+    icon: <Compass className="h-4 w-4" aria-hidden />,
+    query: { q: "diver" },
+  },
+  {
+    id: "with-box",
+    label: "Box & papiri",
+    description: "Kompletan paket",
+    icon: <ShieldCheck className="h-4 w-4" aria-hidden />,
+    query: { box: "full" },
+  },
+  {
+    id: "verified",
+    label: "Verifikovani prodavci",
+    description: "Potvrđena bezbednost",
+    icon: <ShieldCheck className="h-4 w-4" aria-hidden />,
+    query: { verified: "1" },
+  },
+  {
+    id: "near-me",
+    label: "U mojoj blizini",
+    description: "Pogledajte uživo pre kupovine",
+    icon: <MapPin className="h-4 w-4" aria-hidden />,
+    requiresLocation: true,
+  },
+];
+
+function formatPrice(eurCents?: number | null) {
+  if (eurCents == null) return null;
+  return new Intl.NumberFormat("sr-RS", {
+    style: "currency",
+    currency: "EUR",
+    maximumFractionDigits: 0,
+  }).format(eurCents / 100);
+}
+
+export function Hero({
+  featuredListings,
+  totalListings,
+  totalSellers,
+  userLocation,
+}: HeroProps) {
   const router = useRouter();
   const { start: startNavigation } = useNavigationFeedback();
-  const [filters, setFilters] = useState<FiltersState>(INITIAL_FILTERS);
-  const [showMore, setShowMore] = useState(false);
 
-  const hasActiveFilters = useMemo(
-    () =>
-      Object.entries(filters).some(([key, value]) => {
-        if (key === "cond" || key === "gender") {
-          return value !== "all";
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [query, setQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<HeroSuggestion[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const autoRotateRef = useRef<NodeJS.Timeout | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const hasFeatured = featuredListings.length > 0;
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem("ps-search-history");
+    if (!stored) return;
+    try {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) {
+        setSearchHistory(parsed.slice(0, MAX_HISTORY));
+      }
+    } catch {
+      // ignore invalid JSON
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hasFeatured) return;
+
+    if (autoRotateRef.current) {
+      clearTimeout(autoRotateRef.current);
+    }
+
+    autoRotateRef.current = setTimeout(() => {
+      setCurrentSlide((prev) => (prev + 1) % featuredListings.length);
+    }, CAROUSEL_ROTATION_MS);
+
+    return () => {
+      if (autoRotateRef.current) {
+        clearTimeout(autoRotateRef.current);
+      }
+    };
+  }, [currentSlide, featuredListings.length, hasFeatured]);
+
+  const fetchSuggestions = useCallback(
+    async (value: string) => {
+      if (value.trim().length < 2) {
+        abortControllerRef.current?.abort();
+        setSuggestions([]);
+        setIsLoadingSuggestions(false);
+        return;
+      }
+
+      abortControllerRef.current?.abort();
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
+      setIsLoadingSuggestions(true);
+
+      try {
+        const paramsBrand = new URLSearchParams({
+          type: "brand",
+          q: value,
+          detail: "1",
+        });
+        const paramsModel = new URLSearchParams({
+          type: "model",
+          q: value,
+          detail: "1",
+        });
+
+        const [brandRes, modelRes] = await Promise.all([
+          fetch(`/api/listings/suggest?${paramsBrand.toString()}`, {
+            signal: controller.signal,
+          }),
+          fetch(`/api/listings/suggest?${paramsModel.toString()}`, {
+            signal: controller.signal,
+          }),
+        ]);
+
+        if (!brandRes.ok && !modelRes.ok) {
+          throw new Error("Suggestion request failed");
         }
-        return value.trim().length > 0;
-      }),
-    [filters]
-  );
 
-  const applyFilters = useCallback(
-    (nextFilters?: FiltersState) => {
-      const activeFilters = nextFilters ?? filters;
-      const params = new URLSearchParams();
+        const brandData = brandRes.ok ? ((await brandRes.json()) as HeroSuggestion[]) : [];
+        const modelData = modelRes.ok ? ((await modelRes.json()) as HeroSuggestion[]) : [];
 
-      const mappings: Array<[keyof FiltersState, string]> = [
-        ["brand", "brand"],
-        ["model", "model"],
-        ["min", "min"],
-        ["max", "max"],
-        ["year", "year"],
-        ["cond", "cond"],
-        ["loc", "loc"],
-        ["gender", "gender"],
-      ];
-
-      mappings.forEach(([key, queryKey]) => {
-        const value = activeFilters[key].trim();
-        if ((key === "cond" || key === "gender") && value === "all") {
+        const merged = [...brandData, ...modelData].slice(0, 8);
+        setSuggestions(merged);
+      } catch (error) {
+        if (
+          error &&
+          typeof error === "object" &&
+          "name" in error &&
+          (error as { name?: string }).name === "AbortError"
+        ) {
           return;
         }
-        if (value) {
-          params.set(queryKey, value);
-        }
-      });
-
-      const queryString = params.toString();
-      startNavigation({ immediate: true });
-      router.push(queryString ? `/listings?${queryString}` : "/listings");
+        setSuggestions([]);
+      } finally {
+        setIsLoadingSuggestions(false);
+      }
     },
-    [filters, router, startNavigation]
+    []
   );
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    applyFilters();
-  };
+  useEffect(() => {
+    const debounce = setTimeout(() => {
+      fetchSuggestions(query);
+    }, 220);
 
-  const handleReset = () => {
-    setFilters(INITIAL_FILTERS);
-    startNavigation({ immediate: true });
-    router.push("/listings");
-  };
+    return () => clearTimeout(debounce);
+  }, [query, fetchSuggestions]);
 
-  const toggleAdditionalFilters = () => {
-    setShowMore((prev) => !prev);
-  };
+  const persistHistory = useCallback((value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    const next = [trimmed, ...searchHistory.filter((item) => item !== trimmed)].slice(
+      0,
+      MAX_HISTORY
+    );
+    setSearchHistory(next);
+    window.localStorage.setItem("ps-search-history", JSON.stringify(next));
+  }, [searchHistory]);
+
+  const performNavigation = useCallback(
+    (params: URLSearchParams) => {
+      startNavigation({ immediate: true });
+      router.push(params.toString() ? `/listings?${params.toString()}` : "/listings");
+    },
+    [router, startNavigation]
+  );
+
+  const handleSearchSubmit = useCallback(
+    (event?: React.FormEvent<HTMLFormElement>) => {
+      event?.preventDefault();
+      if (!query.trim()) return;
+      persistHistory(query);
+      const params = new URLSearchParams({ q: query.trim() });
+      performNavigation(params);
+      setShowHistory(false);
+    },
+    [performNavigation, persistHistory, query]
+  );
+
+  const handleSuggestionClick = useCallback(
+    (suggestion: HeroSuggestion) => {
+      const params = new URLSearchParams();
+      if (suggestion.type === "brand") {
+        params.set("brand", suggestion.label);
+      } else {
+        params.set("model", suggestion.label);
+        if (suggestion.secondary) {
+          params.set("brand", suggestion.secondary);
+        }
+      }
+      persistHistory(suggestion.label);
+      performNavigation(params);
+      setQuery("");
+      setSuggestions([]);
+      setShowHistory(false);
+    },
+    [performNavigation, persistHistory]
+  );
+
+  const handleHistorySelect = useCallback(
+    (value: string) => {
+      setQuery(value);
+      const params = new URLSearchParams({ q: value });
+      performNavigation(params);
+    },
+    [performNavigation]
+  );
+
+  const handleQuickFilter = useCallback(
+    (filter: QuickFilter) => {
+      if (filter.requiresLocation) {
+        const storedLocation =
+          userLocation || window.localStorage.getItem("ps-last-location") || "";
+        if (storedLocation) {
+          const params = new URLSearchParams({ loc: storedLocation });
+          performNavigation(params);
+          return;
+        }
+
+        const manual = window.prompt(
+          "Unesite grad ili lokaciju koju želite da pretražite:",
+          ""
+        );
+        if (manual && manual.trim()) {
+          window.localStorage.setItem("ps-last-location", manual.trim());
+          const params = new URLSearchParams({ loc: manual.trim() });
+          performNavigation(params);
+        }
+        return;
+      }
+
+      if (!filter.query) return;
+      const params = new URLSearchParams(filter.query);
+      performNavigation(params);
+    },
+    [performNavigation, userLocation]
+  );
+
+  const slides = useMemo(() => {
+    if (!hasFeatured) return [];
+    return featuredListings.map((listing) => ({
+      ...listing,
+      priceLabel: formatPrice(listing.priceEurCents),
+    }));
+  }, [featuredListings, hasFeatured]);
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-background to-background py-20 md:py-32">
-      <div className="container mx-auto px-4">
-        <div className="mx-auto max-w-5xl text-center md:text-left">
-          <div className="md:flex md:items-start md:justify-between md:gap-12">
-            <div className="md:flex-1">
-              <h1 className="mb-6 text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
-                Pronađite svoj savršeni sat
-              </h1>
-              <p className="mb-8 text-lg text-muted-foreground md:text-xl">
-                Najveća ponuda polovnih i vintage satova na Balkanu. Filtrirajte po marki, modelu i ceni da brže dođete do idealnog oglasa.
-              </p>
+    <section className="relative overflow-hidden bg-gradient-to-br from-primary/20 via-background to-background py-16 md:py-24">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-primary/10 [mask-image:linear-gradient(to_bottom,rgba(0,0,0,0.85),transparent)] dark:bg-primary/20" />
+      <div className="container relative mx-auto px-4">
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,1.35fr),minmax(0,1fr)] lg:items-start">
+          <div>
+            <div className="space-y-6">
+              <div>
+                <Badge variant="outline" className="mb-4 border-primary/50 text-primary">
+                  Marketplace #1 za ljubitelje satova na Balkanu
+                </Badge>
+                <h1 className="max-w-2xl text-4xl font-semibold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
+                  Pronađite sledeći sat u svojoj kolekciji
+                </h1>
+                <p className="mt-4 max-w-xl text-lg text-muted-foreground sm:text-xl">
+                  Personalizovana selekcija proverenih oglasa, trendova i vodiča za kupovinu
+                  polovnih i vintage satova.
+                </p>
+              </div>
 
-              <div className="rounded-3xl border border-border/80 bg-background/80 p-6 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <div className="text-left">
-                      <Label htmlFor="hero-brand" className="mb-1 block text-sm font-medium">
-                        Marka
-                      </Label>
+              <div className="rounded-3xl border border-border/70 bg-background/70 p-6 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/50">
+                <form onSubmit={handleSearchSubmit} className="relative">
+                  <div className="flex flex-col gap-3">
+                    <div className="relative">
+                      <Search
+                        className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground"
+                        aria-hidden
+                      />
                       <Input
-                        id="hero-brand"
-                        placeholder="npr. Rolex"
-                        value={filters.brand}
-                        onChange={(event) =>
-                          setFilters((prev) => ({ ...prev, brand: event.target.value }))
-                        }
+                        value={query}
+                        onChange={(event) => {
+                          setQuery(event.target.value);
+                          if (!event.target.value.trim()) {
+                            setSuggestions([]);
+                          }
+                        }}
+                        onFocus={() => setShowHistory(true)}
+                        placeholder="Pretražite po marki, modelu ili referentnom broju..."
+                        className="h-14 w-full rounded-2xl border-none bg-muted/50 pl-12 pr-4 text-base shadow-inner focus-visible:ring-2 focus-visible:ring-primary sm:text-lg"
+                        autoComplete="off"
                       />
                     </div>
-                    <div className="text-left">
-                      <Label htmlFor="hero-model" className="mb-1 block text-sm font-medium">
-                        Model
-                      </Label>
-                      <Input
-                        id="hero-model"
-                        placeholder="npr. Submariner"
-                        value={filters.model}
-                        onChange={(event) =>
-                          setFilters((prev) => ({ ...prev, model: event.target.value }))
-                        }
-                      />
-                    </div>
-                    <div className="text-left">
-                      <Label htmlFor="hero-min-price" className="mb-1 block text-sm font-medium">
-                        Cena od (EUR)
-                      </Label>
-                      <Input
-                        id="hero-min-price"
-                        inputMode="numeric"
-                        placeholder="Min"
-                        value={filters.min}
-                        onChange={(event) =>
-                          setFilters((prev) => ({ ...prev, min: event.target.value }))
-                        }
-                      />
-                    </div>
-                    <div className="text-left">
-                      <Label htmlFor="hero-max-price" className="mb-1 block text-sm font-medium">
-                        Cena do (EUR)
-                      </Label>
-                      <Input
-                        id="hero-max-price"
-                        inputMode="numeric"
-                        placeholder="Max"
-                        value={filters.max}
-                        onChange={(event) =>
-                          setFilters((prev) => ({ ...prev, max: event.target.value }))
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex flex-wrap items-center gap-3">
                       <Button
-                        type="button"
-                        variant={showMore ? "secondary" : "outline"}
-                        onClick={toggleAdditionalFilters}
-                        className="inline-flex items-center gap-2"
-                        aria-expanded={showMore}
-                        aria-controls="hero-additional-filters"
+                        type="submit"
+                        size="lg"
+                        className="rounded-full px-6"
                       >
-                        <SlidersHorizontal className="h-4 w-4" aria-hidden />
-                        Dodatni filteri
-                        {showMore ? (
-                          <ChevronUp className="h-4 w-4" aria-hidden />
-                        ) : (
-                          <ChevronDown className="h-4 w-4" aria-hidden />
-                        )}
-                      </Button>
-                      {hasActiveFilters && (
-                        <Button type="button" variant="ghost" onClick={handleReset}>
-                          Resetuj filtere
-                        </Button>
-                      )}
-                    </div>
-
-                    <div className="flex shrink-0 gap-3">
-                      <Button type="submit" size="lg" className="px-6">
                         Pretraži oglase
                       </Button>
-                      <Button asChild variant="outline" size="lg" className="px-6">
-                        <Link href="/sell">Prodaj svoj sat</Link>
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div
-                    id="hero-additional-filters"
-                    className={cn(
-                      "grid gap-4 overflow-hidden transition-[max-height,opacity] duration-300",
-                      showMore ? "max-h-[520px] opacity-100" : "max-h-0 opacity-0"
-                    )}
-                    aria-hidden={!showMore}
-                  >
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      <div className="text-left">
-                        <Label htmlFor="hero-year" className="mb-1 block text-sm font-medium">
-                          Godište
-                        </Label>
-                        <Input
-                          id="hero-year"
-                          inputMode="numeric"
-                          placeholder="npr. 2018"
-                          value={filters.year}
-                          onChange={(event) =>
-                            setFilters((prev) => ({ ...prev, year: event.target.value }))
-                          }
-                        />
-                      </div>
-                      <div className="text-left">
-                        <Label htmlFor="hero-condition" className="mb-1 block text-sm font-medium">
-                          Stanje
-                        </Label>
-                        <Select
-                          value={filters.cond}
-                          onValueChange={(value) =>
-                            setFilters((prev) => ({ ...prev, cond: value }))
-                          }
-                        >
-                          <SelectTrigger id="hero-condition">
-                            <SelectValue placeholder="Odaberite stanje" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {CONDITION_OPTIONS.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    <div className="text-left">
-                      <Label htmlFor="hero-gender" className="mb-1 block text-sm font-medium">
-                        Namenjeno
-                      </Label>
-                      <Select
-                        value={filters.gender}
-                        onValueChange={(value) =>
-                          setFilters((prev) => ({ ...prev, gender: value }))
-                        }
-                      >
-                        <SelectTrigger id="hero-gender">
-                          <SelectValue placeholder="Odaberite" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {GENDER_OPTIONS.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
+                      {searchHistory.length > 0 && showHistory && (
+                        <div className="flex flex-wrap gap-2 text-sm">
+                          {searchHistory.map((item) => (
+                            <Button
+                              key={item}
+                              type="button"
+                              variant="outline"
+                              className="rounded-full border-border/60 px-3 py-1 text-muted-foreground hover:border-primary/60 hover:text-primary"
+                              onClick={() => handleHistorySelect(item)}
+                            >
+                              {item}
+                            </Button>
                           ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                      <div className="text-left">
-                        <Label htmlFor="hero-location" className="mb-1 block text-sm font-medium">
-                          Lokacija
-                        </Label>
-                        <Input
-                          id="hero-location"
-                          placeholder="npr. Beograd"
-                          value={filters.loc}
-                          onChange={(event) =>
-                            setFilters((prev) => ({ ...prev, loc: event.target.value }))
-                          }
-                        />
-                      </div>
+                        </div>
+                      )}
                     </div>
                   </div>
+                  {query.length >= 2 && (
+                    <div className="absolute left-0 right-0 top-[calc(100%+0.75rem)] z-20">
+                      <div className="rounded-2xl border border-border/60 bg-background/95 shadow-xl backdrop-blur">
+                        {isLoadingSuggestions && (
+                          <div className="p-4 text-sm text-muted-foreground">
+                            Učitavanje predloga...
+                          </div>
+                        )}
+                        {!isLoadingSuggestions && suggestions.length === 0 && (
+                          <div className="p-4 text-sm text-muted-foreground">
+                            Nema rezultata. Probajte sa drugom pretragom.
+                          </div>
+                        )}
+                        {!isLoadingSuggestions &&
+                          suggestions.map((suggestion) => (
+                            <button
+                              key={suggestion.id}
+                              type="button"
+                              className="flex w-full items-center justify-between gap-4 px-5 py-3 text-left hover:bg-muted/60 focus:bg-muted/60 focus:outline-none"
+                              onClick={() => handleSuggestionClick(suggestion)}
+                            >
+                              <div className="flex items-center gap-3">
+                                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                                  <Watch className="h-5 w-5" aria-hidden />
+                                </span>
+                                <div>
+                                  <p className="text-sm font-medium text-foreground">
+                                    {suggestion.label}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {suggestion.type === "brand"
+                                      ? "Marka"
+                                      : `Model${suggestion.secondary ? ` • ${suggestion.secondary}` : ""}`}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="text-right text-xs text-muted-foreground">
+                                {suggestion.avgPriceEurCents
+                                  ? `Prosek ${formatPrice(suggestion.avgPriceEurCents)}`
+                                  : null}
+                                {suggestion.listingsCount ? (
+                                  <div>{suggestion.listingsCount} oglasa</div>
+                                ) : null}
+                              </div>
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                  )}
                 </form>
               </div>
+
+              <div className="flex flex-wrap gap-3">
+                {QUICK_FILTERS.map((filter) => (
+                  <button
+                    key={filter.id}
+                    type="button"
+                    onClick={() => handleQuickFilter(filter)}
+                    className="group flex min-w-[140px] flex-1 items-center justify-between rounded-full border border-border/60 bg-background/70 px-5 py-3 text-left shadow-sm transition hover:border-primary/60 hover:bg-primary/5"
+                  >
+                    <div className="space-y-1">
+                      <span className="text-sm font-medium text-foreground">
+                        {filter.label}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {filter.description}
+                      </span>
+                    </div>
+                    <span className="ml-4 text-primary transition group-hover:translate-x-1">
+                      {filter.icon}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="relative overflow-hidden rounded-3xl border border-border/80 bg-background/70 shadow-xl">
+              <div className="relative h-[380px] w-full">
+                {slides.map((slide, index) => (
+                  <article
+                    key={slide.id}
+                    className={cn(
+                      "absolute inset-0 grid grid-rows-[minmax(0,1fr)_auto] gap-4 p-6 transition-opacity duration-700",
+                      index === currentSlide ? "opacity-100" : "pointer-events-none opacity-0"
+                    )}
+                  >
+                    <div className="relative overflow-hidden rounded-2xl bg-muted">
+                      {slide.photoUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={slide.photoUrl}
+                          alt={`${slide.brand} ${slide.model}`}
+                          className="h-full w-full object-cover"
+                          loading={index === 0 ? "eager" : "lazy"}
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                          <Watch className="h-12 w-12" aria-hidden />
+                        </div>
+                      )}
+                      <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-black/70 to-transparent p-4 text-sm text-white">
+                        <span className="font-medium">
+                          {slide.brand} {slide.model}
+                        </span>
+                        <Badge variant="secondary" className="bg-white/20 text-white">
+                          {slide.condition}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Cena</p>
+                        <p className="text-xl font-semibold text-foreground">
+                          {slide.priceLabel ?? "Na upit"}
+                        </p>
+                      </div>
+                      <Button
+                        asChild
+                        variant="secondary"
+                        className="rounded-full"
+                      >
+                        <Link href={`/listing/${slide.id}`}>
+                          Pogledaj detalje
+                          <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
+                        </Link>
+                      </Button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+              {hasFeatured && (
+                <div className="flex items-center justify-center gap-2 pb-6">
+                  {slides.map((_, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => setCurrentSlide(index)}
+                      className={cn(
+                        "h-2.5 w-2.5 rounded-full transition",
+                        index === currentSlide
+                          ? "bg-primary"
+                          : "bg-muted-foreground/40 hover:bg-muted-foreground/70"
+                      )}
+                      aria-label={`Prikaži istaknutu ponudu ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
 
-            <div className="mt-12 flex flex-col items-center gap-6 text-center md:mt-0 md:w-72">
-              <div className="rounded-3xl border border-border/80 bg-background/80 p-6 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                <h2 className="text-2xl font-semibold">Istražite ponudu</h2>
-                <p className="mt-3 text-sm text-muted-foreground">
-                  Pogledajte sve oglase ili podelite svoj sat sa zajednicom kolekcionara.
+            <div className="grid gap-4 rounded-3xl border border-border/70 bg-background/70 p-6 shadow-lg backdrop-blur sm:grid-cols-2">
+              <div>
+                <p className="text-sm text-muted-foreground">Aktivnih oglasa</p>
+                <p className="text-3xl font-semibold text-foreground">
+                  {totalListings.toLocaleString("sr-RS")}
                 </p>
-                <div className="mt-6 flex flex-col gap-3">
-                  <Button asChild variant="outline" size="lg" className="w-full">
-                    <Link href="/listings">Pregledaj sve oglase</Link>
-                  </Button>
-                  <Button asChild size="lg" className="w-full">
-                    <Link href="/sell">Objavi oglas</Link>
-                  </Button>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Prodavaca u zajednici</p>
+                <p className="text-3xl font-semibold text-foreground">
+                  {totalSellers.toLocaleString("sr-RS")}
+                </p>
+              </div>
+              <div className="sm:col-span-2 flex items-center justify-between rounded-2xl bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <Heart className="h-4 w-4 text-primary" aria-hidden />
+                  <span>Sačuvajte omiljene satove i pratite promene cena u realnom vremenu.</span>
                 </div>
+                <Button asChild variant="ghost" size="sm" className="rounded-full text-primary">
+                  <Link href="/dashboard/wishlist">
+                    Lista želja
+                    <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
+                  </Link>
+                </Button>
               </div>
             </div>
           </div>
@@ -328,4 +582,3 @@ export function Hero() {
     </section>
   );
 }
-

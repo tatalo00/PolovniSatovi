@@ -44,6 +44,8 @@ interface IncomingSearchParams {
   loc?: string;
   location?: string;
   gender?: string;
+  box?: string;
+  verified?: string;
   sort?: string;
   cols?: string;
   page?: string;
@@ -83,6 +85,14 @@ const normalizeSearchParams = (params: IncomingSearchParams): NormalizedParams =
 
   if (params.gender && params.gender.trim().length > 0) {
     normalized.gender = params.gender.trim();
+  }
+
+  if (params.box && params.box.trim().length > 0) {
+    normalized.box = params.box.trim();
+  }
+
+  if (params.verified && params.verified.trim().length > 0) {
+    normalized.verified = params.verified.trim();
   }
 
   const cond = params.cond ?? params.condition;
@@ -187,6 +197,32 @@ const buildWhereClause = (filters: NormalizedParams): Prisma.ListingWhereInput =
     }
   }
 
+  if (filters.box) {
+    const normalizedBox = filters.box.trim().toLowerCase();
+    if (normalizedBox === "full") {
+      where.boxPapers = { not: null };
+    }
+  }
+
+  if (filters.verified) {
+    const normalizedVerified = filters.verified.trim().toLowerCase();
+    if (["1", "true", "yes"].includes(normalizedVerified)) {
+      const existingAnd = Array.isArray(where.AND)
+        ? where.AND
+        : where.AND
+        ? [where.AND]
+        : [];
+      where.AND = [
+        ...existingAnd,
+        {
+          seller: {
+            isVerified: true,
+          },
+        },
+      ];
+    }
+  }
+
   return where;
 };
 
@@ -216,6 +252,41 @@ const resolveOrderBy = (
   }
 };
 
+const cloneWhereInput = (input: Prisma.ListingWhereInput): Prisma.ListingWhereInput =>
+  JSON.parse(JSON.stringify(input));
+
+const removeVerifiedFilter = (
+  whereInput: Prisma.ListingWhereInput
+): Prisma.ListingWhereInput => {
+  const clone = cloneWhereInput(whereInput);
+  if (!clone.AND) {
+    return clone;
+  }
+  const andArray = Array.isArray(clone.AND) ? clone.AND : [clone.AND];
+  const filtered = andArray
+    .map((entry) => {
+      if (!entry || typeof entry !== "object") return entry;
+      const entryObj = entry as Record<string, unknown>;
+      const sellerValue = entryObj.seller as Record<string, unknown> | undefined;
+      if (sellerValue && typeof sellerValue === "object" && "isVerified" in sellerValue) {
+        const { seller, ...rest } = entryObj;
+        if (Object.keys(rest).length === 0) {
+          return null;
+        }
+        return rest as Prisma.ListingWhereInput;
+      }
+      return entry;
+    })
+    .filter(Boolean) as Prisma.ListingWhereInput[];
+
+  if (filtered.length === 0) {
+    delete clone.AND;
+  } else {
+    clone.AND = filtered;
+  }
+  return clone;
+};
+
 export default async function ListingsPage({
   searchParams,
 }: {
@@ -241,16 +312,10 @@ export default async function ListingsPage({
   const where = buildWhereClause(normalizedParams);
   const orderBy = resolveOrderBy(normalizedParams.sort);
 
-  let listings: ListingWithSeller[] = [];
-  let total = 0;
-  let totalPages = 0;
-  let popularBrands: string[] = [];
-  let favoriteIds: string[] = [];
-
-  try {
-    [listings, total, popularBrands] = await Promise.all([
+  const runQueries = async (whereInput: Prisma.ListingWhereInput) => {
+    const [listingsResult, totalResult, popularBrandsResult] = await Promise.all([
       prisma.listing.findMany({
-        where,
+        where: whereInput,
         include: {
           photos: {
             orderBy: { order: "asc" },
@@ -269,7 +334,7 @@ export default async function ListingsPage({
         take: limit,
         skip: offset,
       }),
-      prisma.listing.count({ where }),
+      prisma.listing.count({ where: whereInput }),
       prisma.listing.findMany({
         where: { status: "APPROVED" },
         select: { brand: true },
@@ -278,10 +343,37 @@ export default async function ListingsPage({
         take: 12,
       }).then((rows) => rows.map((row) => row.brand)),
     ]);
+    return { listingsResult, totalResult, popularBrandsResult };
+  };
 
+  let listings: ListingWithSeller[] = [];
+  let total = 0;
+  let totalPages = 0;
+  let popularBrands: string[] = [];
+  let favoriteIds: string[] = [];
+
+  try {
+    const { listingsResult, totalResult, popularBrandsResult } = await runQueries(where);
+    listings = listingsResult;
+    total = totalResult;
+    popularBrands = popularBrandsResult;
     totalPages = Math.ceil(total / limit);
   } catch (error) {
-    console.error("Database error on listings page:", error);
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2022"
+    ) {
+      const fallbackWhere = removeVerifiedFilter(where);
+      const { listingsResult, totalResult, popularBrandsResult } = await runQueries(
+        fallbackWhere
+      );
+      listings = listingsResult;
+      total = totalResult;
+      popularBrands = popularBrandsResult;
+      totalPages = Math.ceil(total / limit);
+    } else {
+      throw error;
+    }
   }
 
   if (session?.user?.id) {
@@ -305,6 +397,8 @@ export default async function ListingsPage({
   }
 
   clientSearchParams.cols = columns.toString();
+  if (normalizedParams.box) clientSearchParams.box = normalizedParams.box;
+  if (normalizedParams.verified) clientSearchParams.verified = normalizedParams.verified;
 
   return (
     <main className="container mx-auto px-4 py-8">

@@ -43,7 +43,19 @@ const GENDER_OPTIONS = [
   { value: "unisex", label: "Uniseks" },
 ] as const;
 
-const FILTER_KEYS = ["q", "brand", "model", "min", "max", "year", "cond", "loc", "gender"] as const;
+const FILTER_KEYS = [
+  "q",
+  "brand",
+  "model",
+  "min",
+  "max",
+  "year",
+  "cond",
+  "loc",
+  "gender",
+  "box",
+  "verified",
+] as const;
 type FilterKey = (typeof FILTER_KEYS)[number];
 
 type FilterState = Record<FilterKey, string>;
@@ -58,6 +70,8 @@ const emptyFilters: FilterState = {
   cond: "",
   loc: "",
   gender: "",
+  box: "",
+  verified: "",
 };
 
 interface ListingFiltersProps {
@@ -86,6 +100,8 @@ const parseFiltersFromRecord = (
   cond: params.cond ?? params.condition ?? "",
   loc: params.loc ?? params.location ?? "",
   gender: params.gender ?? "",
+  box: params.box ?? "",
+  verified: params.verified ?? "",
 });
 
 const parseFiltersFromUrl = (
@@ -100,6 +116,8 @@ const parseFiltersFromUrl = (
   cond: params.get("cond") ?? params.get("condition") ?? "",
   loc: params.get("loc") ?? params.get("location") ?? "",
   gender: params.get("gender") ?? "",
+  box: params.get("box") ?? "",
+  verified: params.get("verified") ?? "",
 });
 
 const areFiltersEqual = (a: FilterState, b: FilterState) =>
@@ -280,6 +298,8 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
         "loc",
         "location",
         "gender",
+        "box",
+        "verified",
         "page",
       ].forEach((key) => params.delete(key));
 
@@ -292,6 +312,8 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
       if (filtersToApply.cond) params.set("cond", filtersToApply.cond);
       if (filtersToApply.loc) params.set("loc", filtersToApply.loc);
       if (filtersToApply.gender) params.set("gender", filtersToApply.gender);
+      if (filtersToApply.box) params.set("box", filtersToApply.box);
+      if (filtersToApply.verified) params.set("verified", filtersToApply.verified);
 
       const queryString = params.toString();
       setFilters(filtersToApply);
@@ -651,6 +673,40 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
                 }
               }}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Dodatni filteri</Label>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant={filters.box === "full" ? "secondary" : "outline"}
+                onClick={() => {
+                  const next: FilterState = {
+                    ...filters,
+                    box: filters.box === "full" ? "" : "full",
+                  };
+                  setFilters(next);
+                  applyFilters(next);
+                }}
+              >
+                Sa kutijom i papirima
+              </Button>
+              <Button
+                type="button"
+                variant={filters.verified === "1" ? "secondary" : "outline"}
+                onClick={() => {
+                  const next: FilterState = {
+                    ...filters,
+                    verified: filters.verified === "1" ? "" : "1",
+                  };
+                  setFilters(next);
+                  applyFilters(next);
+                }}
+              >
+                Verifikovani prodavci
+              </Button>
+            </div>
           </div>
 
           <div className="space-y-2">
