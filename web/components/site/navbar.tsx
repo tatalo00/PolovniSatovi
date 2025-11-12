@@ -3,17 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { Menu, User } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { Heart, Menu, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu";
 import {
   Sheet,
   SheetContent,
@@ -33,22 +24,16 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MessagesNavLink } from "@/components/messages/messages-nav-link";
 import { cn } from "@/lib/utils";
 
-type TopBrandGroups = {
-  men: string[];
-  women: string[];
-};
-
 function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
   const pathname = usePathname() ?? "/";
   const isActive = pathname === href || (href !== "/" && pathname.startsWith(href));
   return (
-    <Link 
-      href={href} 
-      className={`transition-colors ${
-        isActive 
-          ? "text-foreground font-medium" 
-          : "text-muted-foreground hover:text-foreground"
-      }`}
+    <Link
+      href={href}
+      className={cn(
+        "relative inline-flex items-center text-base font-medium tracking-tight transition-colors",
+        isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+      )}
     >
       {children}
       {isActive && (
@@ -65,197 +50,40 @@ export function Navbar() {
   const user = session?.user;
   const pathname = usePathname() ?? "/";
 
-  const [topBrandGroups, setTopBrandGroups] = useState<TopBrandGroups>({
-    men: [],
-    women: [],
-  });
-  const [brandsLoading, setBrandsLoading] = useState(false);
-  const [brandsError, setBrandsError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    const controller = new AbortController();
-
-    const loadBrands = async () => {
-      setBrandsLoading(true);
-      try {
-        const response = await fetch("/api/brands/top", { signal: controller.signal });
-        if (!response.ok) {
-          throw new Error(`Status ${response.status}`);
-        }
-        const data = (await response.json()) as Partial<TopBrandGroups>;
-        if (!cancelled) {
-          setTopBrandGroups({
-            men: Array.isArray(data.men) ? data.men : [],
-            women: Array.isArray(data.women) ? data.women : [],
-          });
-          setBrandsError(null);
-        }
-      } catch (error: unknown) {
-        if (
-          error &&
-          typeof error === "object" &&
-          "name" in error &&
-          (error as { name?: string }).name === "AbortError"
-        ) {
-          return;
-        }
-        if (!cancelled) {
-          setBrandsError(error instanceof Error ? error.message : "Nepoznata greška");
-        }
-      } finally {
-        if (!cancelled) {
-          setBrandsLoading(false);
-        }
-      }
-    };
-
-    loadBrands();
-
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
-  }, []);
-
-  const menBrands = useMemo(
-    () => topBrandGroups.men.slice(0, 10),
-    [topBrandGroups.men]
-  );
-  const womenBrands = useMemo(
-    () => topBrandGroups.women.slice(0, 10),
-    [topBrandGroups.women]
-  );
-
-  const isListingsActive = pathname === "/listings" || pathname.startsWith("/listings/");
-
   const handleSignOut = async () => {
     await signOut({ callbackUrl: "/" });
   };
 
-  const buildListingHref = (gender: "male" | "female", brand?: string) => {
-    const params = new URLSearchParams({ gender });
-    if (brand) {
-      params.set("brand", brand);
-    }
-    return `/listings?${params.toString()}`;
-  };
-
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur">
-      <div className="container mx-auto flex h-14 items-center justify-between px-4">
-        <div className="flex items-center gap-6">
-          <Link href="/" className="font-semibold tracking-tight">
-            PolovniSatovi
-          </Link>
-          <nav className="hidden md:block">
-            <NavigationMenu>
-              <NavigationMenuList className="gap-6">
-                <NavigationMenuItem>
-                  <NavigationMenuTrigger
-                    className={cn(
-                      "bg-transparent px-0 py-0 text-base font-normal text-muted-foreground hover:bg-transparent hover:text-foreground focus:bg-transparent focus:text-foreground focus-visible:outline-none focus-visible:ring-0 data-[state=open]:text-foreground",
-                      isListingsActive && "text-foreground font-medium"
-                    )}
-                  >
-                    <span className="relative flex items-center gap-1">
-                      Oglasi
-                      {isListingsActive && (
-                        <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary" />
-                      )}
-                    </span>
-                  </NavigationMenuTrigger>
-                  <NavigationMenuContent className="md:w-[560px]">
-                    <div className="rounded-md border bg-popover p-4 shadow-lg md:p-6">
-                      <div className="grid gap-6 md:grid-cols-2">
-                        <div>
-                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                            Muški satovi
-                          </p>
-                          <div className="mt-3 space-y-1.5">
-                            {brandsLoading ? (
-                              <span className="text-sm text-muted-foreground">Učitavanje...</span>
-                            ) : menBrands.length > 0 ? (
-                              menBrands.map((brand) => (
-                                <NavigationMenuLink asChild key={`men-${brand}`}>
-                                  <Link
-                                    href={buildListingHref("male", brand)}
-                                    className="flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
-                                  >
-                                    <span>{brand}</span>
-                                  </Link>
-                                </NavigationMenuLink>
-                              ))
-                            ) : (
-                              <span className="text-sm text-muted-foreground">
-                                {brandsError ? "Nije moguće učitati brendove" : "Nema dostupnih brendova"}
-                              </span>
-                            )}
-                          </div>
-                          <NavigationMenuLink asChild>
-                            <Link
-                              href={buildListingHref("male")}
-                              className="mt-3 inline-flex text-sm font-medium text-primary hover:underline"
-                            >
-                              Pogledaj sve muške oglase
-                            </Link>
-                          </NavigationMenuLink>
-                        </div>
-                        <div>
-                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                            Ženski satovi
-                          </p>
-                          <div className="mt-3 space-y-1.5">
-                            {brandsLoading ? (
-                              <span className="text-sm text-muted-foreground">Učitavanje...</span>
-                            ) : womenBrands.length > 0 ? (
-                              womenBrands.map((brand) => (
-                                <NavigationMenuLink asChild key={`women-${brand}`}>
-                                  <Link
-                                    href={buildListingHref("female", brand)}
-                                    className="flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
-                                  >
-                                    <span>{brand}</span>
-                                  </Link>
-                                </NavigationMenuLink>
-                              ))
-                            ) : (
-                              <span className="text-sm text-muted-foreground">
-                                {brandsError ? "Nije moguće učitati brendove" : "Nema dostupnih brendova"}
-                              </span>
-                            )}
-                          </div>
-                          <NavigationMenuLink asChild>
-                            <Link
-                              href={buildListingHref("female")}
-                              className="mt-3 inline-flex text-sm font-medium text-primary hover:underline"
-                            >
-                              Pogledaj sve ženske oglase
-                            </Link>
-                          </NavigationMenuLink>
-                        </div>
-                      </div>
-                      <p className="mt-4 text-xs text-muted-foreground">
-                        Muški i ženski izbor uključuje i uniseks modele pa dobijate širu ponudu.
-                      </p>
-                    </div>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <div className="relative">
-                      <NavLink href="/sell">Prodaj</NavLink>
-                    </div>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-              </NavigationMenuList>
-            </NavigationMenu>
-          </nav>
-        </div>
+      <div className="container mx-auto flex h-16 items-center gap-6 px-4">
+        <Link href="/" className="text-lg font-semibold tracking-tight">
+          PolovniSatovi
+        </Link>
+        <nav className="hidden flex-1 justify-center md:flex">
+          <div className="flex items-center gap-8 lg:gap-10">
+            <NavLink href="/listings">Pogledaj oglase</NavLink>
+            <NavLink href="/sell">Prodaj sat</NavLink>
+            <NavLink href="/blog">Blog</NavLink>
+            <NavLink href="/about">O nama</NavLink>
+            <NavLink href="/contact">Kontakt</NavLink>
+          </div>
+        </nav>
 
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="hidden items-center gap-3 md:flex">
           {isLoggedIn ? (
             <>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 text-muted-foreground hover:text-foreground"
+                asChild
+                aria-label="Lista želja"
+              >
+                <Link href="/dashboard/wishlist">
+                  <Heart className="h-5 w-5" aria-hidden />
+                </Link>
+              </Button>
               <MessagesNavLink />
               <Button variant="ghost" asChild>
                 <Link href="/dashboard">Dashboard</Link>
@@ -307,7 +135,7 @@ export function Navbar() {
           )}
         </div>
 
-        <div className="md:hidden flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-2 md:hidden">
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" aria-label="Otvori meni" className="h-10 w-10">
@@ -319,8 +147,11 @@ export function Navbar() {
                 <SheetTitle>PolovniSatovi</SheetTitle>
               </SheetHeader>
               <div className="mt-6 flex flex-col gap-3">
-                <NavLink href="/listings">Oglasi</NavLink>
-                <NavLink href="/sell">Prodaj</NavLink>
+                <NavLink href="/listings">Pogledaj oglase</NavLink>
+                <NavLink href="/sell">Prodaj sat</NavLink>
+                <NavLink href="/blog">Blog</NavLink>
+                <NavLink href="/about">O nama</NavLink>
+                <NavLink href="/contact">Kontakt</NavLink>
                 {isLoggedIn ? (
                   <>
                     <NavLink href="/dashboard/messages">Poruke</NavLink>

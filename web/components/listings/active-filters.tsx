@@ -30,6 +30,12 @@ const boxLabels: Record<string, string> = {
   full: "Sa kutijom i papirima",
 };
 
+const movementLabels: Record<string, string> = {
+  Automatic: "Automatski",
+  Manual: "Mehanički (ručno)",
+  Quartz: "Kvarcni",
+};
+
 export function ActiveFilters({ searchParams }: ActiveFiltersProps) {
   const router = useRouter();
   const currentParams = useSearchParams();
@@ -50,6 +56,7 @@ export function ActiveFilters({ searchParams }: ActiveFiltersProps) {
     const gender = searchParams.gender;
     const box = searchParams.box;
     const verified = searchParams.verified;
+    const movement = searchParams.movement;
 
     if (q) {
       result.push({
@@ -113,6 +120,14 @@ export function ActiveFilters({ searchParams }: ActiveFiltersProps) {
       });
     }
 
+    if (movement) {
+      result.push({
+        key: "movement",
+        label: "Mehanizam",
+        value: movementLabels[movement] ?? movement,
+      });
+    }
+
     if (gender) {
       const normalized = gender.toLowerCase();
       result.push({
@@ -164,6 +179,8 @@ export function ActiveFilters({ searchParams }: ActiveFiltersProps) {
       params.delete("location");
     } else if (keyToRemove === "gender") {
       params.delete("gender");
+    } else if (keyToRemove === "movement") {
+      params.delete("movement");
     } else if (keyToRemove === "box") {
       params.delete("box");
     } else if (keyToRemove === "verified") {

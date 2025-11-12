@@ -36,6 +36,13 @@ const CONDITION_OPTIONS = [
   { value: "Fair", label: "Zadovoljavajuće" },
 ];
 
+const MOVEMENT_OPTIONS = [
+  { value: "all", label: "Svi mehanizmi" },
+  { value: "Automatic", label: "Automatski" },
+  { value: "Manual", label: "Mehanički (ručno)" },
+  { value: "Quartz", label: "Kvarcni" },
+] as const;
+
 const GENDER_OPTIONS = [
   { value: "all", label: "Svi" },
   { value: "male", label: "Muški i uniseks" },
@@ -51,6 +58,7 @@ const FILTER_KEYS = [
   "max",
   "year",
   "cond",
+  "movement",
   "loc",
   "gender",
   "box",
@@ -68,6 +76,7 @@ const emptyFilters: FilterState = {
   max: "",
   year: "",
   cond: "",
+  movement: "",
   loc: "",
   gender: "",
   box: "",
@@ -98,6 +107,7 @@ const parseFiltersFromRecord = (
   max: params.max ?? params.maxPrice ?? "",
   year: params.year ?? "",
   cond: params.cond ?? params.condition ?? "",
+  movement: params.movement ?? "",
   loc: params.loc ?? params.location ?? "",
   gender: params.gender ?? "",
   box: params.box ?? "",
@@ -114,6 +124,7 @@ const parseFiltersFromUrl = (
   max: params.get("max") ?? params.get("maxPrice") ?? "",
   year: params.get("year") ?? "",
   cond: params.get("cond") ?? params.get("condition") ?? "",
+  movement: params.get("movement") ?? "",
   loc: params.get("loc") ?? params.get("location") ?? "",
   gender: params.get("gender") ?? "",
   box: params.get("box") ?? "",
@@ -295,6 +306,7 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
         "year",
         "cond",
         "condition",
+        "movement",
         "loc",
         "location",
         "gender",
@@ -310,6 +322,7 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
       if (filtersToApply.max) params.set("max", filtersToApply.max);
       if (filtersToApply.year) params.set("year", filtersToApply.year);
       if (filtersToApply.cond) params.set("cond", filtersToApply.cond);
+      if (filtersToApply.movement) params.set("movement", filtersToApply.movement);
       if (filtersToApply.loc) params.set("loc", filtersToApply.loc);
       if (filtersToApply.gender) params.set("gender", filtersToApply.gender);
       if (filtersToApply.box) params.set("box", filtersToApply.box);
@@ -568,6 +581,30 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
               <SelectContent>
                 {CONDITION_OPTIONS.map((option) => (
                   <SelectItem key={option.value || "all"} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="listings-movement">Mehanizam</Label>
+            <Select
+              value={filters.movement || "all"}
+              onValueChange={(value) => {
+                const normalized = value === "all" ? "" : value;
+                const next: FilterState = { ...filters, movement: normalized };
+                setFilters(next);
+                applyFilters(next);
+              }}
+            >
+              <SelectTrigger id="listings-movement">
+                <SelectValue placeholder="Svi" />
+              </SelectTrigger>
+              <SelectContent>
+                {MOVEMENT_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>
                 ))}

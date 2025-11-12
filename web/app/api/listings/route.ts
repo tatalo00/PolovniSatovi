@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
     const min = searchParams.get("min") ?? searchParams.get("minPrice") ?? undefined;
     const max = searchParams.get("max") ?? searchParams.get("maxPrice") ?? undefined;
     const year = searchParams.get("year") ?? undefined;
+    const movement = searchParams.get("movement") ?? undefined;
     const loc = searchParams.get("loc") ?? searchParams.get("location") ?? undefined;
     const box = searchParams.get("box") ?? undefined;
     const verified = searchParams.get("verified") ?? undefined;
@@ -60,6 +61,10 @@ export async function GET(request: NextRequest) {
 
     if (model) {
       where.model = { contains: model, mode: "insensitive" };
+    }
+
+    if (movement) {
+      where.movement = { contains: movement, mode: "insensitive" };
     }
 
     if (cond) {

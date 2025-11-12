@@ -41,6 +41,7 @@ interface IncomingSearchParams {
   year?: string;
   cond?: string;
   condition?: string;
+  movement?: string;
   loc?: string;
   location?: string;
   gender?: string;
@@ -67,6 +68,10 @@ const normalizeSearchParams = (params: IncomingSearchParams): NormalizedParams =
 
   if (params.model && params.model.trim().length > 0) {
     normalized.model = params.model.trim();
+  }
+
+  if (params.movement && params.movement.trim().length > 0) {
+    normalized.movement = params.movement.trim();
   }
 
   const min = params.min ?? params.minPrice;
@@ -139,6 +144,10 @@ const buildWhereClause = (filters: NormalizedParams): Prisma.ListingWhereInput =
 
   if (filters.model) {
     where.model = { contains: filters.model, mode: "insensitive" };
+  }
+
+  if (filters.movement) {
+    where.movement = { contains: filters.movement, mode: "insensitive" };
   }
 
   if (filters.cond) {

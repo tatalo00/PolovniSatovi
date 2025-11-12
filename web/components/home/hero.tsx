@@ -5,10 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowRight,
-  CalendarClock,
-  Compass,
+  ChevronDown,
   Heart,
   MapPin,
+  RefreshCcw,
   Search,
   ShieldCheck,
   Watch,
@@ -19,6 +19,24 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useNavigationFeedback } from "@/components/providers/navigation-feedback-provider";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type FeaturedListing = {
   id: string;
@@ -48,6 +66,28 @@ type QuickFilter = {
   requiresLocation?: boolean;
 };
 
+type HeroFilterState = {
+  brand: string;
+  min: string;
+  max: string;
+  cond: string;
+  movement: string;
+  loc: string;
+  verified: boolean;
+  box: string;
+};
+
+const createDefaultFilterState = (): HeroFilterState => ({
+  brand: "",
+  min: "",
+  max: "",
+  cond: "",
+  movement: "",
+  loc: "",
+  verified: false,
+  box: "",
+});
+
 export interface HeroProps {
   featuredListings: FeaturedListing[];
   totalListings: number;
@@ -60,39 +100,25 @@ const MAX_HISTORY = 8;
 
 const QUICK_FILTERS: QuickFilter[] = [
   {
-    id: "under-500",
-    label: "Ispod €500",
-    description: "Pristupačni početni modeli",
+    id: "under-200",
+    label: "Ispod €200",
+    description: "Pristupačni satovi za svaki dan",
     icon: <Watch className="h-4 w-4" aria-hidden />,
-    query: { max: "500" },
-  },
-  {
-    id: "vintage",
-    label: "Vintage",
-    description: "Kolekcionarski klasici",
-    icon: <CalendarClock className="h-4 w-4" aria-hidden />,
-    query: { q: "vintage" },
-  },
-  {
-    id: "diver",
-    label: "Ronilački satovi",
-    description: "Otpornost i funkcionalnost",
-    icon: <Compass className="h-4 w-4" aria-hidden />,
-    query: { q: "diver" },
-  },
-  {
-    id: "with-box",
-    label: "Box & papiri",
-    description: "Kompletan paket",
-    icon: <ShieldCheck className="h-4 w-4" aria-hidden />,
-    query: { box: "full" },
+    query: { max: "200" },
   },
   {
     id: "verified",
     label: "Verifikovani prodavci",
-    description: "Potvrđena bezbednost",
+    description: "Potvrđena bezbednost kupovine",
     icon: <ShieldCheck className="h-4 w-4" aria-hidden />,
     query: { verified: "1" },
+  },
+  {
+    id: "automatic",
+    label: "Automatski mehanizam",
+    description: "Samonavijajući satovi",
+    icon: <RefreshCcw className="h-4 w-4" aria-hidden />,
+    query: { movement: "Automatic" },
   },
   {
     id: "near-me",
@@ -129,6 +155,19 @@ export function Hero({
   const [showHistory, setShowHistory] = useState(false);
   const autoRotateRef = useRef<NodeJS.Timeout | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const [filters, setFilters] = useState<HeroFilterState>(() => createDefaultFilterState());
+  const [brandSuggestions, setBrandSuggestions] = useState<string[]>([]);
+  const [brandOpen, setBrandOpen] = useState(false);
+  const [brandLoading, setBrandLoading] = useState(false);
+  const brandAbortRef = useRef<AbortController | null>(null);
+  const brandBlurTimeout = useRef<NodeJS.Timeout | null>(null);
+  const additionalActiveCount = useMemo(() => {
+    let count = 0;
+    if (filters.cond) count += 1;
+    if (filters.verified) count += 1;
+    if (filters.box) count += 1;
+    return count;
+  }, [filters.box, filters.cond, filters.verified]);
 
   const hasFeatured = featuredListings.length > 0;
 
@@ -233,6 +272,71 @@ export function Hero({
     return () => clearTimeout(debounce);
   }, [query, fetchSuggestions]);
 
+  useEffect(() => {
+    const query = filters.brand.trim();
+    if (query.length < 2) {
+      brandAbortRef.current?.abort();
+      setBrandSuggestions([]);
+      setBrandLoading(false);
+      return;
+    }
+
+    setBrandLoading(true);
+    const controller = new AbortController();
+    brandAbortRef.current?.abort();
+    brandAbortRef.current = controller;
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `/api/listings/suggest?type=brand&q=${encodeURIComponent(query)}`,
+          { signal: controller.signal }
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch brand suggestions");
+        }
+        const data = (await response.json()) as string[];
+        const unique = Array.from(
+          new Set(
+            data
+              .map((value) => value?.trim())
+              .filter((value): value is string => Boolean(value && value.length > 0))
+          )
+        );
+        setBrandSuggestions(unique.slice(0, 8));
+      } catch (error) {
+        if (
+          error &&
+          typeof error === "object" &&
+          "name" in error &&
+          (error as { name?: string }).name === "AbortError"
+        ) {
+          return;
+        }
+        if (process.env.NODE_ENV !== "production") {
+          console.error("Brand suggestions error:", error);
+        }
+      } finally {
+        setBrandLoading(false);
+      }
+    }, 220);
+
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [filters.brand]);
+
+  useEffect(
+    () => () => {
+      brandAbortRef.current?.abort();
+      if (brandBlurTimeout.current) {
+        clearTimeout(brandBlurTimeout.current);
+      }
+    },
+    []
+  );
+
   const persistHistory = useCallback((value: string) => {
     const trimmed = value.trim();
     if (!trimmed) return;
@@ -293,6 +397,72 @@ export function Hero({
     [performNavigation]
   );
 
+  const handleBrandFocus = useCallback(() => {
+    if (brandBlurTimeout.current) {
+      clearTimeout(brandBlurTimeout.current);
+    }
+    setBrandOpen(true);
+  }, []);
+
+  const handleBrandBlur = useCallback(() => {
+    brandBlurTimeout.current = setTimeout(() => setBrandOpen(false), 120);
+  }, []);
+
+  const handleBrandSelect = useCallback((value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    setFilters((prev) => ({
+      ...prev,
+      brand: trimmed,
+    }));
+    setBrandOpen(false);
+  }, []);
+
+  const handleFiltersSubmit = useCallback(
+    (event?: React.FormEvent<HTMLFormElement>) => {
+      event?.preventDefault();
+      const params = new URLSearchParams();
+      if (filters.brand.trim()) {
+        params.set("brand", filters.brand.trim());
+      }
+      if (filters.min.trim()) {
+        params.set("min", filters.min.trim());
+      }
+      if (filters.max.trim()) {
+        params.set("max", filters.max.trim());
+      }
+      if (filters.cond.trim()) {
+        params.set("cond", filters.cond.trim());
+      }
+      if (filters.movement.trim()) {
+        params.set("movement", filters.movement.trim());
+      }
+      if (filters.loc.trim()) {
+        params.set("loc", filters.loc.trim());
+      }
+      if (filters.verified) {
+        params.set("verified", "1");
+      }
+      if (filters.box) {
+        params.set("box", filters.box);
+      }
+
+      if (filters.loc.trim()) {
+        window.localStorage.setItem("ps-last-location", filters.loc.trim());
+      }
+
+      performNavigation(params);
+    },
+    [filters, performNavigation]
+  );
+
+  const handleResetFilters = useCallback(() => {
+    setFilters(createDefaultFilterState());
+    setBrandSuggestions([]);
+    setBrandOpen(false);
+    performNavigation(new URLSearchParams());
+  }, [performNavigation]);
+
   const handleQuickFilter = useCallback(
     (filter: QuickFilter) => {
       if (filter.requiresLocation) {
@@ -349,6 +519,221 @@ export function Hero({
                   Personalizovana selekcija proverenih oglasa, trendova i vodiča za kupovinu
                   polovnih i vintage satova.
                 </p>
+              </div>
+
+              <div className="rounded-3xl border border-border/70 bg-background/70 p-6 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/50">
+                <form
+                  className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6"
+                  onSubmit={handleFiltersSubmit}
+                >
+                  <div className="space-y-2 lg:col-span-2">
+                    <Label htmlFor="hero-filter-brand">Marka</Label>
+                    <div className="relative">
+                      <Input
+                        id="hero-filter-brand"
+                        placeholder="npr. Rolex"
+                        value={filters.brand}
+                        onChange={(event) =>
+                          setFilters((prev) => ({
+                            ...prev,
+                            brand: event.target.value,
+                          }))
+                        }
+                        onFocus={handleBrandFocus}
+                        onBlur={handleBrandBlur}
+                        autoComplete="off"
+                      />
+                      {brandOpen && (
+                        <div className="absolute left-0 right-0 z-20 mt-1 rounded-md border bg-popover shadow-lg">
+                          {filters.brand.trim().length < 2 ? (
+                            <div className="px-3 py-2 text-xs text-muted-foreground">
+                              Unesite bar dva slova za sugestije marki.
+                            </div>
+                          ) : (
+                            <ul className="max-h-56 overflow-y-auto py-1 text-sm">
+                              {brandLoading ? (
+                                <li className="px-3 py-2 text-muted-foreground">
+                                  Pretraga...
+                                </li>
+                              ) : brandSuggestions.length > 0 ? (
+                                brandSuggestions.map((suggestion) => (
+                                  <li key={suggestion}>
+                                    <button
+                                      type="button"
+                                      className="flex w-full items-center justify-between px-3 py-2 text-left hover:bg-accent hover:text-accent-foreground"
+                                      onMouseDown={(event) => {
+                                        event.preventDefault();
+                                        handleBrandSelect(suggestion);
+                                      }}
+                                    >
+                                      <span>{suggestion}</span>
+                                    </button>
+                                  </li>
+                                ))
+                              ) : (
+                                <li className="px-3 py-2 text-muted-foreground">
+                                  Nema rezultata
+                                </li>
+                              )}
+                            </ul>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-2 lg:col-span-2">
+                    <Label htmlFor="hero-filter-price-min">Cena (EUR)</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        id="hero-filter-price-min"
+                        type="number"
+                        inputMode="numeric"
+                        min="0"
+                        placeholder="Min"
+                        value={filters.min}
+                        onChange={(event) =>
+                          setFilters((prev) => ({
+                            ...prev,
+                            min: event.target.value,
+                          }))
+                        }
+                      />
+                      <Input
+                        id="hero-filter-price-max"
+                        type="number"
+                        inputMode="numeric"
+                        min="0"
+                        placeholder="Max"
+                        value={filters.max}
+                        onChange={(event) =>
+                          setFilters((prev) => ({
+                            ...prev,
+                            max: event.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="hero-filter-movement">Mehanizam</Label>
+                    <Select
+                      value={filters.movement || "all"}
+                      onValueChange={(value) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          movement: value === "all" ? "" : value,
+                        }))
+                      }
+                    >
+                      <SelectTrigger id="hero-filter-movement">
+                        <SelectValue placeholder="Svi tipovi" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Svi tipovi</SelectItem>
+                        <SelectItem value="Automatic">Automatski</SelectItem>
+                        <SelectItem value="Manual">Mehanički (ručno)</SelectItem>
+                        <SelectItem value="Quartz">Kvarcni</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="hero-filter-location">Lokacija</Label>
+                    <Input
+                      id="hero-filter-location"
+                      placeholder="npr. Beograd"
+                      value={filters.loc}
+                      onChange={(event) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          loc: event.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="space-y-3 lg:col-span-6">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full justify-between rounded-full sm:w-auto"
+                          >
+                            <span>Dodatni filteri</span>
+                            <span className="flex items-center gap-2">
+                              {additionalActiveCount > 0 && (
+                                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                                  {additionalActiveCount}
+                                </span>
+                              )}
+                              <ChevronDown className="h-4 w-4 text-muted-foreground" aria-hidden />
+                            </span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-60 space-y-2 p-2" align="end">
+                          <DropdownMenuLabel>Stanje</DropdownMenuLabel>
+                          <DropdownMenuRadioGroup
+                            value={filters.cond || "all"}
+                            onValueChange={(value) =>
+                              setFilters((prev) => ({
+                                ...prev,
+                                cond: value === "all" ? "" : value,
+                              }))
+                            }
+                          >
+                            <DropdownMenuRadioItem value="all">Sve</DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="New">Novo</DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="Like New">Kao novo</DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="Excellent">Odlično</DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="Very Good">
+                              Vrlo dobro
+                            </DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="Good">Dobro</DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="Fair">
+                              Zadovoljavajuće
+                            </DropdownMenuRadioItem>
+                          </DropdownMenuRadioGroup>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuCheckboxItem
+                            checked={filters.box === "full"}
+                            onCheckedChange={(checked) =>
+                              setFilters((prev) => ({
+                                ...prev,
+                                box: checked === true ? "full" : "",
+                              }))
+                            }
+                          >
+                            Sa kutijom i papirima
+                          </DropdownMenuCheckboxItem>
+                          <DropdownMenuCheckboxItem
+                            checked={filters.verified}
+                            onCheckedChange={(checked) =>
+                              setFilters((prev) => ({
+                                ...prev,
+                                verified: checked === true,
+                              }))
+                            }
+                          >
+                            Verifikovani prodavci
+                          </DropdownMenuCheckboxItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <Button type="submit" className="rounded-full sm:flex-1">
+                        Primeni filtere
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="rounded-full sm:flex-1"
+                        onClick={handleResetFilters}
+                      >
+                        Resetuj
+                      </Button>
+                    </div>
+                  </div>
+                </form>
               </div>
 
               <div className="rounded-3xl border border-border/70 bg-background/70 p-6 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/50">
