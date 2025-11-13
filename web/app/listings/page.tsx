@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { ListingFilters } from "@/components/listings/listing-filters";
 import { ListingContent } from "@/components/listings/listing-content";
 import { auth } from "@/auth";
+import type { ListingSummary } from "@/types/listing";
+import { AUTHENTICATION_STATUS, type AuthenticationStatus } from "@/lib/authentication/status";
 
 // Force dynamic rendering to avoid build-time database queries
 export const dynamic = 'force-dynamic';
@@ -24,102 +26,160 @@ type ListingWithSeller = Prisma.ListingGetPayload<{
         email: true;
         locationCity: true;
         locationCountry: true;
+        isVerified: true;
       };
     };
   };
 }>;
 
 interface IncomingSearchParams {
-  q?: string;
-  search?: string;
-  brand?: string;
-  model?: string;
-  min?: string;
-  minPrice?: string;
-  max?: string;
-  maxPrice?: string;
-  year?: string;
-  cond?: string;
-  condition?: string;
-  movement?: string;
-  loc?: string;
-  location?: string;
-  gender?: string;
-  box?: string;
-  verified?: string;
-  sort?: string;
-  cols?: string;
-  page?: string;
+  q?: string | string[];
+  search?: string | string[];
+  brand?: string | string[];
+  model?: string | string[];
+  min?: string | string[];
+  minPrice?: string | string[];
+  max?: string | string[];
+  maxPrice?: string | string[];
+  year?: string | string[];
+  yearFrom?: string | string[];
+  yearTo?: string | string[];
+  cond?: string | string[];
+  condition?: string | string[];
+  movement?: string | string[];
+  loc?: string | string[];
+  location?: string | string[];
+  gender?: string | string[];
+  box?: string | string[];
+  verified?: string | string[];
+  authenticated?: string | string[];
+  sort?: string | string[];
+  page?: string | string[];
+  [key: string]: string | string[] | undefined;
 }
 
-type NormalizedParams = Record<string, string>;
+type NormalizedParams = {
+  q?: string;
+  brand?: string[];
+  model?: string;
+  movement?: string[];
+  min?: string;
+  max?: string;
+  year?: string;
+  yearFrom?: string;
+  yearTo?: string;
+  gender?: string[];
+  box?: string[];
+  verified?: string;
+  authenticated?: string;
+  cond?: string[];
+  loc?: string;
+  sort?: string;
+  page?: string;
+};
+
+const parseMultiParam = (value?: string | string[]): string[] => {
+  if (!value) return [];
+  const raw = Array.isArray(value) ? value : value.split(",");
+  return raw
+    .map((entry) => (typeof entry === "string" ? entry.trim() : ""))
+    .filter((entry) => entry.length > 0);
+};
+
+const getFirstValue = (value?: string | string[]): string | undefined => {
+  if (!value) return undefined;
+  const candidate = Array.isArray(value) ? value[0] : value;
+  if (typeof candidate !== "string") return undefined;
+  const trimmed = candidate.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+};
 
 const normalizeSearchParams = (params: IncomingSearchParams): NormalizedParams => {
   const normalized: NormalizedParams = {};
 
-  const q = params.q ?? params.search;
-  if (q && q.trim().length > 0) {
-    normalized.q = q.trim();
+  const q = getFirstValue(params.q ?? params.search);
+  if (q) {
+    normalized.q = q;
   }
 
-  if (params.brand && params.brand.trim().length > 0) {
-    normalized.brand = params.brand.trim();
+  const brands = parseMultiParam(params.brand);
+  if (brands.length) {
+    normalized.brand = brands;
   }
 
-  if (params.model && params.model.trim().length > 0) {
-    normalized.model = params.model.trim();
+  const model = getFirstValue(params.model);
+  if (model) {
+    normalized.model = model;
   }
 
-  if (params.movement && params.movement.trim().length > 0) {
-    normalized.movement = params.movement.trim();
+  const movements = parseMultiParam(params.movement);
+  if (movements.length) {
+    normalized.movement = movements;
   }
 
-  const min = params.min ?? params.minPrice;
-  if (min && min.trim().length > 0) {
-    normalized.min = min.trim();
+  const min = getFirstValue(params.min ?? params.minPrice);
+  if (min) {
+    normalized.min = min;
   }
 
-  const max = params.max ?? params.maxPrice;
-  if (max && max.trim().length > 0) {
-    normalized.max = max.trim();
+  const max = getFirstValue(params.max ?? params.maxPrice);
+  if (max) {
+    normalized.max = max;
   }
 
-  if (params.year && params.year.trim().length > 0) {
-    normalized.year = params.year.trim();
+  const year = getFirstValue(params.year);
+  if (year) {
+    normalized.year = year;
   }
 
-  if (params.gender && params.gender.trim().length > 0) {
-    normalized.gender = params.gender.trim();
+  const yearFrom = getFirstValue(params.yearFrom);
+  if (yearFrom) {
+    normalized.yearFrom = yearFrom;
   }
 
-  if (params.box && params.box.trim().length > 0) {
-    normalized.box = params.box.trim();
+  const yearTo = getFirstValue(params.yearTo);
+  if (yearTo) {
+    normalized.yearTo = yearTo;
   }
 
-  if (params.verified && params.verified.trim().length > 0) {
-    normalized.verified = params.verified.trim();
+  const conditions = parseMultiParam(params.cond ?? params.condition);
+  if (conditions.length) {
+    normalized.cond = conditions;
   }
 
-  const cond = params.cond ?? params.condition;
-  if (cond && cond.trim().length > 0) {
-    normalized.cond = cond.trim();
+  const gender = parseMultiParam(params.gender);
+  if (gender.length) {
+    normalized.gender = gender;
   }
 
-  const loc = params.loc ?? params.location;
-  if (loc && loc.trim().length > 0) {
-    normalized.loc = loc.trim();
+  const box = parseMultiParam(params.box);
+  if (box.length) {
+    normalized.box = box;
   }
 
-  if (params.sort && params.sort.trim().length > 0) {
-    normalized.sort = params.sort.trim();
+  const verified = getFirstValue(params.verified);
+  if (verified) {
+    normalized.verified = verified;
   }
 
-  if (params.cols && ["3", "4", "5"].includes(params.cols.trim())) {
-    normalized.cols = params.cols.trim();
+  const authenticated = getFirstValue(params.authenticated);
+  if (authenticated) {
+    normalized.authenticated = authenticated;
   }
 
-  if (params.page && params.page.trim().length > 0) {
-    normalized.page = params.page.trim();
+  const loc = getFirstValue(params.loc ?? params.location);
+  if (loc) {
+    normalized.loc = loc;
+  }
+
+  const sort = getFirstValue(params.sort);
+  if (sort) {
+    normalized.sort = sort;
+  }
+
+  const page = getFirstValue(params.page);
+  if (page) {
+    normalized.page = page;
   }
 
   return normalized;
@@ -130,6 +190,15 @@ const buildWhereClause = (filters: NormalizedParams): Prisma.ListingWhereInput =
     status: "APPROVED",
   };
 
+  const appendAndCondition = (condition: Prisma.ListingWhereInput) => {
+    const existingAnd = Array.isArray(where.AND)
+      ? where.AND
+      : where.AND
+      ? [where.AND]
+      : [];
+    where.AND = [...existingAnd, condition];
+  };
+
   if (filters.q) {
     where.OR = [
       { title: { contains: filters.q, mode: "insensitive" } },
@@ -138,20 +207,23 @@ const buildWhereClause = (filters: NormalizedParams): Prisma.ListingWhereInput =
     ];
   }
 
-  if (filters.brand) {
-    where.brand = { contains: filters.brand, mode: "insensitive" };
+  if (filters.brand?.length) {
+    const brandConditions = filters.brand.map((value) => ({
+      brand: { contains: value, mode: "insensitive" as const },
+    }));
+    appendAndCondition({ OR: brandConditions });
   }
 
   if (filters.model) {
-    where.model = { contains: filters.model, mode: "insensitive" };
+    appendAndCondition({ model: { contains: filters.model, mode: "insensitive" } });
   }
 
-  if (filters.movement) {
-    where.movement = { contains: filters.movement, mode: "insensitive" };
+  if (filters.movement?.length) {
+    appendAndCondition({ movement: { in: filters.movement } });
   }
 
-  if (filters.cond) {
-    where.condition = filters.cond;
+  if (filters.cond?.length) {
+    appendAndCondition({ condition: { in: filters.cond } });
   }
 
   if (filters.min || filters.max) {
@@ -177,59 +249,97 @@ const buildWhereClause = (filters: NormalizedParams): Prisma.ListingWhereInput =
     if (!Number.isNaN(yearValue)) {
       where.year = yearValue;
     }
-  }
-
-  if (filters.loc) {
-    const existingAnd = Array.isArray(where.AND)
-      ? where.AND
-      : where.AND
-      ? [where.AND]
-      : [];
-    where.AND = [
-      ...existingAnd,
-      {
-        OR: [
-          { location: { contains: filters.loc, mode: "insensitive" } },
-          { seller: { locationCity: { contains: filters.loc, mode: "insensitive" } } },
-          { seller: { locationCountry: { contains: filters.loc, mode: "insensitive" } } },
-        ],
-      },
-    ];
-  }
-
-  if (filters.gender) {
-    const normalizedGender = filters.gender.trim().toUpperCase();
-    if (normalizedGender === Gender.MALE || normalizedGender === Gender.FEMALE) {
-      where.gender = { in: [normalizedGender as Gender, Gender.UNISEX] };
-    } else if (normalizedGender === Gender.UNISEX) {
-      where.gender = normalizedGender as Gender;
+  } else {
+    const yearRange: Prisma.IntFilter = {};
+    if (filters.yearFrom) {
+      const minYear = parseInt(filters.yearFrom, 10);
+      if (!Number.isNaN(minYear)) {
+        yearRange.gte = minYear;
+      }
+    }
+    if (filters.yearTo) {
+      const maxYear = parseInt(filters.yearTo, 10);
+      if (!Number.isNaN(maxYear)) {
+        yearRange.lte = maxYear;
+      }
+    }
+    if (Object.keys(yearRange).length > 0) {
+      where.year = yearRange;
     }
   }
 
-  if (filters.box) {
-    const normalizedBox = filters.box.trim().toLowerCase();
-    if (normalizedBox === "full") {
-      where.boxPapers = { not: null };
+  if (filters.loc) {
+    appendAndCondition({
+      OR: [
+        { location: { contains: filters.loc, mode: "insensitive" } },
+        { seller: { locationCity: { contains: filters.loc, mode: "insensitive" } } },
+        { seller: { locationCountry: { contains: filters.loc, mode: "insensitive" } } },
+      ],
+    });
+  }
+
+  if (filters.gender?.length) {
+    const genderValues = filters.gender
+      .map((value) => value.toUpperCase())
+      .filter((value) => ["MALE", "FEMALE", "UNISEX"].includes(value)) as Gender[];
+    if (genderValues.length) {
+      appendAndCondition({ gender: { in: genderValues } });
+    }
+  }
+
+  if (filters.box?.length) {
+    if (filters.box.length) {
+      const extrasConditions: Prisma.ListingWhereInput[] = [];
+      filters.box.forEach((value) => {
+        switch (value) {
+          case "BOX":
+            extrasConditions.push({
+              boxPapers: { contains: "box", mode: "insensitive" },
+            });
+            break;
+          case "PAPERS":
+            extrasConditions.push({
+              boxPapers: { contains: "pap", mode: "insensitive" },
+            });
+            break;
+          case "BOTH":
+            extrasConditions.push({
+              AND: [
+                { boxPapers: { contains: "box", mode: "insensitive" } },
+                { boxPapers: { contains: "pap", mode: "insensitive" } },
+              ],
+            });
+            break;
+          case "NONE":
+            extrasConditions.push({ boxPapers: null });
+            extrasConditions.push({ boxPapers: "" });
+            break;
+          default:
+            break;
+        }
+      });
+      if (extrasConditions.length) {
+        appendAndCondition({ OR: extrasConditions });
+      }
     }
   }
 
   if (filters.verified) {
-    const normalizedVerified = filters.verified.trim().toLowerCase();
-    if (["1", "true", "yes"].includes(normalizedVerified)) {
-      const existingAnd = Array.isArray(where.AND)
-        ? where.AND
-        : where.AND
-        ? [where.AND]
-        : [];
-      where.AND = [
-        ...existingAnd,
-        {
-          seller: {
-            isVerified: true,
-          },
+    appendAndCondition({
+      seller: {
+        isVerified: true,
+      },
+    });
+  }
+
+  if (filters.authenticated) {
+    appendAndCondition({
+      seller: {
+        authentication: {
+          status: AUTHENTICATION_STATUS.APPROVED,
         },
-      ];
-    }
+      },
+    } as Prisma.ListingWhereInput);
   }
 
   return where;
@@ -256,8 +366,9 @@ const resolveOrderBy = (
     case "oldest":
       return { createdAt: "asc" };
     case "newest":
-    default:
       return { createdAt: "desc" };
+    default:
+      return { priceEurCents: "asc" };
   }
 };
 
@@ -305,44 +416,46 @@ export default async function ListingsPage({
   const normalizedParams = normalizeSearchParams(params);
   const session = await auth();
 
-  const columns = (() => {
-    const parsed = parseInt(normalizedParams.cols ?? "3", 10);
-    if ([3, 4, 5].includes(parsed)) {
-      return parsed;
-    }
-    return 3;
-  })();
+  const columns = 4;
 
   const page = parseInt(normalizedParams.page ?? "1", 10);
   const currentPage = Number.isNaN(page) || page < 1 ? 1 : page;
-  const limit = columns === 5 ? 25 : 24;
+  const limit = 24;
   const offset = (currentPage - 1) * limit;
 
   const where = buildWhereClause(normalizedParams);
   const orderBy = resolveOrderBy(normalizedParams.sort);
 
   const runQueries = async (whereInput: Prisma.ListingWhereInput) => {
-    const [listingsResult, totalResult, popularBrandsResult] = await Promise.all([
-      prisma.listing.findMany({
-        where: whereInput,
-        include: {
-          photos: {
-            orderBy: { order: "asc" },
-            take: 1,
-          },
-          seller: {
-            select: {
-              name: true,
-              email: true,
-              locationCity: true,
-              locationCountry: true,
+    const listingQueryArgs = {
+      where: whereInput,
+      include: {
+        photos: {
+          orderBy: { order: "asc" },
+          take: 1,
+        },
+        seller: {
+          select: {
+            name: true,
+            email: true,
+            locationCity: true,
+            locationCountry: true,
+            isVerified: true,
+            authentication: {
+              select: {
+                status: true,
+              },
             },
           },
         },
-        orderBy,
-        take: limit,
-        skip: offset,
-      }),
+      },
+      orderBy,
+      take: limit,
+      skip: offset,
+    } as unknown as Prisma.ListingFindManyArgs;
+
+    const [listingsResult, totalResult, popularBrandsResult] = await Promise.all([
+      prisma.listing.findMany(listingQueryArgs),
       prisma.listing.count({ where: whereInput }),
       prisma.listing.findMany({
         where: { status: "APPROVED" },
@@ -363,7 +476,7 @@ export default async function ListingsPage({
 
   try {
     const { listingsResult, totalResult, popularBrandsResult } = await runQueries(where);
-    listings = listingsResult;
+    listings = listingsResult as ListingWithSeller[];
     total = totalResult;
     popularBrands = popularBrandsResult;
     totalPages = Math.ceil(total / limit);
@@ -376,7 +489,7 @@ export default async function ListingsPage({
       const { listingsResult, totalResult, popularBrandsResult } = await runQueries(
         fallbackWhere
       );
-      listings = listingsResult;
+      listings = listingsResult as ListingWithSeller[];
       total = totalResult;
       popularBrands = popularBrandsResult;
       totalPages = Math.ceil(total / limit);
@@ -398,16 +511,52 @@ export default async function ListingsPage({
   }
 
   const clientSearchParams: Record<string, string | undefined> = {
-    ...normalizedParams,
+    q: normalizedParams.q,
+    brand: normalizedParams.brand?.join(","),
+    model: normalizedParams.model,
+    min: normalizedParams.min,
+    max: normalizedParams.max,
+    year: normalizedParams.year,
+    yearFrom: normalizedParams.yearFrom,
+    yearTo: normalizedParams.yearTo,
+    cond: normalizedParams.cond?.join(","),
+    movement: normalizedParams.movement?.join(","),
+    loc: normalizedParams.loc,
+    gender: normalizedParams.gender?.join(","),
+    box: normalizedParams.box?.join(","),
+    verified: normalizedParams.verified,
+    authenticated: normalizedParams.authenticated,
+    sort: normalizedParams.sort,
   };
 
   if (currentPage > 1) {
     clientSearchParams.page = currentPage.toString();
   }
 
-  clientSearchParams.cols = columns.toString();
-  if (normalizedParams.box) clientSearchParams.box = normalizedParams.box;
+  if (normalizedParams.box) clientSearchParams.box = normalizedParams.box?.join(",");
   if (normalizedParams.verified) clientSearchParams.verified = normalizedParams.verified;
+
+  const listingSummaries: ListingSummary[] = listings.map((listing) => {
+    const sellerWithAuth = listing.seller as (typeof listing.seller & {
+      authentication?: { status: AuthenticationStatus | null } | null;
+    }) | null;
+
+    return {
+      ...listing,
+      photos: listing.photos.map((photo) => ({ url: photo.url })),
+      seller: sellerWithAuth
+        ? {
+            name: sellerWithAuth.name,
+            email: sellerWithAuth.email,
+            locationCity: sellerWithAuth.locationCity,
+            locationCountry: sellerWithAuth.locationCountry,
+            isVerified: sellerWithAuth.isVerified,
+            isAuthenticated:
+              sellerWithAuth.authentication?.status === AUTHENTICATION_STATUS.APPROVED,
+          }
+        : null,
+    } satisfies ListingSummary;
+  });
 
   return (
     <main className="container mx-auto px-4 py-8">
@@ -418,17 +567,17 @@ export default async function ListingsPage({
         </p>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-4">
-        <aside className="lg:col-span-1">
+      <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)] xl:gap-8">
+        <aside>
           <ListingFilters
             popularBrands={popularBrands}
             searchParams={clientSearchParams}
           />
         </aside>
 
-        <div className="lg:col-span-3">
+        <div>
           <ListingContent
-            listings={listings}
+            listings={listingSummaries}
             total={total}
             currentPage={currentPage}
             totalPages={totalPages}

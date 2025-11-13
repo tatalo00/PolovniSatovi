@@ -47,7 +47,7 @@ model User {
   reviews       Review[] @relation("reviews")
   sellerReviews Review[] @relation("sellerReviews")
   listingStatusAudits ListingStatusAudit[]
-  verification  UserVerification?
+  authentication  UserAuthentication?
 }
 
 enum UserRole {
@@ -197,11 +197,11 @@ model Favorite {
   @@unique([userId, listingId])
 }
 
-model UserVerification {
+model UserAuthentication {
   id                       String                   @id @default(cuid())
   userId                   String                   @unique
   user                     User                     @relation(fields: [userId], references: [id])
-  status                   UserVerificationStatus   @default(PENDING)
+  status                   UserAuthenticationStatus @default(PENDING)
   diditSessionId           String
   diditVerificationId      String?
   diditSessionUrl          String?
@@ -213,7 +213,7 @@ model UserVerification {
   @@index([status])
 }
 
-enum UserVerificationStatus {
+enum UserAuthenticationStatus {
   PENDING
   APPROVED
   REJECTED

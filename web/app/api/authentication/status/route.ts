@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   const user = await requireAuth();
-  const verification = await prisma.userVerification.findUnique({
+  const authentication = await prisma.userAuthentication.findUnique({
     where: { userId: user.id },
     select: {
       id: true,
@@ -20,8 +20,7 @@ export async function GET() {
   });
 
   return NextResponse.json({
-    isVerified: user.isVerified ?? false,
-    verification,
+    isVerifiedSeller: user.isVerified ?? false,
+    authentication,
   });
 }
-

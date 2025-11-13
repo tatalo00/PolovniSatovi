@@ -9,13 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-type VerificationStatus = "PENDING" | "APPROVED" | "REJECTED" | "CANCELED" | "NONE";
+export type AuthenticationStatus = "PENDING" | "APPROVED" | "REJECTED" | "CANCELED" | "NONE";
 
-interface VerificationStatusCardProps {
-  isVerified: boolean;
-  verification: {
+interface AuthenticationStatusCardProps {
+  isVerifiedSeller: boolean;
+  authentication: {
     id: string;
-    status: VerificationStatus;
+    status: AuthenticationStatus;
     diditSessionUrl?: string | null;
     diditVerificationId?: string | null;
     rejectionReason?: string | null;
@@ -25,30 +25,31 @@ interface VerificationStatusCardProps {
   } | null;
 }
 
-const statusCopy: Record<VerificationStatus, { label: string; description: string }> = {
+const statusCopy: Record<AuthenticationStatus, { label: string; description: string }> = {
   NONE: {
-    label: "Nije verifikovan",
+    label: "Nije autentifikovan",
     description:
-      "Verifikacija preko Didit platforme pomaže da izgradite poverenje kod drugih članova. Potrebno je da dostavite selfie i fotografiju važećeg dokumenta.",
+      "Autentifikacija preko Didit platforme potvrđuje da ste vi zaista osoba koja prodaje ili kupuje sat. Potrebno je da završite brz KYC proces (dokument + selfie).",
   },
   PENDING: {
     label: "U toku",
     description:
-      "Verifikacija je u toku na Didit platformi. Obaveštenje o ishodu stiže čim Didit završi proveru.",
+      "Autentifikacija je u toku na Didit platformi. Obavestićemo vas čim Didit završi proveru.",
   },
   APPROVED: {
-    label: "Verifikovan",
-    description: "Vaš nalog je verifikovan. Kupci i prodavci će videti oznaku poverenja na vašem profilu.",
+    label: "Autentifikovan",
+    description:
+      "Vaš identitet je potvrđen. Oznaka 'Autentifikovani korisnik' sada je istaknuta na vašim oglasima i profilu.",
   },
   REJECTED: {
     label: "Odbijeno",
     description:
-      "Didit nije mogao da potvrdi identitet. Proverite razlog i pokrenite novi pokušaj sa jasnim fotografijama dokumenta i selfija.",
+      "Didit nije uspeo da potvrdi vaš identitet. Pogledajte razlog i pokušajte ponovo sa jasnim fotografijama i dobrim osvetljenjem.",
   },
   CANCELED: {
     label: "Otkazano",
     description:
-      "Verifikacija je otkazana na Didit platformi. Pokrenite novi zahtev da biste završili proces.",
+      "Autentifikacija je otkazana na Didit platformi. Pokrenite novi zahtev da biste dovršili proces.",
   },
 };
 
@@ -61,35 +62,35 @@ function formatDate(value?: string | null) {
   }
 }
 
-export function VerificationStatusCard({
-  isVerified,
-  verification,
-}: VerificationStatusCardProps) {
+export function AuthenticationStatusCard({
+  isVerifiedSeller,
+  authentication,
+}: AuthenticationStatusCardProps) {
   const [isPending, startTransition] = useTransition();
-  const [sessionUrl, setSessionUrl] = useState<string | null>(verification?.diditSessionUrl ?? null);
-  const [status, setStatus] = useState<VerificationStatus>(
-    verification?.status ?? (isVerified ? "APPROVED" : "NONE")
+  const [sessionUrl, setSessionUrl] = useState<string | null>(authentication?.diditSessionUrl ?? null);
+  const [status, setStatus] = useState<AuthenticationStatus>(
+    authentication?.status ?? (isVerifiedSeller ? "APPROVED" : "NONE")
   );
   const [rejectionReason, setRejectionReason] = useState<string | null>(
-    verification?.rejectionReason ?? null
+    authentication?.rejectionReason ?? null
   );
   const [statusDetail, setStatusDetail] = useState<string | null>(
-    verification?.statusDetail ?? null
+    authentication?.statusDetail ?? null
   );
 
   const copy = useMemo(() => statusCopy[status], [status]);
-  const updatedAtReadable = formatDate(verification?.updatedAt ?? verification?.createdAt ?? null);
+  const updatedAtReadable = formatDate(authentication?.updatedAt ?? authentication?.createdAt ?? null);
 
-  const handleStartVerification = () => {
+  const handleStartAuthentication = () => {
     startTransition(async () => {
       try {
-        const response = await fetch("/api/verification/session", {
+        const response = await fetch("/api/authentication/session", {
           method: "POST",
         });
 
         if (!response.ok) {
           const error = await response.json().catch(() => ({}));
-          throw new Error(error.error ?? "Neuspešno pokretanje verifikacije.");
+          throw new Error(error.error ?? "Neuspešno pokretanje autentifikacije.");
         }
 
         const data = await response.json();
@@ -101,11 +102,11 @@ export function VerificationStatusCard({
         if (data.url) {
           window.location.href = data.url;
         } else {
-          toast.success("Verifikacija je pokrenuta. Proverite e-mail za instrukcije.");
+          toast.success("Autentifikacija je pokrenuta. Proverite e-mail za instrukcije.");
         }
       } catch (error) {
-        console.error("Failed to start verification", error);
-        toast.error(error instanceof Error ? error.message : "Greška pri pokretanju verifikacije.");
+        console.error("Failed to start authentication", error);
+        toast.error(error instanceof Error ? error.message : "Greška pri pokretanju autentifikacije.");
       }
     });
   };
@@ -129,7 +130,7 @@ export function VerificationStatusCard({
         <div className="flex items-center gap-3">
           {renderIcon()}
           <div>
-            <CardTitle>Verifikacija naloga</CardTitle>
+            <CardTitle>Autentifikacija naloga</CardTitle>
             <CardDescription>{copy.description}</CardDescription>
           </div>
         </div>
@@ -156,8 +157,12 @@ export function VerificationStatusCard({
 
         {status !== "APPROVED" && (
           <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={handleStartVerification} disabled={isPending}>
-              {isPending ? "Pokretanje..." : status === "NONE" ? "Započni verifikaciju" : "Ponovi verifikaciju"}
+            <Button onClick={handleStartAuthentication} disabled={isPending}>
+              {isPending
+                ? "Pokretanje..."
+                : status === "NONE"
+                ? "Započni autentifikaciju"
+                : "Ponovi autentifikaciju"}
             </Button>
             {sessionUrl && status === "PENDING" && (
               <Button asChild variant="outline">
@@ -170,10 +175,9 @@ export function VerificationStatusCard({
         )}
 
         <p className="text-xs text-muted-foreground">
-          Po završetku procesa Didit nas obaveštava o rezultatu i automatski ažurira status vašeg naloga.
+          Po završetku procesa Didit nas obaveštava o rezultatu i automatski ažurira status vaše autentifikacije.
         </p>
       </CardContent>
     </Card>
   );
 }
-

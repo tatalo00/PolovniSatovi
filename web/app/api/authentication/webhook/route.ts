@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { UserVerificationStatus } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 import { getDiditClient } from "@/lib/kyc/didit";
 import { logger } from "@/lib/logger";
+import { AUTHENTICATION_STATUS } from "@/lib/authentication/status";
 
 export async function POST(request: NextRequest) {
   const rawBody = await request.text();
@@ -36,11 +36,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  const verificationRecord = await prisma.userVerification.findFirst({
+  const authenticationRecord = await prisma.userAuthentication.findFirst({
     where: { diditSessionId: sessionId },
   });
 
-  if (!verificationRecord) {
+  if (!authenticationRecord) {
     logger.warn("Didit webhook received for unknown session", { sessionId });
     return NextResponse.json({ ok: true });
   }
@@ -48,10 +48,10 @@ export async function POST(request: NextRequest) {
   const diditVerificationId =
     (data?.verification_id as string | undefined) ??
     (data?.id as string | undefined) ??
-    verificationRecord.diditVerificationId ??
+    authenticationRecord.diditVerificationId ??
     null;
 
-  let nextStatus = verificationRecord.status;
+  let nextStatus = authenticationRecord.status;
   let rejectionReason: string | null = null;
   let statusDetail: string | null = null;
 
@@ -68,35 +68,28 @@ export async function POST(request: NextRequest) {
     diditStatus === "verified" ||
     diditStatus === "success"
   ) {
-    nextStatus = UserVerificationStatus.APPROVED;
+    nextStatus = AUTHENTICATION_STATUS.APPROVED;
   } else if (diditStatus === "declined" || diditStatus === "failed") {
-    nextStatus = UserVerificationStatus.REJECTED;
+    nextStatus = AUTHENTICATION_STATUS.REJECTED;
     rejectionReason =
-      diditReason ?? "Verifikacija nije uspela na Didit platformi. Molimo pokušajte ponovo.";
+      diditReason ?? "Autentifikacija nije uspela na Didit platformi. Molimo pokušajte ponovo.";
   } else if (diditStatus === "canceled") {
-    nextStatus = UserVerificationStatus.CANCELED;
-    statusDetail = diditReason ?? "Verifikacija je otkazana na Didit platformi.";
+    nextStatus = AUTHENTICATION_STATUS.CANCELED;
+    statusDetail = diditReason ?? "Autentifikacija je otkazana na Didit platformi.";
   } else {
-    nextStatus = UserVerificationStatus.PENDING;
+    nextStatus = AUTHENTICATION_STATUS.PENDING;
     statusDetail = diditReason;
   }
 
-  await prisma.$transaction([
-    prisma.userVerification.update({
-      where: { userId: verificationRecord.userId },
-      data: {
-        diditVerificationId,
-        status: nextStatus,
-        rejectionReason,
-        statusDetail,
-      },
-    }),
-    prisma.user.update({
-      where: { id: verificationRecord.userId },
-      data: { isVerified: nextStatus === UserVerificationStatus.APPROVED },
-    }),
-  ]);
+  await prisma.userAuthentication.update({
+    where: { userId: authenticationRecord.userId },
+    data: {
+      diditVerificationId,
+      status: nextStatus,
+      rejectionReason,
+      statusDetail,
+    },
+  });
 
   return NextResponse.json({ ok: true });
 }
-

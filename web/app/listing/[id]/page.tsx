@@ -12,6 +12,31 @@ import { ListingSpecsTable } from "@/components/listings/listing-specs-table";
 import { ListingContactCard } from "@/components/listings/listing-contact-card";
 import { ListingStickyCTA } from "@/components/listings/listing-sticky-cta";
 import { WishlistButton } from "@/components/listings/wishlist-button";
+import { ShieldCheck, UserCheck } from "lucide-react";
+import { Prisma } from "@prisma/client";
+import { AUTHENTICATION_STATUS, type AuthenticationStatus } from "@/lib/authentication/status";
+
+type ListingWithSellerDetail = Prisma.ListingGetPayload<{
+  include: {
+    photos: true;
+    seller: {
+      select: {
+        id: true;
+        name: true;
+        email: true;
+        locationCity: true;
+        locationCountry: true;
+        createdAt: true;
+        isVerified: true;
+        authentication: {
+          select: {
+            status: true;
+          };
+        };
+      };
+    };
+  };
+}>;
 
 // Force dynamic rendering to avoid build-time database queries
 export const dynamic = 'force-dynamic';
@@ -58,6 +83,8 @@ type SellerSummary = {
   locationCity: string | null;
   locationCountry: string | null;
   createdAt: Date;
+  isVerified: boolean;
+  authenticationStatus: AuthenticationStatus | null;
 };
 
 function SellerInfoCard({
@@ -65,11 +92,13 @@ function SellerInfoCard({
   locationLabel,
   memberSince,
   className,
+  badge,
 }: {
   seller: SellerSummary;
   locationLabel: string | null;
   memberSince: string;
   className?: string;
+  badge?: { label: string; type: "verified" | "authenticated" } | null;
 }) {
   return (
     <Card className={className}>
@@ -78,8 +107,22 @@ function SellerInfoCard({
       </CardHeader>
       <CardContent className="space-y-3">
         <div>
-          <p className="text-base font-semibold">
+          <p className="text-base font-semibold flex items-center gap-2">
             {seller.name?.trim() || seller.email}
+            {badge && (
+              <Badge
+                variant="secondary"
+                title={badge.label}
+                className="flex items-center gap-1.5 border border-white/0 bg-neutral-900/5 text-xs font-semibold text-neutral-700 backdrop-blur"
+              >
+                {badge.type === "verified" ? (
+                  <ShieldCheck className="h-3.5 w-3.5 text-[#D4AF37]" aria-hidden />
+                ) : (
+                  <UserCheck className="h-3.5 w-3.5 text-neutral-900" aria-hidden />
+                )}
+                <span>{badge.label}</span>
+              </Badge>
+            )}
           </p>
           {locationLabel && (
             <p className="text-sm text-muted-foreground">{locationLabel}</p>
@@ -96,7 +139,7 @@ function SellerInfoCard({
 
 export default async function ListingPage({ params }: ListingPageProps) {
   const { id } = await params;
-  const listing = await prisma.listing.findUnique({
+  const listing = (await prisma.listing.findUnique({
     where: { id },
     include: {
       photos: {
@@ -110,10 +153,16 @@ export default async function ListingPage({ params }: ListingPageProps) {
           locationCity: true,
           locationCountry: true,
           createdAt: true,
+          isVerified: true,
+          authentication: {
+            select: {
+              status: true,
+            },
+          },
         },
       },
     },
-  });
+  })) as ListingWithSellerDetail | null;
 
   if (
     !listing ||
@@ -181,6 +230,16 @@ export default async function ListingPage({ params }: ListingPageProps) {
   ];
 
   const isOwner = session?.user?.id === listing.seller.id;
+  const isVerifiedSeller = listing.seller.isVerified;
+  const sellerAuthStatus =
+    (listing.seller.authentication?.status ?? null) as AuthenticationStatus | null;
+  const isAuthenticatedSeller =
+    !isVerifiedSeller && sellerAuthStatus === AUTHENTICATION_STATUS.APPROVED;
+  const sellerBadge = isVerifiedSeller
+    ? { label: "Verifikovani prodavac", type: "verified" as const }
+    : isAuthenticatedSeller
+    ? { label: "Autentifikovani korisnik", type: "authenticated" as const }
+    : null;
   const memberSince = new Intl.DateTimeFormat("sr-RS", {
     month: "long",
     year: "numeric",
@@ -322,9 +381,13 @@ export default async function ListingPage({ params }: ListingPageProps) {
 
             <div className="lg:hidden">
               <SellerInfoCard
-                seller={listing.seller}
+                seller={{
+                  ...listing.seller,
+                  authenticationStatus: sellerAuthStatus,
+                }}
                 locationLabel={sellerLocation}
                 memberSince={memberSince}
+                badge={sellerBadge}
               />
             </div>
 
@@ -338,6 +401,7 @@ export default async function ListingPage({ params }: ListingPageProps) {
                 isOwner={isOwner}
                 isSold={isSold}
                 showReport={!isSold}
+                sellerBadge={sellerBadge}
               />
             </div>
           </section>
@@ -362,11 +426,16 @@ export default async function ListingPage({ params }: ListingPageProps) {
               isOwner={isOwner}
               isSold={isSold}
               showReport={!isSold}
+              sellerBadge={sellerBadge}
             />
             <SellerInfoCard
-              seller={listing.seller}
+              seller={{
+                ...listing.seller,
+                authenticationStatus: sellerAuthStatus,
+              }}
               locationLabel={sellerLocation}
               memberSince={memberSince}
+              badge={sellerBadge}
             />
           </div>
         </aside>

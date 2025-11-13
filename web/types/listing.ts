@@ -16,6 +16,8 @@ export interface ListingSummary {
     email: string;
     locationCity: string | null;
     locationCountry: string | null;
+    isVerified?: boolean | null;
+    isAuthenticated?: boolean | null;
   } | null;
   status?: string;
   favoritedAt?: Date;

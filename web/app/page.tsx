@@ -3,13 +3,11 @@ import type { Listing, ListingPhoto, Prisma } from "@prisma/client";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Hero } from "@/components/home/hero";
-import { PopularBrands } from "@/components/home/popular-brands";
-import { RecentListings } from "@/components/home/recent-listings";
-import { PriceSegments } from "@/components/home/price-segments";
-import { TrustSafetyHighlights } from "@/components/home/trust-safety";
+import type { PaidListing } from "@/components/home/featured-collections";
+import { QuickFilterBar } from "@/components/home/quick-filter-bar";
+import { PaidListings } from "@/components/home/featured-collections";
+import { TrustServices } from "@/components/home/trust-services";
 import { EducationHub } from "@/components/home/education-hub";
-import { RegionalHighlights } from "@/components/home/regional-focus";
-import { POPULAR_BRANDS_LOOKUP } from "@/lib/brands";
 
 // Force dynamic rendering to avoid build-time database queries
 export const dynamic = "force-dynamic";
@@ -21,12 +19,6 @@ type ListingWithRelations = Listing & {
     locationCountry: string | null;
   } | null;
 };
-type BrandAggregate = {
-  brand: string | null;
-  _count: { _all: number };
-  _min: { priceEurCents: number | null };
-};
-
 const PRICE_SEGMENTS = [
   {
     id: "budget",
@@ -66,31 +58,25 @@ const PRICE_SEGMENTS = [
   },
 ] as const;
 
+const EURO_FORMATTER = new Intl.NumberFormat("sr-RS", {
+  style: "currency",
+  currency: "EUR",
+  maximumFractionDigits: 0,
+});
+
+const formatEuroFromCents = (value?: number | null) => {
+  if (typeof value !== "number" || Number.isNaN(value) || value <= 0) {
+    return null;
+  }
+  return EURO_FORMATTER.format(value / 100);
+};
+
 export default async function HomePage() {
   let featuredRaw: ListingWithRelations[] = [];
   let recentRaw: ListingWithRelations[] = [];
-  let brandAggregates: BrandAggregate[] = [];
   let totalListings = 0;
   let totalSellers = 0;
   let preferredLocation: string | null = null;
-  let brandCards: Array<{
-    name: string;
-    description?: string;
-    listingsCount: number;
-    startingPriceEurCents: number | null;
-    topModels: string[];
-    verified?: boolean;
-  }> = [];
-  let priceSegmentsData: Array<{
-    id: string;
-    title: string;
-    subtitle: string;
-    description: string;
-    listingsCount: number;
-    featuredBrands: string[];
-    imageUrl: string | null;
-    href: string;
-  }> = [];
   let recentListings: Array<{
     id: string;
     title: string;
@@ -104,19 +90,7 @@ export default async function HomePage() {
     photos: Array<{ url: string }>;
   }> = [];
   let favoriteListingIds: string[] = [];
-  let regionalHighlights: Array<{
-    id: string;
-    title: string;
-    brand: string;
-    model: string;
-    priceEurCents: number;
-    condition: string | null;
-    locationLabel: string | null;
-    createdAt: string;
-    photoUrl: string | null;
-  }> = [];
-  let regionalLabel: string | null = null;
-
+  let availableBrands: string[] = [];
   const session = await auth();
 
   try {
@@ -142,7 +116,7 @@ export default async function HomePage() {
         })
       : Promise.resolve([]);
 
-    const [featuredResult, recentResult, brandStats, counts, favorites] = await Promise.all([
+    const [featuredResult, recentResult, counts, favorites, distinctBrands] = await Promise.all([
       prisma.listing.findMany({
         where: { status: "APPROVED" },
         include: {
@@ -180,18 +154,6 @@ export default async function HomePage() {
         orderBy: { createdAt: "desc" },
         take: 12,
       }),
-      prisma.listing.groupBy({
-        where: { status: "APPROVED" },
-        by: ["brand"],
-        _count: { _all: true },
-        _min: { priceEurCents: true },
-        orderBy: {
-          _count: {
-            brand: "desc",
-          },
-        },
-        take: 16,
-      }),
       Promise.all([
         prisma.listing.count({
           where: { status: "APPROVED" },
@@ -207,51 +169,24 @@ export default async function HomePage() {
         }),
       ]),
       favoritesPromise,
+      prisma.listing.findMany({
+        where: {
+          status: "APPROVED",
+        },
+        distinct: ["brand"],
+        select: { brand: true },
+      }),
     ]);
 
     featuredRaw = featuredResult;
     recentRaw = recentResult;
-    brandAggregates = brandStats;
     [totalListings, totalSellers] = counts;
     favoriteListingIds = (favorites as Array<{ listingId: string }>).map(
       (favorite) => favorite.listingId
     );
-
-    const modelsByBrand = new Map<string, string[]>();
-    const collectModels = (brand?: string | null, model?: string | null) => {
-      if (!brand || !model) return;
-      const bucket = modelsByBrand.get(brand) ?? [];
-      if (!bucket.includes(model) && bucket.length < 5) {
-        bucket.push(model);
-        modelsByBrand.set(brand, bucket);
-      }
-    };
-
-    for (const listing of recentRaw) {
-      collectModels(listing.brand, listing.model);
-    }
-
-    for (const listing of featuredRaw) {
-      collectModels(listing.brand, listing.model);
-    }
-
-    brandCards = brandAggregates
-      .filter((row) => row.brand)
-      .map((row) => {
-        const name = row.brand!;
-        const meta = POPULAR_BRANDS_LOOKUP.get(name.toLowerCase());
-        const topModels = (modelsByBrand.get(name) ?? []).slice(0, 3);
-        const verified =
-          meta && "verified" in meta ? Boolean((meta as { verified?: boolean }).verified) : false;
-        return {
-          name,
-          description: meta?.description,
-          listingsCount: row._count._all,
-          startingPriceEurCents: row._min.priceEurCents,
-          topModels,
-          verified,
-        };
-      });
+    availableBrands = (distinctBrands as Array<{ brand: string | null }>)
+      .map((entry) => entry.brand)
+      .filter((brandName): brandName is string => Boolean(brandName));
 
     recentListings = recentRaw.map((listing) => {
       const sellerLocation = listing.seller
@@ -276,173 +211,9 @@ export default async function HomePage() {
       };
     });
 
-    const mapPriceFilter = (segment: (typeof PRICE_SEGMENTS)[number]): Prisma.ListingWhereInput => {
-      const priceFilter: Prisma.IntFilter = {};
-      if (typeof segment.min === "number") {
-        priceFilter.gte = Math.round(segment.min * 100);
-      }
-      if (typeof segment.max === "number") {
-        priceFilter.lte = Math.round(segment.max * 100);
-      }
-      return Object.keys(priceFilter).length
-        ? { status: "APPROVED", priceEurCents: priceFilter }
-        : { status: "APPROVED" };
-    };
-
-    priceSegmentsData = await Promise.all(
-      PRICE_SEGMENTS.map(async (segment) => {
-        const where = mapPriceFilter(segment);
-        const [count, sampleListing, brandGroups] = await Promise.all([
-          prisma.listing.count({ where }),
-          prisma.listing.findFirst({
-            where,
-            include: {
-              photos: {
-                orderBy: { order: "asc" },
-                take: 1,
-              },
-            },
-            orderBy: { createdAt: "desc" },
-          }),
-          prisma.listing.groupBy({
-            where,
-            by: ["brand"],
-            _count: { _all: true },
-            orderBy: {
-              _count: {
-                brand: "desc",
-              },
-            },
-            take: 4,
-          }),
-        ]);
-
-        const featuredBrands = brandGroups
-          .map((group) => group.brand)
-          .filter((name): name is string => Boolean(name))
-          .slice(0, 3);
-
-        const params = new URLSearchParams(segment.query);
-
-        return {
-          id: segment.id,
-          title: segment.title,
-          subtitle: segment.subtitle,
-          description: segment.description,
-          listingsCount: count,
-          featuredBrands,
-          imageUrl: sampleListing?.photos[0]?.url ?? null,
-          href: params.toString() ? `/listings?${params.toString()}` : "/listings",
-        };
-      })
-    );
-
-    const fetchRegionalListings = async (city: string) =>
-      prisma.listing.findMany({
-        where: {
-          status: "APPROVED",
-          OR: [
-            { location: { contains: city, mode: "insensitive" } },
-            { seller: { locationCity: { contains: city, mode: "insensitive" } } },
-          ],
-        },
-        include: {
-          photos: {
-            orderBy: { order: "asc" },
-            take: 1,
-          },
-          seller: {
-            select: {
-              locationCity: true,
-              locationCountry: true,
-            },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-        take: 8,
-      });
-
-    const mapRegional = (rows: ListingWithRelations[]) =>
-      rows.map((listing) => {
-        const sellerLocation = listing.seller
-          ? [listing.seller.locationCity, listing.seller.locationCountry]
-              .filter(Boolean)
-              .join(", ")
-          : null;
-        const locationLabel = listing.location
-          ? listing.location
-          : sellerLocation || null;
-        return {
-          id: listing.id,
-          title: listing.title,
-          brand: listing.brand,
-          model: listing.model,
-          priceEurCents: listing.priceEurCents,
-          condition: listing.condition ?? null,
-          locationLabel,
-          createdAt: listing.createdAt.toISOString(),
-          photoUrl: listing.photos[0]?.url ?? null,
-        };
-      });
-
-    const preferredCity =
-      preferredLocation?.split(",")[0]?.trim() ?? null;
-
-    if (preferredCity) {
-      const rows = await fetchRegionalListings(preferredCity);
-      if (rows.length) {
-        regionalHighlights = mapRegional(rows);
-        regionalLabel = preferredCity;
-      }
-    }
-
-    if (!regionalHighlights.length) {
-      const topLocation = await prisma.listing.groupBy({
-        where: {
-          status: "APPROVED",
-          location: { not: null },
-        },
-        by: ["location"],
-        _count: { _all: true },
-        orderBy: {
-          _count: {
-            location: "desc",
-          },
-        },
-        take: 1,
-      });
-
-      const fallbackCity =
-        (topLocation[0]?.location ?? null) ||
-        recentRaw.find((listing) => listing.location)?.location ||
-        recentRaw.find((listing) => listing.seller?.locationCity)?.seller?.locationCity ||
-        null;
-
-      if (fallbackCity) {
-        const rows = await fetchRegionalListings(fallbackCity);
-        regionalHighlights = mapRegional(rows);
-        regionalLabel = fallbackCity;
-      }
-    }
   } catch (error: unknown) {
     console.error("Database error on homepage:", error);
     // Continue with whatever data was fetched
-  }
-
-  if (!priceSegmentsData.length) {
-    priceSegmentsData = PRICE_SEGMENTS.map((segment) => {
-      const params = new URLSearchParams(segment.query);
-      return {
-        id: segment.id,
-        title: segment.title,
-        subtitle: segment.subtitle,
-        description: segment.description,
-        listingsCount: 0,
-        featuredBrands: [],
-        imageUrl: null,
-        href: params.toString() ? `/listings?${params.toString()}` : "/listings",
-      };
-    });
   }
 
   const featuredListings = featuredRaw.map((listing) => ({
@@ -455,26 +226,16 @@ export default async function HomePage() {
     photoUrl: listing.photos[0]?.url,
   }));
 
-  if (!regionalHighlights.length && recentListings.length) {
-    regionalHighlights = recentListings.slice(0, 4).map((listing) => ({
-      id: listing.id,
-      title: listing.title,
-      brand: listing.brand,
-      model: listing.model,
-      priceEurCents: listing.priceEurCents,
-      condition: listing.condition,
-      locationLabel: listing.locationLabel,
-      createdAt: listing.createdAt,
-      photoUrl: listing.photos[0]?.url ?? null,
-    }));
-  }
-
-  if (!regionalLabel) {
-    regionalLabel =
-      preferredLocation?.split(",")[0]?.trim() ??
-      regionalHighlights[0]?.locationLabel ??
-      "Vaš region";
-  }
+  const paidListingsContent: PaidListing[] = featuredListings.slice(0, 6).map((listing) => ({
+    id: listing.id,
+    title: listing.title,
+    brand: listing.brand,
+    priceLabel: formatEuroFromCents(listing.priceEurCents) ?? "Cena na upit",
+    href: `/listing/${listing.id}`,
+    imageUrl: listing.photoUrl ?? null,
+    locationLabel: null,
+    sellerLabel: null,
+  }));
 
   return (
     <main>
@@ -484,12 +245,10 @@ export default async function HomePage() {
         totalSellers={totalSellers}
         userLocation={preferredLocation}
       />
-      <PopularBrands brands={brandCards} />
-      <RecentListings listings={recentListings} favoriteIds={favoriteListingIds} />
-      <PriceSegments segments={priceSegmentsData} />
-      <TrustSafetyHighlights />
+      <QuickFilterBar brands={availableBrands} />
+      <PaidListings listings={paidListingsContent} />
+      <TrustServices />
       <EducationHub />
-      <RegionalHighlights listings={regionalHighlights} regionLabel={regionalLabel} />
     </main>
   );
 }

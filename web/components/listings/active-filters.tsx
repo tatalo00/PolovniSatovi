@@ -13,17 +13,15 @@ interface ActiveFiltersProps {
 
 const conditionLabels: Record<string, string> = {
   New: "Novo",
-  "Like New": "Kao novo",
   Excellent: "Odlično",
-  "Very Good": "Vrlo dobro",
   Good: "Dobro",
-  Fair: "Zadovoljavajuće",
+  Fair: "Za servis",
 };
 
 const genderLabels: Record<string, string> = {
-  male: "Muški + uniseks",
-  female: "Ženski + uniseks",
-  unisex: "Uniseks",
+  MALE: "Muški",
+  FEMALE: "Ženski",
+  UNISEX: "Uniseks",
 };
 
 const boxLabels: Record<string, string> = {
@@ -34,6 +32,9 @@ const movementLabels: Record<string, string> = {
   Automatic: "Automatski",
   Manual: "Mehanički (ručno)",
   Quartz: "Kvarcni",
+  automatic: "Automatik",
+  mechanical: "Mehanički",
+  quartz: "Kvarc",
 };
 
 export function ActiveFilters({ searchParams }: ActiveFiltersProps) {
@@ -43,12 +44,25 @@ export function ActiveFilters({ searchParams }: ActiveFiltersProps) {
   const { start: startNavigation } = useNavigationFeedback();
 
   const activeFilters = useMemo(() => {
-    const result: Array<{ key: string; label: string; value: string }> = [];
+    const result: Array<{ key: string; label: string; value: string; rawValue?: string }> = [];
+
+    const params = new URLSearchParams(currentParamsString);
+
+    const getValues = (key: string): string[] => {
+      const values = params.getAll(key);
+      if (values.length) return values;
+      const fallback = searchParams[key as keyof typeof searchParams];
+      if (!fallback) return [];
+      return fallback
+        .split(",")
+        .map((value) => value.trim())
+        .filter(Boolean);
+    };
 
     const q = searchParams.q ?? searchParams.search;
-    const brand = searchParams.brand;
+    const brandValues = getValues("brand");
     const model = searchParams.model;
-    const cond = searchParams.cond ?? searchParams.condition;
+    const conditionValues = getValues("condition").concat(getValues("cond"));
     const min = searchParams.min ?? searchParams.minPrice;
     const max = searchParams.max ?? searchParams.maxPrice;
     const loc = searchParams.loc ?? searchParams.location;
@@ -56,7 +70,7 @@ export function ActiveFilters({ searchParams }: ActiveFiltersProps) {
     const gender = searchParams.gender;
     const box = searchParams.box;
     const verified = searchParams.verified;
-    const movement = searchParams.movement;
+    const movementValues = getValues("movement");
 
     if (q) {
       result.push({
@@ -66,11 +80,14 @@ export function ActiveFilters({ searchParams }: ActiveFiltersProps) {
       });
     }
 
-    if (brand) {
-      result.push({
-        key: "brand",
-        label: "Marka",
-        value: brand,
+    if (brandValues.length) {
+      brandValues.forEach((value, index) => {
+        result.push({
+          key: `brand`,
+          label: "Marka",
+          value,
+          rawValue: value,
+        });
       });
     }
 
@@ -82,11 +99,14 @@ export function ActiveFilters({ searchParams }: ActiveFiltersProps) {
       });
     }
 
-    if (cond) {
-      result.push({
-        key: "condition",
-        label: "Stanje",
-        value: conditionLabels[cond] || cond,
+    if (conditionValues.length) {
+      conditionValues.forEach((value) => {
+        result.push({
+          key: "condition",
+          label: "Stanje",
+          value: conditionLabels[value] || value,
+          rawValue: value,
+        });
       });
     }
 
@@ -120,11 +140,14 @@ export function ActiveFilters({ searchParams }: ActiveFiltersProps) {
       });
     }
 
-    if (movement) {
-      result.push({
-        key: "movement",
-        label: "Mehanizam",
-        value: movementLabels[movement] ?? movement,
+    if (movementValues.length) {
+      movementValues.forEach((value) => {
+        result.push({
+          key: "movement",
+          label: "Mehanizam",
+          value: movementLabels[value] ?? value,
+          rawValue: value,
+        });
       });
     }
 
@@ -158,44 +181,62 @@ export function ActiveFilters({ searchParams }: ActiveFiltersProps) {
     }
 
     return result;
-  }, [searchParams]);
+  }, [currentParamsString, searchParams]);
 
-  const removeFilter = useCallback((keyToRemove: string) => {
-    const params = new URLSearchParams(currentParamsString);
+  const removeFilter = useCallback(
+    (keyToRemove: string, valueToRemove?: string) => {
+      const params = new URLSearchParams(currentParamsString);
     
-    if (keyToRemove === "price") {
-      params.delete("min");
-      params.delete("minPrice");
-      params.delete("max");
-      params.delete("maxPrice");
-    } else if (keyToRemove === "q") {
-      params.delete("q");
-      params.delete("search");
-    } else if (keyToRemove === "condition") {
-      params.delete("cond");
-      params.delete("condition");
-    } else if (keyToRemove === "loc") {
-      params.delete("loc");
-      params.delete("location");
-    } else if (keyToRemove === "gender") {
-      params.delete("gender");
-    } else if (keyToRemove === "movement") {
-      params.delete("movement");
-    } else if (keyToRemove === "box") {
-      params.delete("box");
-    } else if (keyToRemove === "verified") {
-      params.delete("verified");
-    } else {
-      params.delete(keyToRemove);
-    }
+      const deleteMultiValue = (key: string, targetValue?: string) => {
+        if (!targetValue) {
+          params.delete(key);
+          return;
+        }
+        const values = params.getAll(key);
+        if (!values.length) return;
+        params.delete(key);
+        values
+          .filter((value) => value !== targetValue)
+          .forEach((value) => params.append(key, value));
+      };
     
-    params.delete("page"); // Reset to page 1 when filter changes
-    const queryString = params.toString();
-    startNavigation({ immediate: true });
-    router.replace(queryString ? `/listings?${queryString}` : "/listings", {
-      scroll: false,
-    });
-  }, [currentParamsString, router, startNavigation]);
+      if (keyToRemove === "price") {
+        params.delete("min");
+        params.delete("minPrice");
+        params.delete("max");
+        params.delete("maxPrice");
+      } else if (keyToRemove === "q") {
+        params.delete("q");
+        params.delete("search");
+      } else if (keyToRemove === "condition") {
+        deleteMultiValue("condition", valueToRemove);
+        deleteMultiValue("cond", valueToRemove);
+      } else if (keyToRemove === "loc") {
+        params.delete("loc");
+        params.delete("location");
+      } else if (keyToRemove === "gender") {
+        params.delete("gender");
+      } else if (keyToRemove === "movement") {
+        deleteMultiValue("movement", valueToRemove);
+      } else if (keyToRemove === "box") {
+        params.delete("box");
+      } else if (keyToRemove === "verified") {
+        params.delete("verified");
+      } else if (keyToRemove === "brand") {
+        deleteMultiValue("brand", valueToRemove);
+      } else {
+        params.delete(keyToRemove);
+      }
+    
+      params.delete("page"); // Reset to page 1 when filter changes
+      const queryString = params.toString();
+      startNavigation({ immediate: true });
+      router.replace(queryString ? `/listings?${queryString}` : "/listings", {
+        scroll: false,
+      });
+    },
+    [currentParamsString, router, startNavigation]
+  );
 
   const clearAllFilters = useCallback(() => {
     startNavigation({ immediate: true });
@@ -223,7 +264,7 @@ export function ActiveFilters({ searchParams }: ActiveFiltersProps) {
                 {filter.label}: {filter.value}
               </span>
               <button
-                onClick={() => removeFilter(filter.key)}
+                onClick={() => removeFilter(filter.key, filter.rawValue)}
                 className="ml-1 rounded-full hover:bg-muted-foreground/20"
                 aria-label={`Ukloni filter ${filter.label}`}
               >
@@ -235,7 +276,7 @@ export function ActiveFilters({ searchParams }: ActiveFiltersProps) {
         
         return (
           <Badge
-            key={filter.key}
+            key={`${filter.key}-${filter.rawValue ?? filter.value}`}
             variant="secondary"
             className="gap-1 px-2 py-1 text-sm"
           >

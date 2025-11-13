@@ -20,6 +20,8 @@ async function main() {
       role: "SELLER",
       locationCountry: "RS",
       locationCity: "Beograd",
+      isVerified: true,
+      emailVerified: new Date(),
       sellerProfile: {
         upsert: {
           update: {
@@ -43,6 +45,8 @@ async function main() {
       role: "SELLER",
       locationCountry: "RS",
       locationCity: "Beograd",
+      isVerified: true,
+      emailVerified: new Date(),
       sellerProfile: {
         create: {
           storeName: "MVP Watch Boutique",

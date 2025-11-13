@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { emailSchema } from "@/lib/validation";
+import { cn } from "@/lib/utils";
 
 const forgotPasswordSchema = z.object({
   email: emailSchema,
@@ -17,7 +18,7 @@ const forgotPasswordSchema = z.object({
 
 type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 
-export function ForgotPasswordForm() {
+export function ForgotPasswordForm({ className }: { className?: string } = {}) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -59,19 +60,21 @@ export function ForgotPasswordForm() {
 
   if (success) {
     return (
-      <div className="rounded-md bg-green-50 p-4 text-green-800">
-        <p className="font-medium">Email je poslat!</p>
-        <p className="text-sm mt-2">
-          Proverite vašu email adresu. Ako postoji nalog sa tim emailom, poslat će vam se link za resetovanje šifre.
+      <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-6 text-emerald-800 shadow-sm">
+        <p className="text-base font-semibold">Email je poslat!</p>
+        <p className="mt-2 text-sm">
+          Proverite svoju email adresu. Ako nalog postoji, poslaćemo vam link za resetovanje šifre.
         </p>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className={cn("space-y-5", className)}>
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email" className="text-sm font-medium text-neutral-800">
+          Email adresa
+        </Label>
         <Input
           id="email"
           type="email"
@@ -79,13 +82,18 @@ export function ForgotPasswordForm() {
           placeholder="email@example.com"
           disabled={loading}
           required
+          className="h-12 rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
         />
         {errors.email && (
           <p className="text-sm text-destructive">{errors.email.message}</p>
         )}
       </div>
 
-      <Button type="submit" className="w-full" disabled={loading}>
+      <Button
+        type="submit"
+        className="mt-2 h-12 w-full rounded-xl bg-neutral-900 text-base font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed"
+        disabled={loading}
+      >
         {loading ? "Slanje..." : "Pošalji link za resetovanje"}
       </Button>
     </form>

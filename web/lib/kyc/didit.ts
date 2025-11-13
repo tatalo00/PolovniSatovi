@@ -10,7 +10,7 @@ interface DiditConfig {
   defaultCallbackUrl?: string | null;
 }
 
-interface CreateVerificationLinkPayload {
+interface CreateAuthenticationSessionPayload {
   referenceId: string;
   workflowId?: string;
   callbackUrl?: string | null;
@@ -55,8 +55,8 @@ export class DiditClient {
     }
   }
 
-  async createVerificationLink(
-    payload: CreateVerificationLinkPayload
+  async createAuthenticationSession(
+    payload: CreateAuthenticationSessionPayload
   ): Promise<DiditLinkResponse> {
     const baseUrl = this.config.baseUrl.replace(/\/$/, "");
 

@@ -4,6 +4,7 @@ import { PriceDisplay } from "@/components/currency/price-display";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ContactSellerForm } from "@/components/listings/contact-seller-form";
 import { ReportListingForm } from "@/components/listings/report-listing-form";
+import { ShieldCheck, UserCheck } from "lucide-react";
 
 interface ListingContactCardProps {
   priceEurCents: number;
@@ -15,6 +16,7 @@ interface ListingContactCardProps {
   showReport?: boolean;
   className?: string;
   isSold?: boolean;
+  sellerBadge?: { label: string; type: "verified" | "authenticated" } | null;
 }
 
 export function ListingContactCard({
@@ -27,6 +29,7 @@ export function ListingContactCard({
   showReport = true,
   className,
   isSold = false,
+  sellerBadge,
 }: ListingContactCardProps) {
   const contactDisabled = isOwner || isSold;
 
@@ -39,6 +42,16 @@ export function ListingContactCard({
         <CardTitle className="text-2xl md:text-3xl">
           <PriceDisplay amountEurCents={priceEurCents} showSwitcher />
         </CardTitle>
+        {sellerBadge && (
+          <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-neutral-200/70 bg-white/80 px-3 py-1 text-xs font-semibold text-neutral-700">
+            {sellerBadge.type === "verified" ? (
+              <ShieldCheck className="h-3.5 w-3.5 text-[#D4AF37]" aria-hidden />
+            ) : (
+              <UserCheck className="h-3.5 w-3.5 text-neutral-900" aria-hidden />
+            )}
+            <span>{sellerBadge.label}</span>
+          </div>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
         {isOwner ? (
