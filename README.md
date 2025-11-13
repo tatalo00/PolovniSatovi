@@ -43,7 +43,7 @@ See `VERCEL_DEPLOYMENT_CHECKLIST.md` for quick reference.
 - **Styling**: Tailwind CSS
 - **UI Components**: shadcn/ui
 - **Storage**: Supabase Storage
-- **Email**: Resend
+- **Email**: Brevo
 
 ## Project Structure
 

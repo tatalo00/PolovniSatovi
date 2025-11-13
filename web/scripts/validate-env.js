@@ -85,8 +85,19 @@ const checks = {
   'NEXT_PUBLIC_SUPABASE_URL': check('NEXT_PUBLIC_SUPABASE_URL', process.env.NEXT_PUBLIC_SUPABASE_URL, true, validateUrl),
   'NEXT_PUBLIC_SUPABASE_ANON_KEY': check('NEXT_PUBLIC_SUPABASE_ANON_KEY', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, true),
   
-  // Optional - Email (Resend)
-  'RESEND_API_KEY': check('RESEND_API_KEY', process.env.RESEND_API_KEY, false, validateEmailService),
+  // Required - Didit KYC (hosted flow)
+  'DIDIT_API_KEY': check('DIDIT_API_KEY', process.env.DIDIT_API_KEY, true),
+  'DIDIT_WORKFLOW_ID': check('DIDIT_WORKFLOW_ID', process.env.DIDIT_WORKFLOW_ID, true),
+  'DIDIT_WEBHOOK_SECRET': check('DIDIT_WEBHOOK_SECRET', process.env.DIDIT_WEBHOOK_SECRET, true),
+  'DIDIT_BASE_URL': check('DIDIT_BASE_URL', process.env.DIDIT_BASE_URL ?? 'https://api.getdidit.com', true, validateUrl),
+
+  // Optional - Didit redirect overrides
+  'DIDIT_SUCCESS_REDIRECT': check('DIDIT_SUCCESS_REDIRECT', process.env.DIDIT_SUCCESS_REDIRECT, false, validateUrl),
+  'DIDIT_FAILURE_REDIRECT': check('DIDIT_FAILURE_REDIRECT', process.env.DIDIT_FAILURE_REDIRECT, false, validateUrl),
+  'DIDIT_CALLBACK_URL': check('DIDIT_CALLBACK_URL', process.env.DIDIT_CALLBACK_URL, false, validateUrl),
+
+  // Optional - Email (Brevo)
+  'BREVO_API_KEY': check('BREVO_API_KEY', process.env.BREVO_API_KEY, false, validateEmailService),
 };
 
 let hasErrors = false;

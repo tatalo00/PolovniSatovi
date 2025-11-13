@@ -129,17 +129,6 @@ export function ListingContent({
     });
   };
 
-  const handleColumnsChange = (columnCount: number) => {
-    const params = buildSearchParams();
-    params.set("cols", columnCount.toString());
-    params.delete("page");
-    const queryString = params.toString();
-    startNavigation({ immediate: true });
-    router.replace(queryString ? `/listings?${queryString}` : "/listings", {
-      scroll: false,
-    });
-  };
-
   const buildPageUrl = (page: number) => {
     const params = buildSearchParams();
     params.set("page", page.toString());
@@ -153,45 +142,21 @@ export function ListingContent({
         <p className="text-sm text-muted-foreground">
           Pronađeno {total} oglasa · {perPage} po stranici
         </p>
-        <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
-          <div className="flex items-center gap-2">
-            <span className="text-sm">Prikaz:</span>
-            <div className="inline-flex rounded-md border border-input bg-background p-1 text-sm shadow-sm">
-              {[3, 4, 5].map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => handleColumnsChange(option)}
-                  className={`rounded-sm px-3 py-1 transition ${
-                    columns === option
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-muted"
-                  }`}
-                  aria-pressed={columns === option}
-                >
-                  {option} u redu
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <label htmlFor="sort" className="text-sm">
-              Sortiraj:
-            </label>
-            <select
-              id="sort"
-              value={searchParams.sort || "newest"}
-              className="rounded-md border border-input bg-background px-3 py-1 text-sm"
-              onChange={(e) => handleSortChange(e.target.value)}
-            >
-              <option value="newest">Najnoviji</option>
-              <option value="oldest">Najstariji</option>
-              <option value="price-asc">Cena: najniža</option>
-              <option value="price-desc">Cena: najviša</option>
-              <option value="year-desc">Godina: najnovija</option>
-              <option value="year-asc">Godina: najstarija</option>
-            </select>
-          </div>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <label htmlFor="sort" className="text-sm">
+            Sortiraj:
+          </label>
+          <select
+            id="sort"
+            value={searchParams.sort || "price-asc"}
+            className="rounded-md border border-input bg-background px-3 py-1 text-sm"
+            onChange={(e) => handleSortChange(e.target.value)}
+          >
+            <option value="price-asc">Cena: najniža</option>
+            <option value="price-desc">Cena: najviša</option>
+            <option value="year-desc">Godina: najnovija</option>
+            <option value="year-asc">Godina: najstarija</option>
+          </select>
         </div>
       </div>
 

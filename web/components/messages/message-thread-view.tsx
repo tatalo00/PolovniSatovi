@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -52,31 +52,30 @@ export function MessageThreadView({ threadId }: MessageThreadViewProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
-  const currentUserId = (session?.user as any)?.id;
+  const currentUserId = session?.user && "id" in session.user ? (session.user as { id: string }).id : undefined;
 
-  useEffect(() => {
-    fetchThread();
-    // Poll for new messages every 5 seconds
-    const interval = setInterval(fetchThread, 5000);
-    return () => clearInterval(interval);
-  }, [threadId]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [thread?.messages]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  const fetchThread = async () => {
+  const fetchThread = useCallback(async () => {
     try {
       const response = await fetch(`/api/messages/threads/${threadId}`);
       if (response.ok) {
         const data = await response.json();
-        setThread(data);
+        setThread((prev) => {
+          const prevLastId = prev?.messages.at(-1)?.id;
+          const nextLastId = data.messages.at(-1)?.id;
+          const shouldScroll =
+            !prev?.messages.length ||
+            prevLastId !== nextLastId ||
+            messagesEndRef.current === document.activeElement;
 
-        // Mark messages as read
+          if (shouldScroll) {
+            requestAnimationFrame(() => {
+              messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+            });
+          }
+
+          return data;
+        });
+
         if (currentUserId) {
           fetch(`/api/messages/threads/${threadId}/read`, {
             method: "POST",
@@ -88,7 +87,22 @@ export function MessageThreadView({ threadId }: MessageThreadViewProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUserId, threadId]);
+
+  useEffect(() => {
+    fetchThread();
+    const interval = setInterval(fetchThread, 10000);
+    return () => clearInterval(interval);
+  }, [fetchThread]);
+
+  useEffect(() => {
+    if (!thread?.messages.length) return;
+    messagesEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+  }, [thread?.messages]);
+
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, []);
 
   const handleMessageSent = () => {
     fetchThread();

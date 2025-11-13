@@ -6,33 +6,7 @@ import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
-import {
-  MIN_LISTING_PHOTOS,
-  MAX_LISTING_PHOTOS,
-} from "@/lib/listing-constants";
-
-const listingUpdateSchema = z.object({
-  title: z.string().min(5).optional(),
-  brand: z.string().min(2).optional(),
-  model: z.string().min(2).optional(),
-  reference: z.string().optional(),
-  year: z.number().nullable().optional(),
-  caseDiameterMm: z.number().int().positive().nullable().optional(),
-  caseMaterial: z.string().optional(),
-  movement: z.string().optional(),
-  condition: z.string().min(1).optional(),
-  priceEurCents: z.number().int().positive().optional(),
-  currency: z.string().optional(),
-  boxPapers: z.string().optional(),
-  description: z.string().optional(),
-  location: z.string().optional(),
-  photos: z
-    .array(z.string().url())
-    .min(MIN_LISTING_PHOTOS, `Oglas mora imati najmanje ${MIN_LISTING_PHOTOS} fotografije`)
-    .max(MAX_LISTING_PHOTOS, `Oglas može imati najviše ${MAX_LISTING_PHOTOS} fotografija`)
-    .optional(),
-  status: z.nativeEnum(ListingStatus).optional(),
-});
+import { listingUpdateSchema } from "@/lib/validation/listing";
 
 // GET - Get single listing
 export async function GET(
@@ -110,7 +84,11 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const validation = listingUpdateSchema.safeParse(body);
+    const validation = listingUpdateSchema
+      .extend({
+        status: z.nativeEnum(ListingStatus).optional(),
+      })
+      .safeParse(body);
 
     if (validation.success == false) {
       const issue = validation.error.issues[0];
@@ -138,6 +116,7 @@ export async function PATCH(
       updateData.movement = data.movement?.trim() || null;
     if (data.condition !== undefined) updateData.condition = data.condition;
     if (data.priceEurCents !== undefined) updateData.priceEurCents = data.priceEurCents;
+    if (data.gender !== undefined) updateData.gender = data.gender;
     if (data.currency !== undefined) updateData.currency = data.currency;
     if (data.boxPapers !== undefined) updateData.boxPapers = data.boxPapers || null;
     if (data.description !== undefined) updateData.description = data.description || null;

@@ -1,7 +1,15 @@
 import { redirect } from "next/navigation";
+
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { ListingForm } from "@/components/listings/listing-form";
+import {
+  BOX_PAPERS_VALUES,
+  CONDITION_VALUES,
+  SUPPORTED_CURRENCIES,
+} from "@/lib/validation/listing";
+
+type ListingFormInput = NonNullable<Parameters<typeof ListingForm>[0]["listing"]>;
 
 export const metadata = {
   title: "Izmeni Oglas",
@@ -20,8 +28,7 @@ export default async function EditListingPage({
     redirect("/auth/signin");
   }
 
-  const userId = (session.user as any).id;
-  const role = (session.user as any).role;
+  const { id: userId, role } = session.user;
 
   // Fetch listing
   const listing = await prisma.listing.findUnique({
@@ -36,6 +43,14 @@ export default async function EditListingPage({
   if (!listing) {
     redirect("/dashboard/listings");
   }
+
+  const listingForForm: ListingFormInput = {
+    ...listing,
+    condition: listing.condition as (typeof CONDITION_VALUES)[number],
+    currency: listing.currency as (typeof SUPPORTED_CURRENCIES)[number],
+    boxPapers: listing.boxPapers as (typeof BOX_PAPERS_VALUES)[number] | null,
+    photos: listing.photos.map((photo) => ({ url: photo.url })),
+  };
 
   // Check ownership or admin
   if (listing.sellerId !== userId && role !== "ADMIN") {
@@ -52,7 +67,7 @@ export default async function EditListingPage({
           </p>
         </div>
 
-        <ListingForm listing={listing} />
+        <ListingForm listing={listingForForm} />
       </div>
     </main>
   );

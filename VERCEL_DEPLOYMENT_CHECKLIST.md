@@ -22,7 +22,7 @@ Add these variables:
 | `AUTH_SECRET` | Same as NEXTAUTH_SECRET | Same as above |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | `https://xxxxx.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` |
-| `RESEND_API_KEY` | Resend API key | `re_xxxxx` |
+| `BREVO_API_KEY` | Brevo API key | `brevo_xxxxx` |
 
 ### 3. Generate Secrets
 

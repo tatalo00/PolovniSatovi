@@ -6,6 +6,7 @@ export interface ListingSummary {
   reference: string | null;
   year: number | null;
   condition: string | null;
+  gender?: "MALE" | "FEMALE" | "UNISEX";
   priceEurCents: number;
   location: string | null;
   boxPapers?: string | null;
@@ -15,6 +16,8 @@ export interface ListingSummary {
     email: string;
     locationCity: string | null;
     locationCountry: string | null;
+    isVerified?: boolean | null;
+    isAuthenticated?: boolean | null;
   } | null;
   status?: string;
   favoritedAt?: Date;

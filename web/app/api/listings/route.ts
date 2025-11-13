@@ -1,36 +1,13 @@
 import "server-only";
 
 import { NextRequest, NextResponse } from "next/server";
-import { ListingStatus, Prisma } from "@prisma/client";
+import { Gender, ListingStatus, Prisma } from "@prisma/client";
+import { z } from "zod";
+
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
-import { z } from "zod";
-import {
-  MIN_LISTING_PHOTOS,
-  MAX_LISTING_PHOTOS,
-} from "@/lib/listing-constants";
-
-const listingCreateSchema = z.object({
-  title: z.string().min(5, "Naziv mora imati najmanje 5 karaktera"),
-  brand: z.string().min(2, "Marka je obavezna"),
-  model: z.string().min(2, "Model je obavezan"),
-  reference: z.string().optional(),
-  year: z.number().nullable().optional(),
-  caseDiameterMm: z.number().int().positive().nullable().optional(),
-  caseMaterial: z.string().optional(),
-  movement: z.string().optional(),
-  condition: z.string().min(1, "Stanje je obavezno"),
-  priceEurCents: z.number().int().positive("Cena mora biti pozitivan broj"),
-  currency: z.string().default("EUR"),
-  boxPapers: z.string().optional(),
-  description: z.string().optional(),
-  location: z.string().optional(),
-  photos: z
-    .array(z.string().url())
-    .min(MIN_LISTING_PHOTOS, `Oglas mora imati najmanje ${MIN_LISTING_PHOTOS} fotografije`)
-    .max(MAX_LISTING_PHOTOS, `Oglas može imati najviše ${MAX_LISTING_PHOTOS} fotografija`),
-});
+import { listingCreateSchema } from "@/lib/validation/listing";
 
 // GET - List all listings (with filters for approved only)
 export async function GET(request: NextRequest) {
@@ -53,7 +30,11 @@ export async function GET(request: NextRequest) {
     const min = searchParams.get("min") ?? searchParams.get("minPrice") ?? undefined;
     const max = searchParams.get("max") ?? searchParams.get("maxPrice") ?? undefined;
     const year = searchParams.get("year") ?? undefined;
+    const movement = searchParams.get("movement") ?? undefined;
     const loc = searchParams.get("loc") ?? searchParams.get("location") ?? undefined;
+    const box = searchParams.get("box") ?? undefined;
+    const verified = searchParams.get("verified") ?? undefined;
+    const genderParam = searchParams.get("gender") ?? undefined;
     const pageParam = parseInt(searchParams.get("page") ?? "1", 10);
     const limitParam = parseInt(searchParams.get("limit") ?? "20", 10);
 
@@ -80,6 +61,10 @@ export async function GET(request: NextRequest) {
 
     if (model) {
       where.model = { contains: model, mode: "insensitive" };
+    }
+
+    if (movement) {
+      where.movement = { contains: movement, mode: "insensitive" };
     }
 
     if (cond) {
@@ -130,6 +115,41 @@ export async function GET(request: NextRequest) {
       ];
     }
 
+    if (genderParam) {
+      const normalizedGender = genderParam.trim().toUpperCase();
+      if (normalizedGender === Gender.MALE || normalizedGender === Gender.FEMALE) {
+        where.gender = { in: [normalizedGender as Gender, Gender.UNISEX] };
+      } else if (normalizedGender === Gender.UNISEX) {
+        where.gender = { equals: Gender.UNISEX };
+      }
+    }
+
+    if (box) {
+      const normalizedBox = box.trim().toLowerCase();
+      if (normalizedBox === "full") {
+        where.boxPapers = { not: null };
+      }
+    }
+
+    if (verified) {
+      const normalizedVerified = verified.trim().toLowerCase();
+      if (["1", "true", "yes"].includes(normalizedVerified)) {
+        const existingAnd = Array.isArray(where.AND)
+          ? where.AND
+          : where.AND
+          ? [where.AND]
+          : [];
+        where.AND = [
+          ...existingAnd,
+          {
+            seller: {
+              isVerified: true,
+            },
+          },
+        ];
+      }
+    }
+
     const [listings, total] = await Promise.all([
       prisma.listing.findMany({
         where,
@@ -164,8 +184,9 @@ export async function GET(request: NextRequest) {
         totalPages: Math.ceil(total / limit) || 1,
       },
     });
-  } catch (error: any) {
-    logger.error("Error fetching listings", { error: error.message });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    logger.error("Error fetching listings", { error: message });
     return NextResponse.json(
       { error: "Došlo je do greške pri učitavanju oglasa" },
       { status: 500 }
@@ -177,7 +198,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: Request) {
   try {
     const user = await requireAuth();
-    const userId = (user as any).id;
+    const userId = user.id;
 
     const body = await request.json();
     const validation = listingCreateSchema.safeParse(body);
@@ -206,6 +227,7 @@ export async function POST(request: Request) {
         caseMaterial: data.caseMaterial?.trim() || null,
         movement: data.movement?.trim() || null,
         condition: data.condition,
+        gender: data.gender,
         priceEurCents: data.priceEurCents,
         currency: data.currency || "EUR",
         boxPapers: data.boxPapers || null,
@@ -234,9 +256,13 @@ export async function POST(request: Request) {
     logger.info("Listing created", { listingId: listing.id, userId });
 
     return NextResponse.json(listing, { status: 201 });
-  } catch (error: any) {
-    logger.error("Error creating listing:", error);
-    if (error.message === "Unauthorized") {
+  } catch (error: unknown) {
+    const errorContext =
+      error instanceof Error
+        ? { message: error.message, stack: error.stack }
+        : { error };
+    logger.error("Error creating listing:", errorContext);
+    if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json(
         { error: "Morate biti prijavljeni" },
         { status: 401 }
@@ -250,9 +276,7 @@ export async function POST(request: Request) {
           : issue.message;
       return NextResponse.json({ error: message }, { status: 400 });
     }
-    return NextResponse.json(
-      { error: error.message || "Došlo je do greške pri kreiranju oglasa" },
-      { status: 500 }
-    );
+    const message = error instanceof Error ? error.message : "Došlo je do greške pri kreiranju oglasa";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

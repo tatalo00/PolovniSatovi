@@ -8,7 +8,7 @@ import { z } from "zod";
 
 const suggestSchema = z.object({
   type: z.enum(["brand", "model"]),
-  q: z.string().trim().min(1).max(50),
+  q: z.string().trim().min(0).max(50),
   brand: z
     .string()
     .trim()
@@ -33,27 +33,93 @@ export async function GET(request: NextRequest) {
     }
 
     const { type, q, brand } = parsed.data;
+    const query = q.trim();
     const where: Prisma.ListingWhereInput = {
       status: "APPROVED",
     };
+    const detail = params.get("detail") === "1" || params.get("detail") === "true";
 
     if (type === "brand") {
-      where.brand = { contains: q, mode: "insensitive" };
+      if (query) {
+        where.brand = { contains: query, mode: "insensitive" };
+      }
+
+      if (detail) {
+        const results = await prisma.listing.groupBy({
+          by: ["brand"],
+          where,
+          _count: { _all: true },
+          _avg: { priceEurCents: true },
+          _min: { priceEurCents: true },
+          orderBy: {
+            _count: {
+              brand: "desc",
+            },
+          },
+          take: 10,
+        });
+
+        return NextResponse.json(
+          results
+            .filter((row) => row.brand)
+            .map((row) => ({
+              id: `brand:${row.brand}`,
+              label: row.brand!,
+              type: "brand" as const,
+              avgPriceEurCents: row._avg.priceEurCents,
+              listingsCount: row._count._all,
+            }))
+        );
+      }
 
       const results = await prisma.listing.findMany({
         where,
         select: { brand: true },
         distinct: ["brand"],
         orderBy: { brand: "asc" },
-        take: 10,
+        take: 250,
       });
 
       return NextResponse.json(results.map((row) => row.brand).filter(Boolean));
     }
 
-    where.model = { contains: q, mode: "insensitive" };
+    if (query) {
+      where.model = { contains: query, mode: "insensitive" };
+    } else {
+      where.model = { not: "" };
+      where.model = { not: undefined };
+    }
     if (brand) {
       where.brand = { contains: brand, mode: "insensitive" };
+    }
+
+    if (detail) {
+      const results = await prisma.listing.groupBy({
+        by: ["model", "brand"],
+        where,
+        _count: { _all: true },
+        _avg: { priceEurCents: true },
+        _min: { priceEurCents: true },
+        orderBy: {
+          _count: {
+            model: "desc",
+          },
+        },
+        take: 25,
+      });
+
+      return NextResponse.json(
+        results
+          .filter((row) => row.model)
+          .map((row) => ({
+            id: `model:${row.brand ?? "unknown"}:${row.model}`,
+            label: row.model!,
+            type: "model" as const,
+            secondary: row.brand,
+            avgPriceEurCents: row._avg.priceEurCents,
+            listingsCount: row._count._all,
+          }))
+      );
     }
 
     const results = await prisma.listing.findMany({
@@ -61,7 +127,7 @@ export async function GET(request: NextRequest) {
       select: { model: true },
       distinct: ["model"],
       orderBy: { model: "asc" },
-      take: 10,
+      take: 250,
     });
 
     return NextResponse.json(results.map((row) => row.model).filter(Boolean));

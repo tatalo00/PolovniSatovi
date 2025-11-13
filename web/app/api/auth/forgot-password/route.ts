@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     logger.warn("Rate limit exceeded for forgot password");
     return NextResponse.json(
       { error: "Previše pokušaja. Pokušajte ponovo kasnije." },
-      { 
+      {
         status: 429,
         headers: {
           "Retry-After": Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000).toString(),
@@ -44,9 +44,14 @@ export async function POST(request: Request) {
 
     const { email } = validation.data;
 
-    // Find user by email
+    // Find user by email (select only needed fields to avoid schema drift issues)
     const user = await prisma.user.findUnique({
       where: { email },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+      },
     });
 
     // Don't reveal if user exists or not (security best practice)
@@ -74,9 +79,9 @@ export async function POST(request: Request) {
 
       if (!emailResult.success) {
         // Log email error but don't reveal to user (security)
-        logger.error("Failed to send password reset email", { 
-          userId: user.id, 
-          error: emailResult.error 
+        logger.error("Failed to send password reset email", {
+          userId: user.id,
+          error: emailResult.error,
         });
         // Still return success to prevent email enumeration
       } else {

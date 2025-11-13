@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { AdminDashboard } from "@/components/admin/admin-dashboard";
@@ -16,7 +15,6 @@ export default async function AdminPage() {
     where: { status: "PENDING" },
   });
 
-  // Get open reports count
   const openReportsCount = await prisma.report.count({
     where: { status: "OPEN" },
   });

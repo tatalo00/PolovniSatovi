@@ -29,6 +29,7 @@ model User {
   role                  UserRole  @default(BUYER)
   locale                String?   @db.VarChar(8)
   phoneVerified         Boolean   @default(false)
+  isVerified            Boolean   @default(false)
   locationCountry       String?
   locationCity          String?
   createdAt             DateTime  @default(now())
@@ -46,6 +47,7 @@ model User {
   reviews       Review[] @relation("reviews")
   sellerReviews Review[] @relation("sellerReviews")
   listingStatusAudits ListingStatusAudit[]
+  authentication  UserAuthentication?
 }
 
 enum UserRole {
@@ -75,6 +77,7 @@ model Listing {
   reference    String?
   year         Int?
   condition    String
+  gender       Gender       @default(UNISEX)
   priceEurCents Int
   currency     String       @default("EUR")
   boxPapers    String?
@@ -100,6 +103,12 @@ model Listing {
   @@index([status])
   @@index([priceEurCents])
   @@index([createdAt])
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  UNISEX
 }
 
 enum ListingStatus {
@@ -186,6 +195,29 @@ model Favorite {
   createdAt DateTime @default(now())
 
   @@unique([userId, listingId])
+}
+
+model UserAuthentication {
+  id                       String                   @id @default(cuid())
+  userId                   String                   @unique
+  user                     User                     @relation(fields: [userId], references: [id])
+  status                   UserAuthenticationStatus @default(PENDING)
+  diditSessionId           String
+  diditVerificationId      String?
+  diditSessionUrl          String?
+  rejectionReason          String?
+  statusDetail             String?
+  createdAt                DateTime                 @default(now())
+  updatedAt                DateTime                 @updatedAt
+
+  @@index([status])
+}
+
+enum UserAuthenticationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELED
 }
 
 model Review {

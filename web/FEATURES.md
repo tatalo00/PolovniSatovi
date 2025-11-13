@@ -192,12 +192,13 @@ PolovniSatovi is a multi-seller marketplace for buying and selling used and vint
 
 ### 10. Email Notifications
 
-#### Resend Integration
-- Transactional email service
+#### Brevo Integration
+- Transactional email service (via SMTP API)
 - Email Types:
   - **Contact Seller**: Notifies seller when buyer contacts them
   - **Listing Status**: Notifies seller when listing is approved/rejected
   - **Welcome Email**: Sent to new users (future feature)
+  - **Password Reset**: Secure reset links with 1 hour expiry
 
 #### Email Features
 - HTML email templates
@@ -296,7 +297,7 @@ PolovniSatovi is a multi-seller marketplace for buying and selling used and vint
 
 ### Services
 - **Cloudinary**: Image hosting and optimization
-- **Resend**: Email delivery
+- **Brevo**: Email delivery
 - **Supabase**: PostgreSQL hosting
 
 ### Development Tools
@@ -428,7 +429,7 @@ CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
 
 # Email
-RESEND_API_KEY=
+BREVO_API_KEY=
 ```
 
 ## Development Setup

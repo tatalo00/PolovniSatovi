@@ -1,108 +1,254 @@
+import type { Listing, ListingPhoto, Prisma } from "@prisma/client";
+
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Hero } from "@/components/home/hero";
-import { PopularBrands } from "@/components/home/popular-brands";
-import { RecentListings } from "@/components/home/recent-listings";
-import { Card, CardContent } from "@/components/ui/card";
-import { POPULAR_BRAND_NAMES } from "@/lib/brands";
+import type { PaidListing } from "@/components/home/featured-collections";
+import { QuickFilterBar } from "@/components/home/quick-filter-bar";
+import { PaidListings } from "@/components/home/featured-collections";
+import { TrustServices } from "@/components/home/trust-services";
+import { EducationHub } from "@/components/home/education-hub";
 
 // Force dynamic rendering to avoid build-time database queries
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
+
+type ListingWithRelations = Listing & {
+  photos: ListingPhoto[];
+  seller: {
+    locationCity: string | null;
+    locationCountry: string | null;
+  } | null;
+};
+const PRICE_SEGMENTS = [
+  {
+    id: "budget",
+    title: "Budget Collectors",
+    subtitle: "Ispod €500",
+    description: "Savršeno za početnike i vintage istraživače.",
+    min: 0,
+    max: 500,
+    query: { max: "500" },
+  },
+  {
+    id: "mid-range",
+    title: "Mid-Range Enthusiasts",
+    subtitle: "€500 – €2.000",
+    description: "Kultni modeli i pouzdani automatski satovi.",
+    min: 500,
+    max: 2000,
+    query: { min: "500", max: "2000" },
+  },
+  {
+    id: "serious",
+    title: "Serious Collectors",
+    subtitle: "€2.000 – €5.000",
+    description: "Premijum švajcarske kuće i limitirane serije.",
+    min: 2000,
+    max: 5000,
+    query: { min: "2000", max: "5000" },
+  },
+  {
+    id: "luxury",
+    title: "Luxury Segment",
+    subtitle: "€5.000+",
+    description: "Komplikacije, retki vintage i investicioni komadi.",
+    min: 5000,
+    max: undefined,
+    query: { min: "5000" },
+  },
+] as const;
+
+const EURO_FORMATTER = new Intl.NumberFormat("sr-RS", {
+  style: "currency",
+  currency: "EUR",
+  maximumFractionDigits: 0,
+});
+
+const formatEuroFromCents = (value?: number | null) => {
+  if (typeof value !== "number" || Number.isNaN(value) || value <= 0) {
+    return null;
+  }
+  return EURO_FORMATTER.format(value / 100);
+};
 
 export default async function HomePage() {
-  // Fetch data with error handling
-  let recentListings: any[] = [];
-  let brands: any[] = [];
+  let featuredRaw: ListingWithRelations[] = [];
+  let recentRaw: ListingWithRelations[] = [];
   let totalListings = 0;
   let totalSellers = 0;
+  let preferredLocation: string | null = null;
+  let recentListings: Array<{
+    id: string;
+    title: string;
+    brand: string;
+    model: string;
+    reference: string | null;
+    priceEurCents: number;
+    condition: string | null;
+    locationLabel: string | null;
+    createdAt: string;
+    photos: Array<{ url: string }>;
+  }> = [];
+  let favoriteListingIds: string[] = [];
+  let availableBrands: string[] = [];
+  const session = await auth();
 
   try {
-    recentListings = await prisma.listing.findMany({
-      where: { status: "APPROVED" },
-      include: {
-        photos: {
-          orderBy: { order: "asc" },
-          take: 1,
+    if (session?.user?.id) {
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: {
+          locationCity: true,
+          locationCountry: true,
         },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 12,
-    });
+      });
+      if (user?.locationCity) {
+        preferredLocation = user.locationCountry
+          ? `${user.locationCity}, ${user.locationCountry}`
+          : user.locationCity;
+      }
+    }
 
-    brands = await prisma.listing.findMany({
-      where: { status: "APPROVED" },
-      select: { brand: true },
-      distinct: ["brand"],
-      orderBy: { brand: "asc" },
-    });
+    const favoritesPromise = session?.user?.id
+      ? prisma.favorite.findMany({
+          where: { userId: session.user.id },
+          select: { listingId: true },
+        })
+      : Promise.resolve([]);
 
-    [totalListings, totalSellers] = await Promise.all([
-      prisma.listing.count({
+    const [featuredResult, recentResult, counts, favorites, distinctBrands] = await Promise.all([
+      prisma.listing.findMany({
         where: { status: "APPROVED" },
-      }),
-      prisma.user.count({
-        where: {
-          listings: {
-            some: {
-              status: "APPROVED",
+        include: {
+          photos: {
+            orderBy: { order: "asc" },
+            take: 1,
+          },
+          seller: {
+            select: {
+              locationCity: true,
+              locationCountry: true,
             },
           },
         },
+        orderBy: [
+          { priceEurCents: "desc" },
+          { createdAt: "desc" },
+        ],
+        take: 5,
+      }),
+      prisma.listing.findMany({
+        where: { status: "APPROVED" },
+        include: {
+          photos: {
+            orderBy: { order: "asc" },
+            take: 1,
+          },
+          seller: {
+            select: {
+              locationCity: true,
+              locationCountry: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 12,
+      }),
+      Promise.all([
+        prisma.listing.count({
+          where: { status: "APPROVED" },
+        }),
+        prisma.user.count({
+          where: {
+            listings: {
+              some: {
+                status: "APPROVED",
+              },
+            },
+          },
+        }),
+      ]),
+      favoritesPromise,
+      prisma.listing.findMany({
+        where: {
+          status: "APPROVED",
+        },
+        distinct: ["brand"],
+        select: { brand: true },
       }),
     ]);
-  } catch (error: any) {
+
+    featuredRaw = featuredResult;
+    recentRaw = recentResult;
+    [totalListings, totalSellers] = counts;
+    favoriteListingIds = (favorites as Array<{ listingId: string }>).map(
+      (favorite) => favorite.listingId
+    );
+    availableBrands = (distinctBrands as Array<{ brand: string | null }>)
+      .map((entry) => entry.brand)
+      .filter((brandName): brandName is string => Boolean(brandName));
+
+    recentListings = recentRaw.map((listing) => {
+      const sellerLocation = listing.seller
+        ? [listing.seller.locationCity, listing.seller.locationCountry]
+            .filter(Boolean)
+            .join(", ")
+        : null;
+      const locationLabel = listing.location
+        ? listing.location
+        : sellerLocation || null;
+      return {
+        id: listing.id,
+        title: listing.title,
+        brand: listing.brand,
+        model: listing.model,
+        reference: listing.reference ?? null,
+        priceEurCents: listing.priceEurCents,
+        condition: listing.condition ?? null,
+        locationLabel,
+        createdAt: listing.createdAt.toISOString(),
+        photos: listing.photos.map((photo) => ({ url: photo.url })),
+      };
+    });
+
+  } catch (error: unknown) {
     console.error("Database error on homepage:", error);
-    // Continue with empty data - page will still render
+    // Continue with whatever data was fetched
   }
 
-  const brandCounts = new Map<string, number>();
-  for (const listing of recentListings) {
-    if (!listing.brand) continue;
-    const key = listing.brand.trim();
-    brandCounts.set(key, (brandCounts.get(key) ?? 0) + 1);
-  }
+  const featuredListings = featuredRaw.map((listing) => ({
+    id: listing.id,
+    brand: listing.brand,
+    model: listing.model,
+    title: listing.title,
+    priceEurCents: listing.priceEurCents,
+    condition: listing.condition,
+    photoUrl: listing.photos[0]?.url,
+  }));
 
-  const topBrands = Array.from(brandCounts.entries())
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 3)
-    .map(([name]) => name);
+  const paidListingsContent: PaidListing[] = featuredListings.slice(0, 6).map((listing) => ({
+    id: listing.id,
+    title: listing.title,
+    brand: listing.brand,
+    priceLabel: formatEuroFromCents(listing.priceEurCents) ?? "Cena na upit",
+    href: `/listing/${listing.id}`,
+    imageUrl: listing.photoUrl ?? null,
+    locationLabel: null,
+    sellerLabel: null,
+  }));
 
   return (
     <main>
-      <Hero />
-      <PopularBrands highlight={topBrands} />
-      <RecentListings listings={recentListings} />
-
-      {/* Statistics Section */}
-      <section className="py-12">
-        <div className="container mx-auto px-4">
-          <div className="grid gap-6 md:grid-cols-3">
-            <Card>
-              <CardContent className="p-6 text-center">
-                <div className="text-3xl font-bold text-primary mb-2">
-                  {totalListings}
-                </div>
-                <div className="text-muted-foreground">Aktivnih Oglasa</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6 text-center">
-                <div className="text-3xl font-bold text-primary mb-2">
-                  {totalSellers}
-                </div>
-                <div className="text-muted-foreground">Prodavaca</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6 text-center">
-                <div className="text-3xl font-bold text-primary mb-2">
-                  {brands.length}
-                </div>
-                <div className="text-muted-foreground">Različitih Marki</div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
+      <Hero
+        featuredListings={featuredListings}
+        totalListings={totalListings}
+        totalSellers={totalSellers}
+        userLocation={preferredLocation}
+      />
+      <QuickFilterBar brands={availableBrands} />
+      <PaidListings listings={paidListingsContent} />
+      <TrustServices />
+      <EducationHub />
     </main>
   );
 }

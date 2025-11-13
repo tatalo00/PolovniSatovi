@@ -91,7 +91,7 @@ npm run build
 - [ ] `AUTH_SECRET` - Same as NEXTAUTH_SECRET
 - [ ] `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
 - [ ] `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
-- [ ] `RESEND_API_KEY` - Resend API key (for emails)
+- [ ] `BREVO_API_KEY` - Brevo API key (transactional emails)
 
 ### Prepare Production Environment Variables
 - [ ] Copy all variables for Vercel deployment

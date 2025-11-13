@@ -3,14 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { Menu, User } from "lucide-react";
+import { Heart, Menu, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-} from "@/components/ui/navigation-menu";
 import {
   Sheet,
   SheetContent,
@@ -28,18 +22,18 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MessagesNavLink } from "@/components/messages/messages-nav-link";
+import { cn } from "@/lib/utils";
 
 function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
   const pathname = usePathname() ?? "/";
   const isActive = pathname === href || (href !== "/" && pathname.startsWith(href));
   return (
-    <Link 
-      href={href} 
-      className={`transition-colors ${
-        isActive 
-          ? "text-foreground font-medium" 
-          : "text-muted-foreground hover:text-foreground"
-      }`}
+    <Link
+      href={href}
+      className={cn(
+        "relative inline-flex items-center text-base font-medium tracking-tight transition-colors",
+        isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+      )}
     >
       {children}
       {isActive && (
@@ -54,137 +48,157 @@ export function Navbar() {
 
   const isLoggedIn = status === "authenticated";
   const user = session?.user;
+  const pathname = usePathname() ?? "/";
 
   const handleSignOut = async () => {
     await signOut({ callbackUrl: "/" });
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur">
-      <div className="container mx-auto flex h-14 items-center justify-between px-4">
-        <div className="flex items-center gap-6">
-          <Link href="/" className="font-semibold tracking-tight">
-            PolovniSatovi
-          </Link>
-          <nav className="hidden md:block">
-            <NavigationMenu>
-              <NavigationMenuList className="gap-6">
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <div className="relative">
-                      <NavLink href="/listings">Oglasi</NavLink>
-                    </div>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <div className="relative">
-                      <NavLink href="/sell">Prodaj</NavLink>
-                    </div>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-              </NavigationMenuList>
-            </NavigationMenu>
+    <header className="sticky top-0 z-40 w-full border-b bg-background/90 backdrop-blur">
+      <div className="border-b border-border/60">
+        <div className="container relative mx-auto flex h-20 items-center px-4 md:grid md:grid-cols-12">
+          <div className="flex items-center md:col-span-3">
+            <Link href="/" className="text-lg font-semibold tracking-tight">
+              PolovniSatovi
+            </Link>
+          </div>
+          <nav className="pointer-events-none absolute left-1/2 top-1/2 hidden w-full max-w-5xl -translate-x-1/2 -translate-y-1/2 md:flex md:col-span-6 md:static md:translate-x-0 md:translate-y-0 md:justify-center">
+            <div className="pointer-events-auto flex w-full items-center justify-center gap-8 lg:gap-10">
+              <NavLink href="/listings">Pogledaj oglase</NavLink>
+              <NavLink href="/sell">Prodaj sat</NavLink>
+              <NavLink href="/blog">Blog</NavLink>
+              <NavLink href="/about">O nama</NavLink>
+              <NavLink href="/contact">Kontakt</NavLink>
+            </div>
           </nav>
-        </div>
 
-        <div className="hidden items-center gap-2 md:flex">
-          {isLoggedIn ? (
-            <>
-              <MessagesNavLink />
-              <Button variant="ghost" asChild>
-                <Link href="/dashboard">Dashboard</Link>
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback>
-                        {user?.name?.charAt(0).toUpperCase() ||
-                          user?.email?.charAt(0).toUpperCase() || <User className="h-4 w-4" />}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end">
-                  <DropdownMenuLabel>
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium">{user?.name || "Korisnik"}</p>
-                      <p className="text-xs text-muted-foreground">{user?.email}</p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard">Dashboard</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard/wishlist">Lista želja</Link>
-                  </DropdownMenuItem>
-                  {session?.user && "role" in session.user && session.user.role === "ADMIN" && (
+          <div className="ml-auto hidden items-center justify-end gap-2 md:col-span-3 md:flex">
+            {isLoggedIn ? (
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 text-muted-foreground hover:text-foreground"
+                  asChild
+                  aria-label="Lista želja"
+                >
+                  <Link href="/dashboard/wishlist">
+                    <Heart className="h-5 w-5" aria-hidden />
+                  </Link>
+                </Button>
+                <MessagesNavLink />
+                <Button variant="ghost" asChild>
+                  <Link href="/dashboard">Dashboard</Link>
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback>
+                          {user?.name?.charAt(0).toUpperCase() ||
+                            user?.email?.charAt(0).toUpperCase() || <User className="h-4 w-4" />}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end">
+                    <DropdownMenuLabel>
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium">{user?.name || "Korisnik"}</p>
+                        <p className="text-xs text-muted-foreground">{user?.email}</p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link href="/admin">Admin Panel</Link>
+                      <Link href="/dashboard">Dashboard</Link>
                     </DropdownMenuItem>
-                  )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut}>Odjavi se</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </>
-          ) : (
-            <>
-              <Button variant="ghost" asChild>
-                <Link href="/auth/signin">Prijava</Link>
-              </Button>
-              <Button asChild>
-                <Link href="/auth/signup">Registracija</Link>
-              </Button>
-            </>
-          )}
-        </div>
-
-        <div className="md:hidden flex items-center gap-2">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label="Otvori meni" className="h-10 w-10">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-[85vw] sm:w-[400px]">
-              <SheetHeader>
-                <SheetTitle>PolovniSatovi</SheetTitle>
-              </SheetHeader>
-              <div className="mt-6 flex flex-col gap-3">
-                <NavLink href="/listings">Oglasi</NavLink>
-                <NavLink href="/sell">Prodaj</NavLink>
-                {isLoggedIn ? (
-                  <>
-                    <NavLink href="/dashboard/messages">Poruke</NavLink>
-                    <NavLink href="/dashboard">Dashboard</NavLink>
-                    <NavLink href="/dashboard/wishlist">Lista želja</NavLink>
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard/wishlist">Lista želja</Link>
+                    </DropdownMenuItem>
                     {session?.user && "role" in session.user && session.user.role === "ADMIN" && (
-                      <NavLink href="/admin">Admin Panel</NavLink>
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin">Admin Panel</Link>
+                      </DropdownMenuItem>
                     )}
-                    <div className="pt-4 border-t">
-                      <Button variant="outline" onClick={handleSignOut} className="w-full">
-                        Odjavi se
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="pt-4 border-t space-y-2">
-                      <Button variant="outline" asChild className="w-full">
-                        <Link href="/auth/signin">Prijava</Link>
-                      </Button>
-                      <Button asChild className="w-full">
-                        <Link href="/auth/signup">Registracija</Link>
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </div>
-            </SheetContent>
-          </Sheet>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleSignOut}>Odjavi se</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="ghost"
+                  className="text-foreground hover:bg-[#D4AF37]/15 hover:text-[#D4AF37]"
+                  asChild
+                >
+                  <Link href="/auth/signin">Prijava</Link>
+                </Button>
+                <Button
+                  className="hover:border-[#D4AF37] hover:bg-[#D4AF37] hover:text-neutral-900 hover:shadow-lg"
+                  asChild
+                >
+                  <Link href="/auth/signup">Registracija</Link>
+                </Button>
+              </>
+            )}
+          </div>
+
+          <div className="justify-self-end md:hidden">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Otvori meni" className="h-10 w-10">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[85vw] sm:w-[400px]">
+                <SheetHeader>
+                  <SheetTitle>PolovniSatovi</SheetTitle>
+                </SheetHeader>
+                <div className="mt-6 flex flex-col gap-3">
+                  <NavLink href="/listings">Pogledaj oglase</NavLink>
+                  <NavLink href="/sell">Prodaj sat</NavLink>
+                  <NavLink href="/blog">Blog</NavLink>
+                  <NavLink href="/about">O nama</NavLink>
+                  <NavLink href="/contact">Kontakt</NavLink>
+                  {isLoggedIn ? (
+                    <>
+                      <NavLink href="/dashboard/messages">Poruke</NavLink>
+                      <NavLink href="/dashboard">Dashboard</NavLink>
+                      <NavLink href="/dashboard/wishlist">Lista želja</NavLink>
+                      {session?.user && "role" in session.user && session.user.role === "ADMIN" && (
+                        <NavLink href="/admin">Admin Panel</NavLink>
+                      )}
+                      <div className="border-t pt-4">
+                        <Button variant="outline" onClick={handleSignOut} className="w-full">
+                          Odjavi se
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="space-y-2 border-t pt-4">
+                        <Button
+                          variant="outline"
+                          asChild
+                          className="w-full hover:bg-[#D4AF37]/15 hover:text-[#D4AF37] hover:shadow-md"
+                        >
+                          <Link href="/auth/signin">Prijava</Link>
+                        </Button>
+                        <Button
+                          asChild
+                          className="w-full hover:border-[#D4AF37] hover:bg-[#D4AF37] hover:text-neutral-900 hover:shadow-md"
+                        >
+                          <Link href="/auth/signup">Registracija</Link>
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       </div>
     </header>

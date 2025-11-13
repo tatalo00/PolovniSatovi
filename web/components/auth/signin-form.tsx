@@ -6,11 +6,23 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import Link from "next/link";
 import { ForgotPasswordLink } from "./forgot-password-link";
+import { cn } from "@/lib/utils";
 
-export function SignInForm() {
+interface SignInFormProps {
+  className?: string;
+}
+
+export function SignInForm({ className }: SignInFormProps = {}) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -43,20 +55,31 @@ export function SignInForm() {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Prijavite se</CardTitle>
-        <CardDescription>Unesite svoje podatke za prijavu</CardDescription>
+    <Card
+      className={cn(
+        "border-white/15 bg-white/85 text-neutral-900 shadow-[0_30px_65px_-35px_rgba(0,0,0,0.65)] backdrop-blur-2xl",
+        className
+      )}
+    >
+      <CardHeader className="px-8 pb-0">
+        <CardTitle className="text-2xl font-semibold tracking-tight text-neutral-900">
+          Prijavite se
+        </CardTitle>
+        <CardDescription className="text-sm text-neutral-600">
+          Unesite svoje podatke za prijavu
+        </CardDescription>
       </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-0">
+        <CardContent className="space-y-4 px-8 pt-6">
           {error && (
-            <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+            <div className="rounded-lg bg-destructive/15 p-3 text-sm text-destructive">
               {error}
             </div>
           )}
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-sm font-medium text-neutral-800">
+              Email
+            </Label>
             <Input
               id="email"
               type="email"
@@ -65,11 +88,14 @@ export function SignInForm() {
               onChange={(e) => setEmail(e.target.value)}
               required
               disabled={loading}
+              className="h-12 rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
             />
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password">Šifra</Label>
+              <Label htmlFor="password" className="text-sm font-medium text-neutral-800">
+                Šifra
+              </Label>
               <ForgotPasswordLink />
             </div>
             <Input
@@ -79,16 +105,21 @@ export function SignInForm() {
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={loading}
+              className="h-12 rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
             />
           </div>
         </CardContent>
-        <CardFooter className="flex flex-col space-y-4">
-          <Button type="submit" className="w-full" disabled={loading}>
+        <CardFooter className="flex flex-col gap-4 px-8 pb-8 pt-6">
+          <Button
+            type="submit"
+            className="h-12 w-full rounded-xl bg-[#D4AF37] text-base font-semibold text-neutral-900 transition hover:bg-[#b6932c] disabled:cursor-not-allowed"
+            disabled={loading}
+          >
             {loading ? "Prijavljivanje..." : "Prijavi se"}
           </Button>
-          <p className="text-center text-sm text-muted-foreground">
+          <p className="text-center text-sm text-neutral-600">
             Nemate nalog?{" "}
-            <Link href="/auth/signup" className="text-primary hover:underline">
+            <Link href="/auth/signup" className="text-[#D4AF37] underline-offset-4 hover:underline">
               Registrujte se
             </Link>
           </p>
