@@ -7,14 +7,24 @@ import { Badge } from "@/components/ui/badge";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { ListingViewTracker } from "@/components/listings/listing-view-tracker";
 import { ListingImageGallery } from "@/components/listings/listing-image-gallery";
-import { ListingReviewsSection } from "@/components/reviews/listing-reviews-section";
 import { ListingSpecsTable } from "@/components/listings/listing-specs-table";
 import { ListingContactCard } from "@/components/listings/listing-contact-card";
-import { ListingStickyCTA } from "@/components/listings/listing-sticky-cta";
 import { WishlistButton } from "@/components/listings/wishlist-button";
 import { ShieldCheck, UserCheck } from "lucide-react";
+import { ShareButton } from "@/components/listings/share-button";
 import { Prisma } from "@prisma/client";
 import { AUTHENTICATION_STATUS, type AuthenticationStatus } from "@/lib/authentication/status";
+import dynamic from "next/dynamic";
+import { REVALIDATE } from "@/lib/cache";
+
+// Dynamically import heavy components
+const ListingReviewsSection = dynamic(
+  () => import("@/components/reviews/listing-reviews-section").then((mod) => ({ default: mod.ListingReviewsSection })),
+  { 
+    ssr: true,
+    loading: () => <div className="h-32 animate-pulse rounded-lg bg-muted" />
+  }
+);
 
 type ListingWithSellerDetail = Prisma.ListingGetPayload<{
   include: {
@@ -38,8 +48,8 @@ type ListingWithSellerDetail = Prisma.ListingGetPayload<{
   };
 }>;
 
-// Force dynamic rendering to avoid build-time database queries
-export const dynamic = 'force-dynamic';
+// Revalidate listing pages every 5 minutes
+export const revalidate = 300;
 
 interface ListingPageProps {
   params: Promise<{ id: string }>;
@@ -294,13 +304,7 @@ export default async function ListingPage({ params }: ListingPageProps) {
   );
 
   return (
-    <main className="container mx-auto px-4 pt-8 pb-28 lg:pb-12">
-      <ListingStickyCTA
-        priceEurCents={listing.priceEurCents}
-        contactTargetId="contact-seller"
-        isOwner={isOwner}
-        isSold={isSold}
-      />
+    <main className="container mx-auto px-4 pt-8 pb-28 lg:pb-12 mobile-bottom-padding">
       <ListingViewTracker listingId={listing.id} listingTitle={listing.title} />
       <script
         type="application/ld+json"
@@ -330,11 +334,26 @@ export default async function ListingPage({ params }: ListingPageProps) {
         </div>
       )}
 
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:items-start lg:content-start">
         <div className="space-y-8">
           <section aria-label="Galerija fotografija">
             <ListingImageGallery photos={listing.photos} title={listing.title} />
           </section>
+
+          {/* Contact card below image - mobile only */}
+          <div id="contact-seller" tabIndex={-1} className="lg:hidden">
+            <ListingContactCard
+              priceEurCents={listing.priceEurCents}
+              listingId={listing.id}
+              listingTitle={listing.title}
+              sellerEmail={listing.seller.email}
+              sellerId={listing.seller.id}
+              isOwner={isOwner}
+              isSold={isSold}
+              showReport={!isSold}
+              sellerBadge={sellerBadge}
+            />
+          </div>
 
           <section aria-labelledby="listing-details" className="space-y-6">
             <header className="space-y-2" id="listing-details">
@@ -348,11 +367,18 @@ export default async function ListingPage({ params }: ListingPageProps) {
                   </Badge>
                 )}
                 {!isOwner && (
-                  <WishlistButton
-                    listingId={listing.id}
-                    initialIsFavorite={isFavorited}
-                    className="ml-auto h-10 w-10 bg-background/90 shadow-sm"
-                  />
+                  <div className="ml-auto flex items-center gap-2">
+                    <ShareButton
+                      listingId={listing.id}
+                      listingTitle={listing.title}
+                      className="h-10 w-10 bg-background/90 shadow-sm"
+                    />
+                    <WishlistButton
+                      listingId={listing.id}
+                      initialIsFavorite={isFavorited}
+                      className="h-10 w-10 bg-background/90 shadow-sm"
+                    />
+                  </div>
                 )}
               </div>
               <p className="text-muted-foreground">
@@ -390,8 +416,22 @@ export default async function ListingPage({ params }: ListingPageProps) {
                 badge={sellerBadge}
               />
             </div>
+          </section>
 
-            <div className="lg:hidden" id="contact-seller" tabIndex={-1}>
+          <section className="space-y-4">
+            <ListingReviewsSection
+              listingId={listing.id}
+              sellerId={listing.seller.id}
+              sellerName={listing.seller.name || listing.seller.email}
+            />
+          </section>
+        </div>
+
+        <aside className="hidden lg:contents">
+          <div 
+            className="sticky top-20 flex flex-col gap-6 w-full" 
+          >
+            <div id="contact-seller" tabIndex={-1}>
               <ListingContactCard
                 priceEurCents={listing.priceEurCents}
                 listingId={listing.id}
@@ -404,30 +444,6 @@ export default async function ListingPage({ params }: ListingPageProps) {
                 sellerBadge={sellerBadge}
               />
             </div>
-          </section>
-
-          <section className="space-y-4">
-            <ListingReviewsSection
-              listingId={listing.id}
-              sellerId={listing.seller.id}
-              sellerName={listing.seller.name || listing.seller.email}
-            />
-          </section>
-        </div>
-
-        <aside className="hidden lg:flex lg:flex-col">
-          <div className="sticky top-24 flex flex-col gap-6">
-            <ListingContactCard
-              priceEurCents={listing.priceEurCents}
-              listingId={listing.id}
-              listingTitle={listing.title}
-              sellerEmail={listing.seller.email}
-              sellerId={listing.seller.id}
-              isOwner={isOwner}
-              isSold={isSold}
-              showReport={!isSold}
-              sellerBadge={sellerBadge}
-            />
             <SellerInfoCard
               seller={{
                 ...listing.seller,

@@ -71,8 +71,8 @@ export function ReportListingForm({ listingId, listingTitle }: ReportListingForm
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Flag className="mr-2 h-4 w-4" />
+        <Button variant="outline" size="sm" className="w-full sm:w-auto min-h-[36px] text-xs sm:text-sm">
+          <Flag className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
           Prijavi oglas
         </Button>
       </DialogTrigger>

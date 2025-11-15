@@ -208,28 +208,28 @@ export function QuickFilterBar({ brands }: QuickFilterBarProps) {
     Boolean(yearTo);
 
   return (
-    <section className="mt-12 px-4 text-foreground md:mt-16">
+    <section className="mt-8 sm:mt-12 px-3 sm:px-4 text-foreground md:mt-16">
       <div className="mx-auto max-w-6xl">
         <div
           className={cn(
-            "rounded-3xl border border-border/70 bg-white/85 p-6 shadow-xl backdrop-blur-md transition-all md:p-8",
+            "rounded-2xl sm:rounded-3xl border border-border/70 bg-white/85 p-4 sm:p-6 shadow-xl backdrop-blur-md transition-all md:p-8",
             showAdvanced ? "lg:p-10" : "",
           )}
         >
-          <div className="grid gap-6 lg:grid-cols-5 lg:gap-8">
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                <Watch className="h-4 w-4" aria-hidden />
+          <div className="grid gap-3 sm:gap-4 md:gap-6 lg:grid-cols-5 lg:gap-8 lg:items-end">
+            <div className="flex flex-col gap-1.5 sm:gap-2 md:gap-3">
+              <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.25em] sm:tracking-[0.3em] text-muted-foreground">
+                <Watch className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden />
                 <span>Marka</span>
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
-                    className="w-full justify-between rounded-xl border-2 border-muted/70 bg-white/75 px-4 py-3 text-left text-base font-medium text-foreground hover:border-[#D4AF37] hover:bg-white/90"
+                    className="h-11 sm:h-12 w-full justify-between rounded-xl border-2 border-muted/70 bg-white/75 px-4 py-3 text-left text-sm sm:text-base font-medium text-foreground hover:border-[#D4AF37] hover:bg-white/90 min-h-[44px]"
                   >
-                    <span>{brandLabel}</span>
-                    <ChevronDown className="h-4 w-4 opacity-60" aria-hidden />
+                    <span className="truncate">{brandLabel}</span>
+                    <ChevronDown className="h-4 w-4 opacity-60 flex-shrink-0" aria-hidden />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
@@ -297,46 +297,44 @@ export function QuickFilterBar({ brands }: QuickFilterBarProps) {
               </DropdownMenu>
             </div>
 
-            <div className="flex flex-col gap-3">
-              <div className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+            <div className="flex flex-col gap-1.5 sm:gap-2 md:gap-3">
+              <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.25em] sm:tracking-[0.3em] text-muted-foreground">
                 Cena
               </div>
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-3">
-                  <Input
-                    inputMode="numeric"
-                    placeholder="Min €"
-                    value={minPrice}
-                    onChange={(event) => setMinPrice(event.target.value.replace(/[^\d]/g, ""))}
-                    className="h-12 rounded-xl border-2 border-muted/70 bg-white/80 px-4 text-base"
-                  />
-                  <span className="text-muted-foreground">—</span>
-                  <Input
-                    inputMode="numeric"
-                    placeholder="Max €"
-                    value={maxPrice}
-                    onChange={(event) => setMaxPrice(event.target.value.replace(/[^\d]/g, ""))}
-                    className="h-12 rounded-xl border-2 border-muted/70 bg-white/80 px-4 text-base"
-                  />
-                </div>
+              <div className="flex w-full items-center gap-1.5 sm:gap-2 md:gap-3">
+                <Input
+                  inputMode="numeric"
+                  placeholder="Min €"
+                  value={minPrice}
+                  onChange={(event) => setMinPrice(event.target.value.replace(/[^\d]/g, ""))}
+                  className="h-11 sm:h-12 flex-1 rounded-lg sm:rounded-xl border-2 border-muted/70 bg-white/80 px-3 sm:px-4 text-sm sm:text-base min-h-[44px]"
+                />
+                <span className="text-muted-foreground flex-shrink-0 text-sm">—</span>
+                <Input
+                  inputMode="numeric"
+                  placeholder="Max €"
+                  value={maxPrice}
+                  onChange={(event) => setMaxPrice(event.target.value.replace(/[^\d]/g, ""))}
+                  className="h-11 sm:h-12 flex-1 rounded-lg sm:rounded-xl border-2 border-muted/70 bg-white/80 px-3 sm:px-4 text-sm sm:text-base min-h-[44px]"
+                />
               </div>
             </div>
 
-            <div className="flex flex-col gap-3">
-              <div className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+            <div className="flex flex-col gap-1.5 sm:gap-2 md:gap-3">
+              <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.25em] sm:tracking-[0.3em] text-muted-foreground">
                 Mehanizam
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
-                    className="w-full justify-between rounded-xl border-2 border-muted/70 bg-white/75 px-4 py-3 text-left text-base font-medium text-foreground hover:border-[#D4AF37] hover:bg-white/90"
+                    className="h-11 sm:h-12 w-full justify-between rounded-xl border-2 border-muted/70 bg-white/75 px-4 py-3 text-left text-sm sm:text-base font-medium text-foreground hover:border-[#D4AF37] hover:bg-white/90 min-h-[44px]"
                   >
-                    <span className="flex items-center gap-2">
+                    <span className="flex items-center gap-2 truncate">
                       {activeMovementOption?.icon}
-                      <span>{movementLabel}</span>
+                      <span className="truncate">{movementLabel}</span>
                     </span>
-                    <ChevronDown className="h-4 w-4 opacity-60" aria-hidden />
+                    <ChevronDown className="h-4 w-4 opacity-60 flex-shrink-0" aria-hidden />
                   </Button>
                 </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-60 rounded-2xl border border-border/70 bg-background/95 p-1 shadow-xl">
@@ -378,22 +376,22 @@ export function QuickFilterBar({ brands }: QuickFilterBarProps) {
               </DropdownMenu>
             </div>
 
-            <div className="flex flex-col gap-3">
-              <div className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+            <div className="flex flex-col gap-1.5 sm:gap-2 md:gap-3">
+              <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.25em] sm:tracking-[0.3em] text-muted-foreground">
                 Stanje
               </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="outline"
-                      className="w-full justify-between rounded-xl border-2 border-muted/70 bg-white/75 px-4 py-3 text-left text-base font-medium text-foreground hover:border-[#D4AF37] hover:bg-white/90"
+                      className="h-11 sm:h-12 w-full justify-between rounded-xl border-2 border-muted/70 bg-white/75 px-4 py-3 text-left text-sm sm:text-base font-medium text-foreground hover:border-[#D4AF37] hover:bg-white/90 min-h-[44px]"
                     >
-                      <span>
+                      <span className="truncate">
                         {selectedConditions.length
                           ? `${selectedConditions.length} ${selectedConditions.length === 1 ? "stanje" : "stanja"}`
                           : "Sva stanja"}
                       </span>
-                      <ChevronDown className="h-4 w-4 opacity-60" aria-hidden />
+                      <ChevronDown className="h-4 w-4 opacity-60 flex-shrink-0" aria-hidden />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-60 rounded-2xl border border-border/70 bg-background/95 p-1 shadow-xl">
@@ -434,50 +432,50 @@ export function QuickFilterBar({ brands }: QuickFilterBarProps) {
                 </DropdownMenu>
             </div>
 
-            <div className="flex flex-col items-center gap-4">
-              <div className="flex flex-col gap-4 lg:items-start">
-                <div className="flex flex-col items-center gap-3 text-center lg:items-start lg:text-left">
-                  <Button
-                    className="h-12 w-full rounded-full bg-[#D4AF37] px-8 text-base font-semibold text-neutral-900 shadow-lg transition hover:bg-[#b6932c] hover:text-neutral-900 lg:w-auto lg:px-10"
-                    onClick={handleSearch}
-                  >
-                    Pretraži
-                  </Button>
-                  <button
-                    type="button"
-                    onClick={() => setShowAdvanced((prev) => !prev)}
-                    className="text-sm font-semibold text-muted-foreground underline-offset-4 transition hover:text-foreground hover:underline"
-                  >
-                    {showAdvanced ? "Sakrij naprednu pretragu" : "Napredna pretraga"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedBrands([]);
-                      setBrandSearch("");
-                      setMinPrice("");
-                      setMaxPrice("");
-                      setSelectedMovements([]);
-                      setSelectedConditions([]);
-                      setCaseMaterials([]);
-                      setStrapMaterials([]);
-                      setDialColors([]);
-                      setDiameterMin("");
-                      setDiameterMax("");
-                      setYearFrom("");
-                      setYearTo("");
-                    }}
-                    className={cn(
-                      "text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground transition-opacity duration-200",
-                      hasActiveFilters ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-                    )}
-                  >
-                    Resetuj filtere
-                  </button>
-                </div>
-              </div>
+            <div className="flex flex-col gap-1.5 sm:gap-2 md:gap-3">
+              <div className="h-[1.5rem] hidden sm:block"></div>
+              <Button
+                className="h-11 sm:h-12 w-full rounded-full bg-[#D4AF37] px-5 sm:px-6 md:px-8 text-sm sm:text-base font-semibold text-neutral-900 shadow-lg transition hover:bg-[#b6932c] hover:text-neutral-900 min-h-[44px]"
+                onClick={handleSearch}
+              >
+                Pretraži
+              </Button>
             </div>
 
+          </div>
+
+          <div className="mt-4 sm:mt-6 flex flex-col items-center gap-2 sm:gap-3 lg:items-start">
+            <button
+              type="button"
+              onClick={() => setShowAdvanced((prev) => !prev)}
+              className="text-xs sm:text-sm font-semibold text-muted-foreground underline-offset-4 transition hover:text-foreground hover:underline min-h-[44px] px-2"
+            >
+              {showAdvanced ? "Sakrij naprednu pretragu" : "Napredna pretraga"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedBrands([]);
+                setBrandSearch("");
+                setMinPrice("");
+                setMaxPrice("");
+                setSelectedMovements([]);
+                setSelectedConditions([]);
+                setCaseMaterials([]);
+                setStrapMaterials([]);
+                setDialColors([]);
+                setDiameterMin("");
+                setDiameterMax("");
+                setYearFrom("");
+                setYearTo("");
+              }}
+              className={cn(
+                "text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground transition-opacity duration-200",
+                hasActiveFilters ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+              )}
+            >
+              Resetuj filtere
+            </button>
           </div>
 
           <div
@@ -493,40 +491,40 @@ export function QuickFilterBar({ brands }: QuickFilterBarProps) {
                 showAdvanced ? "opacity-100" : "opacity-0 pointer-events-none"
               )}
             >
-              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <div className="space-y-1">
-                  <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">
+              <div className="flex flex-col gap-3 sm:gap-4 md:flex-row md:items-center md:justify-between">
+                <div className="space-y-1.5 sm:space-y-2">
+                  <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em] sm:tracking-[0.35em] text-muted-foreground">
                     Napredni filteri
                   </p>
-                  <h3 className="text-2xl font-semibold text-foreground">
+                  <h3 className="text-xl sm:text-2xl font-semibold text-foreground leading-tight">
                     Suptilno prilagodite izbor prema detaljima koji su vam važni
                   </h3>
-                  <p className="max-w-2xl text-sm text-muted-foreground">
+                  <p className="max-w-2xl text-xs sm:text-sm text-muted-foreground leading-relaxed">
                     Kombinujte završnu obradu, narukvicu, boju brojčanika i tehničke specifikacije kako biste brzo
                     suzili izbor na modele koji savršeno odgovaraju vašem stilu.
                   </p>
                 </div>
-                <div className="inline-flex items-center justify-center rounded-full border border-muted/60 bg-white/70 px-5 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground shadow-sm">
+                <div className="inline-flex items-center justify-center rounded-full border border-muted/60 bg-white/70 px-4 sm:px-5 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.25em] sm:tracking-[0.3em] text-muted-foreground shadow-sm self-start sm:self-auto">
                   15+ opcija filtriranja
                 </div>
               </div>
 
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <div className="rounded-2xl border border-muted/60 bg-white/80 p-5 shadow-sm backdrop-blur-sm">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#D4AF37]/15 text-[#D4AF37]">
-                      <Layers className="h-5 w-5" aria-hidden />
+              <div className="grid gap-4 sm:gap-5 md:gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <div className="rounded-xl sm:rounded-2xl border border-muted/60 bg-white/80 p-4 sm:p-5 shadow-sm backdrop-blur-sm">
+                  <div className="flex items-start sm:items-center gap-2.5 sm:gap-3">
+                    <span className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-[#D4AF37]/15 text-[#D4AF37] flex-shrink-0">
+                      <Layers className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden />
                     </span>
-                    <div>
-                      <h4 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-xs sm:text-sm font-semibold uppercase tracking-[0.15em] sm:tracking-[0.2em] text-muted-foreground">
                         Materijal kućišta
                       </h4>
-                      <p className="text-xs text-muted-foreground/80">
+                      <p className="text-[10px] sm:text-xs text-muted-foreground/80 mt-0.5 sm:mt-1">
                         Odaberite završnu obradu i metal koji tražite.
                       </p>
                     </div>
                   </div>
-                  <div className="mt-4 flex flex-wrap gap-2">
+                  <div className="mt-3 sm:mt-4 flex flex-wrap gap-1.5 sm:gap-2">
                     {CASE_MATERIAL_OPTIONS.map((option) => {
                       const isActive = caseMaterials.includes(option);
                       return (
@@ -535,7 +533,7 @@ export function QuickFilterBar({ brands }: QuickFilterBarProps) {
                           type="button"
                           onClick={() => toggleMultiSelect(option, caseMaterials, setCaseMaterials)}
                           className={cn(
-                            "rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] transition-colors",
+                            "rounded-full border px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.1em] sm:tracking-[0.15em] transition-colors min-h-[36px] sm:min-h-[40px]",
                             isActive
                               ? "border-[#D4AF37] bg-[#D4AF37]/15 text-foreground"
                               : "border-muted/60 bg-white/70 text-muted-foreground hover:border-[#D4AF37] hover:text-foreground",
@@ -548,21 +546,21 @@ export function QuickFilterBar({ brands }: QuickFilterBarProps) {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-muted/60 bg-white/80 p-5 shadow-sm backdrop-blur-sm">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#D4AF37]/15 text-[#D4AF37]">
-                      <LinkIcon className="h-5 w-5" aria-hidden />
+                <div className="rounded-xl sm:rounded-2xl border border-muted/60 bg-white/80 p-4 sm:p-5 shadow-sm backdrop-blur-sm">
+                  <div className="flex items-start sm:items-center gap-2.5 sm:gap-3">
+                    <span className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-[#D4AF37]/15 text-[#D4AF37] flex-shrink-0">
+                      <LinkIcon className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden />
                     </span>
-                    <div>
-                      <h4 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-xs sm:text-sm font-semibold uppercase tracking-[0.15em] sm:tracking-[0.2em] text-muted-foreground">
                         Materijal narukvice
                       </h4>
-                      <p className="text-xs text-muted-foreground/80">
+                      <p className="text-[10px] sm:text-xs text-muted-foreground/80 mt-0.5 sm:mt-1">
                         Selektujte teksturu i stil narukvice.
                       </p>
                     </div>
                   </div>
-                  <div className="mt-4 flex flex-wrap gap-2">
+                  <div className="mt-3 sm:mt-4 flex flex-wrap gap-1.5 sm:gap-2">
                     {STRAP_OPTIONS.map((option) => {
                       const isActive = strapMaterials.includes(option);
                       return (
@@ -584,21 +582,21 @@ export function QuickFilterBar({ brands }: QuickFilterBarProps) {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-muted/60 bg-white/80 p-5 shadow-sm backdrop-blur-sm">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#D4AF37]/15 text-[#D4AF37]">
-                      <Palette className="h-5 w-5" aria-hidden />
+                <div className="rounded-xl sm:rounded-2xl border border-muted/60 bg-white/80 p-4 sm:p-5 shadow-sm backdrop-blur-sm">
+                  <div className="flex items-start sm:items-center gap-2.5 sm:gap-3">
+                    <span className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-[#D4AF37]/15 text-[#D4AF37] flex-shrink-0">
+                      <Palette className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden />
                     </span>
-                    <div>
-                      <h4 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-xs sm:text-sm font-semibold uppercase tracking-[0.15em] sm:tracking-[0.2em] text-muted-foreground">
                         Boja brojčanika
                       </h4>
-                      <p className="text-xs text-muted-foreground/80">
+                      <p className="text-[10px] sm:text-xs text-muted-foreground/80 mt-0.5 sm:mt-1">
                         Uskladite sat sa garderobom ili kolekcijom.
                       </p>
                     </div>
                   </div>
-                  <div className="mt-4 flex flex-wrap gap-2">
+                  <div className="mt-3 sm:mt-4 flex flex-wrap gap-1.5 sm:gap-2">
                     {DIAL_COLOR_OPTIONS.map((option) => {
                       const isActive = dialColors.includes(option);
                       return (
@@ -620,70 +618,70 @@ export function QuickFilterBar({ brands }: QuickFilterBarProps) {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-muted/60 bg-white/80 p-5 shadow-sm backdrop-blur-sm lg:col-span-1">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#D4AF37]/15 text-[#D4AF37]">
-                      <Ruler className="h-5 w-5" aria-hidden />
+                <div className="rounded-xl sm:rounded-2xl border border-muted/60 bg-white/80 p-4 sm:p-5 shadow-sm backdrop-blur-sm lg:col-span-1">
+                  <div className="flex items-start sm:items-center gap-2.5 sm:gap-3">
+                    <span className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-[#D4AF37]/15 text-[#D4AF37] flex-shrink-0">
+                      <Ruler className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden />
                     </span>
-                    <div>
-                      <h4 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-xs sm:text-sm font-semibold uppercase tracking-[0.15em] sm:tracking-[0.2em] text-muted-foreground">
                         Prečnik kućišta
                       </h4>
-                      <p className="text-xs text-muted-foreground/80">
+                      <p className="text-[10px] sm:text-xs text-muted-foreground/80 mt-0.5 sm:mt-1">
                         Precizirajte dimenzije u milimetrima.
                       </p>
                     </div>
                   </div>
-                  <div className="mt-4 flex items-center gap-3">
+                  <div className="mt-3 sm:mt-4 flex items-center gap-2 sm:gap-3">
                     <Input
                       inputMode="numeric"
                       placeholder="Min"
                       value={diameterMin}
                       onChange={(event) => setDiameterMin(event.target.value.replace(/[^\d]/g, ""))}
-                      className="h-12 rounded-xl border-2 border-muted/70 bg-white/80 px-4 text-base"
+                      className="h-11 sm:h-12 rounded-lg sm:rounded-xl border-2 border-muted/70 bg-white/80 px-3 sm:px-4 text-sm sm:text-base min-h-[44px]"
                     />
-                    <span className="text-muted-foreground">—</span>
+                    <span className="text-muted-foreground text-sm">—</span>
                     <Input
                       inputMode="numeric"
                       placeholder="Max"
                       value={diameterMax}
                       onChange={(event) => setDiameterMax(event.target.value.replace(/[^\d]/g, ""))}
-                      className="h-12 rounded-xl border-2 border-muted/70 bg-white/80 px-4 text-base"
+                      className="h-11 sm:h-12 rounded-lg sm:rounded-xl border-2 border-muted/70 bg-white/80 px-3 sm:px-4 text-sm sm:text-base min-h-[44px]"
                     />
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-muted/60 bg-white/80 p-5 shadow-sm backdrop-blur-sm lg:col-span-2">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#D4AF37]/15 text-[#D4AF37]">
-                      <Calendar className="h-5 w-5" aria-hidden />
+                <div className="rounded-xl sm:rounded-2xl border border-muted/60 bg-white/80 p-4 sm:p-5 shadow-sm backdrop-blur-sm lg:col-span-2">
+                  <div className="flex items-start sm:items-center gap-2.5 sm:gap-3">
+                    <span className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-[#D4AF37]/15 text-[#D4AF37] flex-shrink-0">
+                      <Calendar className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden />
                     </span>
-                    <div>
-                      <h4 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-xs sm:text-sm font-semibold uppercase tracking-[0.15em] sm:tracking-[0.2em] text-muted-foreground">
                         Godište / godina proizvodnje
                       </h4>
-                      <p className="text-xs text-muted-foreground/80">
+                      <p className="text-[10px] sm:text-xs text-muted-foreground/80 mt-0.5 sm:mt-1">
                         Fokusirajte se na period proizvodnje ili izdanje.
                       </p>
                     </div>
                   </div>
-                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <div className="mt-3 sm:mt-4 flex flex-wrap items-center gap-2 sm:gap-3">
                     <Input
                       inputMode="numeric"
                       placeholder="Od"
                       value={yearFrom}
                       onChange={(event) => setYearFrom(event.target.value.replace(/[^\d]/g, ""))}
-                      className="h-12 w-full rounded-xl border-2 border-muted/70 bg-white/80 px-4 text-base sm:w-40"
+                      className="h-11 sm:h-12 w-full rounded-lg sm:rounded-xl border-2 border-muted/70 bg-white/80 px-3 sm:px-4 text-sm sm:text-base min-h-[44px] sm:w-40"
                     />
-                    <span className="text-muted-foreground">—</span>
+                    <span className="text-muted-foreground text-sm">—</span>
                     <Input
                       inputMode="numeric"
                       placeholder="Do"
                       value={yearTo}
                       onChange={(event) => setYearTo(event.target.value.replace(/[^\d]/g, ""))}
-                      className="h-12 w-full rounded-xl border-2 border-muted/70 bg-white/80 px-4 text-base sm:w-40"
+                      className="h-11 sm:h-12 w-full rounded-lg sm:rounded-xl border-2 border-muted/70 bg-white/80 px-3 sm:px-4 text-sm sm:text-base min-h-[44px] sm:w-40"
                     />
-                    <p className="text-xs text-muted-foreground sm:ml-auto">
+                    <p className="text-[10px] sm:text-xs text-muted-foreground w-full sm:w-auto sm:ml-auto">
                       Savet: ostavite jedno polje prazno za otvoreni opseg.
                     </p>
                   </div>

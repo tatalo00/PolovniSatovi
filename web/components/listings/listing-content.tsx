@@ -138,18 +138,18 @@ export function ListingContent({
   return (
     <>
       <ActiveFilters searchParams={searchParams} />
-      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <p className="text-sm text-muted-foreground">
-          Pronađeno {total} oglasa · {perPage} po stranici
+      <div className="mb-3 sm:mb-4 flex flex-col gap-2 sm:gap-3 md:flex-row md:items-center md:justify-between">
+        <p className="text-xs sm:text-sm text-muted-foreground">
+          Pronađeno <span className="font-semibold text-foreground">{total}</span> oglasa · {perPage} po stranici
         </p>
         <div className="flex items-center gap-2 self-start sm:self-auto">
-          <label htmlFor="sort" className="text-sm">
+          <label htmlFor="sort" className="text-xs sm:text-sm font-medium">
             Sortiraj:
           </label>
           <select
             id="sort"
             value={searchParams.sort || "price-asc"}
-            className="rounded-md border border-input bg-background px-3 py-1 text-sm"
+            className="rounded-md border border-input bg-background px-2 sm:px-3 py-1.5 sm:py-1 text-xs sm:text-sm min-h-[36px] sm:min-h-[32px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
             onChange={(e) => handleSortChange(e.target.value)}
           >
             <option value="price-asc">Cena: najniža</option>
@@ -169,11 +169,11 @@ export function ListingContent({
       />
 
       {totalPages > 1 && (
-        <div className="mt-8 flex justify-center gap-2">
+        <div className="mt-6 sm:mt-8 flex flex-wrap justify-center gap-1.5 sm:gap-2">
           {currentPage > 1 && (
             <a
               href={buildPageUrl(currentPage - 1)}
-              className="rounded-md border border-input bg-background px-4 py-2 text-sm hover:bg-accent"
+              className="rounded-md border border-input bg-background px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm hover:bg-accent min-h-[36px] sm:min-h-[32px] flex items-center justify-center transition-colors"
             >
               Prethodna
             </a>
@@ -183,12 +183,12 @@ export function ListingContent({
               (p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 2
             )
             .map((p, idx, arr) => (
-              <div key={p} className="flex items-center gap-2">
-                {idx > 0 && arr[idx - 1] !== p - 1 && <span className="px-2">...</span>}
+              <div key={p} className="flex items-center gap-1 sm:gap-2">
+                {idx > 0 && arr[idx - 1] !== p - 1 && <span className="px-1 sm:px-2 text-xs sm:text-sm text-muted-foreground">...</span>}
                 <a
                   href={buildPageUrl(p)}
-                  className={`rounded-md border border-input bg-background px-4 py-2 text-sm hover:bg-accent ${
-                    p === currentPage ? "bg-primary text-primary-foreground" : ""
+                  className={`rounded-md border border-input bg-background px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm hover:bg-accent min-h-[36px] sm:min-h-[32px] min-w-[36px] sm:min-w-[32px] flex items-center justify-center transition-colors ${
+                    p === currentPage ? "bg-primary text-primary-foreground border-primary" : ""
                   }`}
                 >
                   {p}
@@ -198,7 +198,7 @@ export function ListingContent({
           {currentPage < totalPages && (
             <a
               href={buildPageUrl(currentPage + 1)}
-              className="rounded-md border border-input bg-background px-4 py-2 text-sm hover:bg-accent"
+              className="rounded-md border border-input bg-background px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm hover:bg-accent min-h-[36px] sm:min-h-[32px] flex items-center justify-center transition-colors"
             >
               Sledeća
             </a>

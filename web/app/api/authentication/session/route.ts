@@ -4,6 +4,7 @@ import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getDiditClient } from "@/lib/kyc/didit";
 import { AUTHENTICATION_STATUS } from "@/lib/authentication/status";
+import { randomUUID } from "crypto";
 
 export async function POST(request: NextRequest) {
   const user = await requireAuth();
@@ -30,8 +31,10 @@ export async function POST(request: NextRequest) {
     process.env.DIDIT_SUCCESS_REDIRECT ??
     `${origin}/dashboard/profile?authentication=success`;
 
+  const referenceId = `${userId}-${Date.now()}-${randomUUID()}`;
+
   const session = await getDiditClient().createAuthenticationSession({
-    referenceId: userId,
+    referenceId,
     callbackUrl,
     vendorData: user.email ?? userId,
   });

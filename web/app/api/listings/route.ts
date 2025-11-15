@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const rawStatus = searchParams.get("status");
+    const isPublicListing = !rawStatus || rawStatus === "APPROVED";
 
     const isListingStatus = (value: string): value is ListingStatus => {
       return Object.values(ListingStatus).includes(value as ListingStatus);
@@ -175,7 +176,7 @@ export async function GET(request: NextRequest) {
       prisma.listing.count({ where }),
     ]);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       data: listings,
       pagination: {
         page,
@@ -184,6 +185,16 @@ export async function GET(request: NextRequest) {
         totalPages: Math.ceil(total / limit) || 1,
       },
     });
+
+    // Add cache headers for public listings
+    if (isPublicListing) {
+      response.headers.set(
+        "Cache-Control",
+        "public, s-maxage=300, stale-while-revalidate=600"
+      );
+    }
+
+    return response;
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
     logger.error("Error fetching listings", { error: message });

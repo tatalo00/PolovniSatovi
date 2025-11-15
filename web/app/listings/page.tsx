@@ -2,12 +2,15 @@ import { Prisma, Gender } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ListingFilters } from "@/components/listings/listing-filters";
 import { ListingContent } from "@/components/listings/listing-content";
+import { MobileFilterDrawer } from "@/components/listings/mobile-filter-drawer";
+import { ListingsQuickFilterBar } from "@/components/listings/listings-quick-filter-bar";
 import { auth } from "@/auth";
 import type { ListingSummary } from "@/types/listing";
 import { AUTHENTICATION_STATUS, type AuthenticationStatus } from "@/lib/authentication/status";
+import { REVALIDATE } from "@/lib/cache";
 
-// Force dynamic rendering to avoid build-time database queries
-export const dynamic = 'force-dynamic';
+// Revalidate listings page every 5 minutes
+export const revalidate = 300;
 
 export const metadata = {
   title: "Oglasi",
@@ -33,10 +36,9 @@ type ListingWithSeller = Prisma.ListingGetPayload<{
 }>;
 
 interface IncomingSearchParams {
-  q?: string | string[];
-  search?: string | string[];
   brand?: string | string[];
   model?: string | string[];
+  reference?: string | string[];
   min?: string | string[];
   minPrice?: string | string[];
   max?: string | string[];
@@ -59,9 +61,9 @@ interface IncomingSearchParams {
 }
 
 type NormalizedParams = {
-  q?: string;
   brand?: string[];
   model?: string;
+  reference?: string;
   movement?: string[];
   min?: string;
   max?: string;
@@ -97,11 +99,6 @@ const getFirstValue = (value?: string | string[]): string | undefined => {
 const normalizeSearchParams = (params: IncomingSearchParams): NormalizedParams => {
   const normalized: NormalizedParams = {};
 
-  const q = getFirstValue(params.q ?? params.search);
-  if (q) {
-    normalized.q = q;
-  }
-
   const brands = parseMultiParam(params.brand);
   if (brands.length) {
     normalized.brand = brands;
@@ -110,6 +107,11 @@ const normalizeSearchParams = (params: IncomingSearchParams): NormalizedParams =
   const model = getFirstValue(params.model);
   if (model) {
     normalized.model = model;
+  }
+
+  const reference = getFirstValue(params.reference);
+  if (reference) {
+    normalized.reference = reference;
   }
 
   const movements = parseMultiParam(params.movement);
@@ -199,14 +201,6 @@ const buildWhereClause = (filters: NormalizedParams): Prisma.ListingWhereInput =
     where.AND = [...existingAnd, condition];
   };
 
-  if (filters.q) {
-    where.OR = [
-      { title: { contains: filters.q, mode: "insensitive" } },
-      { model: { contains: filters.q, mode: "insensitive" } },
-      { reference: { contains: filters.q, mode: "insensitive" } },
-    ];
-  }
-
   if (filters.brand?.length) {
     const brandConditions = filters.brand.map((value) => ({
       brand: { contains: value, mode: "insensitive" as const },
@@ -216,6 +210,10 @@ const buildWhereClause = (filters: NormalizedParams): Prisma.ListingWhereInput =
 
   if (filters.model) {
     appendAndCondition({ model: { contains: filters.model, mode: "insensitive" } });
+  }
+
+  if (filters.reference) {
+    appendAndCondition({ reference: { contains: filters.reference, mode: "insensitive" } });
   }
 
   if (filters.movement?.length) {
@@ -511,9 +509,9 @@ export default async function ListingsPage({
   }
 
   const clientSearchParams: Record<string, string | undefined> = {
-    q: normalizedParams.q,
     brand: normalizedParams.brand?.join(","),
     model: normalizedParams.model,
+    reference: normalizedParams.reference,
     min: normalizedParams.min,
     max: normalizedParams.max,
     year: normalizedParams.year,
@@ -559,23 +557,25 @@ export default async function ListingsPage({
   });
 
   return (
-    <main className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight">Oglasi za Satove</h1>
-        <p className="text-muted-foreground mt-2">
+    <main className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8 pb-20 lg:pb-8">
+      <div className="mb-4 sm:mb-6 md:mb-8">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight">Oglasi za Satove</h1>
+        <p className="text-muted-foreground mt-1 sm:mt-2 text-sm sm:text-base">
           Pretražite ponudu polovnih i vintage satova
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)] xl:gap-8">
-        <aside>
+      <ListingsQuickFilterBar brands={popularBrands} />
+
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)] xl:gap-8 mt-4 sm:mt-6">
+        <aside className="hidden lg:block">
           <ListingFilters
             popularBrands={popularBrands}
             searchParams={clientSearchParams}
           />
         </aside>
 
-        <div>
+        <div className="min-w-0">
           <ListingContent
             listings={listingSummaries}
             total={total}
@@ -588,6 +588,11 @@ export default async function ListingsPage({
           />
         </div>
       </div>
+
+      <MobileFilterDrawer
+        popularBrands={popularBrands}
+        searchParams={clientSearchParams}
+      />
     </main>
   );
 }

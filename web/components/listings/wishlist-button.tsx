@@ -84,8 +84,8 @@ export function WishlistButton({
 
   const sizeClasses =
     size === "sm"
-      ? "h-8 w-8"
-      : "h-9 w-9";
+      ? "h-8 w-8 min-h-[36px] min-w-[36px] sm:min-h-0 sm:min-w-0"
+      : "h-9 w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0";
 
   return (
     <button

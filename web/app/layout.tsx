@@ -4,6 +4,7 @@ import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/site/navbar";
 import { Footer } from "@/components/site/footer";
+import { MobileBottomNav } from "@/components/site/mobile-bottom-nav";
 import { Providers } from "@/components/providers/session-provider";
 import { PageViewTracker } from "@/components/analytics/page-view-tracker";
 import { NavigationFeedbackProvider } from "@/components/providers/navigation-feedback-provider";
@@ -35,8 +36,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full">
-      <body className={`${inter.variable} ${playfair.variable} antialiased flex min-h-screen flex-col bg-background`}>
+    <html lang="en" className="h-full overflow-x-hidden">
+      <body className={`${inter.variable} ${playfair.variable} antialiased flex min-h-screen flex-col bg-background overflow-x-hidden`}>
         <Providers>
           <Suspense fallback={null}>
             <NavigationFeedbackProvider>
@@ -44,6 +45,7 @@ export default function RootLayout({
               <Navbar />
               <PageTransitionWrapper>{children}</PageTransitionWrapper>
               <Footer />
+              <MobileBottomNav />
               <Toaster 
                 position="bottom-center"
                 expand={false}
@@ -59,6 +61,7 @@ export default function RootLayout({
                     cancelButton: "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
                   },
                 }}
+                className="lg:bottom-4 bottom-20"
               />
             </NavigationFeedbackProvider>
           </Suspense>

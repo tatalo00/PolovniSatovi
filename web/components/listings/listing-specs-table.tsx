@@ -50,14 +50,14 @@ export function ListingSpecsTable({ specs, boxPapersStatus }: ListingSpecsTableP
         {specs.map((spec) => (
           <div
             key={spec.label}
-            className="flex flex-col gap-1 px-4 py-4 sm:px-6 sm:py-5"
+            className="flex flex-col gap-1 px-4 py-3.5 sm:px-6 sm:py-5 min-h-[60px] sm:min-h-0"
           >
             <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               {spec.label}
             </span>
             <span
               className={cn(
-                "text-base font-medium text-foreground",
+                "text-sm sm:text-base font-medium text-foreground",
                 !spec.value && "text-muted-foreground"
               )}
             >
