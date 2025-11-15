@@ -51,9 +51,9 @@ const EXTRA_OPTIONS = [
 ];
 
 const FILTER_KEYS = [
-  "q",
   "brand",
   "model",
+  "reference",
   "min",
   "max",
   "year",
@@ -73,9 +73,9 @@ type FilterKey = (typeof FILTER_KEYS)[number];
 type FilterState = Record<FilterKey, string>;
 
 const emptyFilters: FilterState = {
-  q: "",
   brand: "",
   model: "",
+  reference: "",
   min: "",
   max: "",
   year: "",
@@ -119,9 +119,9 @@ const joinMulti = (values: string[]): string =>
 const parseFiltersFromRecord = (
   params: Record<string, string | undefined>
 ): FilterState => ({
-  q: params.q ?? params.search ?? "",
   brand: params.brand ?? "",
   model: params.model ?? "",
+  reference: params.reference ?? "",
   min: params.min ?? params.minPrice ?? "",
   max: params.max ?? params.maxPrice ?? "",
   year: params.year ?? "",
@@ -139,9 +139,9 @@ const parseFiltersFromRecord = (
 const parseFiltersFromUrl = (
   params: URLSearchParams,
 ): FilterState => ({
-  q: params.get("q") ?? params.get("search") ?? "",
   brand: params.get("brand") ?? "",
   model: params.get("model") ?? "",
+  reference: params.get("reference") ?? "",
   min: params.get("min") ?? params.get("minPrice") ?? "",
   max: params.get("max") ?? params.get("maxPrice") ?? "",
   year: params.get("year") ?? "",
@@ -232,6 +232,7 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
         "search",
         "brand",
         "model",
+        "reference",
         "min",
         "minPrice",
         "max",
@@ -251,9 +252,9 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
         "page",
       ].forEach((key) => params.delete(key));
 
-      if (filtersToApply.q) params.set("q", filtersToApply.q);
       if (filtersToApply.brand) params.set("brand", filtersToApply.brand);
       if (filtersToApply.model) params.set("model", filtersToApply.model);
+      if (filtersToApply.reference) params.set("reference", filtersToApply.reference);
       if (filtersToApply.min) params.set("min", filtersToApply.min);
       if (filtersToApply.max) params.set("max", filtersToApply.max);
       if (filtersToApply.year) params.set("year", filtersToApply.year);
@@ -408,27 +409,6 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
       <CardContent className="px-5 pb-6 pt-5">
         <form onSubmit={onFormSubmit} className="space-y-5">
           <div className="space-y-1.5">
-            <Label htmlFor="listings-search" className="text-xs font-medium text-neutral-600">
-              Pretraga
-            </Label>
-            <Input
-              id="listings-search"
-              placeholder="Naziv, model ili referenca"
-              value={filters.q}
-              onChange={(event) =>
-                setFilters((prev) => ({ ...prev, q: event.target.value }))
-              }
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  applyFilters();
-                }
-              }}
-              className="h-10 rounded-xl border-neutral-200 bg-white/90 text-sm text-neutral-900 placeholder:text-neutral-300 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
-            />
-          </div>
-
-          <div className="space-y-1.5">
             <Label className="text-xs font-medium text-neutral-600">Brend</Label>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -474,7 +454,7 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
                           checked={checked}
                           onCheckedChange={(value) => toggleBrand(brand, value === true)}
                           onSelect={(event) => event.preventDefault()}
-                          className="flex cursor-pointer items-center justify-between px-4 py-2 text-neutral-700 hover:bg-neutral-100 [&>span:first-child]:hidden"
+                          className="flex cursor-pointer items-center justify-between px-4 py-3 sm:py-2 min-h-[44px] sm:min-h-0 text-neutral-700 hover:bg-neutral-100 [&>span:first-child]:hidden"
                         >
                           <span>{brand}</span>
                           {checked && (
@@ -520,6 +500,21 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
               value={filters.model}
               onChange={(event) =>
                 setFilters((prev) => ({ ...prev, model: event.target.value }))
+              }
+              className="h-10 rounded-xl border-neutral-200 bg-white/90 text-sm text-neutral-900 placeholder:text-neutral-300 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="listings-reference" className="text-xs font-medium text-neutral-600">
+              Referenca
+            </Label>
+            <Input
+              id="listings-reference"
+              placeholder="npr. 126610LN"
+              value={filters.reference}
+              onChange={(event) =>
+                setFilters((prev) => ({ ...prev, reference: event.target.value }))
               }
               className="h-10 rounded-xl border-neutral-200 bg-white/90 text-sm text-neutral-900 placeholder:text-neutral-300 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
             />
@@ -629,7 +624,7 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
                           checked={checked}
                           onCheckedChange={(value) => toggleCondition(option.value, value === true)}
                           onSelect={(event) => event.preventDefault()}
-                          className="flex cursor-pointer items-center justify-between px-4 py-2 text-neutral-700 hover:bg-neutral-100 [&>span:first-child]:hidden"
+                          className="flex cursor-pointer items-center justify-between px-4 py-3 sm:py-2 min-h-[44px] sm:min-h-0 text-neutral-700 hover:bg-neutral-100 [&>span:first-child]:hidden"
                         >
                           <span>{option.label}</span>
                           {checked && (
@@ -675,7 +670,7 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
                           checked={checked}
                           onCheckedChange={(value) => toggleMovement(option.value, value === true)}
                           onSelect={(event) => event.preventDefault()}
-                          className="flex cursor-pointer items-center justify-between px-4 py-2 text-neutral-700 hover:bg-neutral-100 [&>span:first-child]:hidden"
+                          className="flex cursor-pointer items-center justify-between px-4 py-3 sm:py-2 min-h-[44px] sm:min-h-0 text-neutral-700 hover:bg-neutral-100 [&>span:first-child]:hidden"
                         >
                           <span>{option.label}</span>
                           {checked && (
@@ -719,7 +714,7 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
                           checked={checked}
                           onCheckedChange={(value) => toggleGender(option.value, value === true)}
                           onSelect={(event) => event.preventDefault()}
-                          className="flex cursor-pointer items-center justify-between px-4 py-2 text-neutral-700 hover:bg-neutral-100 [&>span:first-child]:hidden"
+                          className="flex cursor-pointer items-center justify-between px-4 py-3 sm:py-2 min-h-[44px] sm:min-h-0 text-neutral-700 hover:bg-neutral-100 [&>span:first-child]:hidden"
                         >
                           <span>{option.label}</span>
                           {checked && (
@@ -767,7 +762,7 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
                           checked={checked}
                           onCheckedChange={(value) => toggleExtra(option.value, value === true)}
                           onSelect={(event) => event.preventDefault()}
-                          className="flex cursor-pointer items-center justify-between px-4 py-2 text-neutral-700 hover:bg-neutral-100 [&>span:first-child]:hidden"
+                          className="flex cursor-pointer items-center justify-between px-4 py-3 sm:py-2 min-h-[44px] sm:min-h-0 text-neutral-700 hover:bg-neutral-100 [&>span:first-child]:hidden"
                         >
                           <span>{option.label}</span>
                           {checked && (

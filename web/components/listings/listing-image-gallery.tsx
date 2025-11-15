@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+
 interface ListingPhoto {
   id: string;
   url: string;
@@ -23,20 +24,24 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right');
   const mainImageRef = useRef<HTMLDivElement | null>(null);
 
   // Minimum swipe distance (in pixels)
   const minSwipeDistance = 50;
 
   const handlePrevious = useCallback(() => {
+    setSlideDirection('left');
     setCurrentIndex((prev) => (prev === 0 ? photos.length - 1 : prev - 1));
   }, [photos.length]);
 
   const handleNext = useCallback(() => {
+    setSlideDirection('right');
     setCurrentIndex((prev) => (prev === photos.length - 1 ? 0 : prev + 1));
   }, [photos.length]);
 
   const handleThumbnailClick = (index: number) => {
+    setSlideDirection(index > currentIndex ? 'right' : 'left');
     setCurrentIndex(index);
   };
 
@@ -132,14 +137,21 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
             tabIndex={0}
             aria-label={`Otvori galeriju, slika ${currentIndex + 1} od ${photos.length}`}
             aria-haspopup="dialog"
+            style={{
+              position: 'relative'
+            }}
           >
             <Image
+              key={currentPhoto.id}
               src={currentPhoto.url}
               alt={`${title} - Slika ${currentIndex + 1}`}
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-105"
               priority={currentIndex === 0}
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 60vw"
+              style={{
+                animation: slideDirection === 'right' ? 'slideInRight 0.5s ease-out' : 'slideInLeft 0.5s ease-out'
+              }}
             />
             
             {/* Image Counter */}
@@ -160,7 +172,7 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity h-10 w-10 rounded-full"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 md:opacity-0 transition-opacity h-11 w-11 min-h-[44px] min-w-[44px] rounded-full md:h-10 md:w-10 md:min-h-0 md:min-w-0"
                   onClick={(e) => {
                     e.stopPropagation();
                     handlePrevious();
@@ -172,7 +184,7 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity h-10 w-10 rounded-full"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 md:opacity-0 transition-opacity h-11 w-11 min-h-[44px] min-w-[44px] rounded-full md:h-10 md:w-10 md:min-h-0 md:min-w-0"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleNext();
@@ -187,18 +199,19 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
 
           {/* Mobile Navigation Dots */}
           {photos.length > 1 && (
-            <div className="flex justify-center gap-2 md:hidden mt-2">
+            <div className="flex justify-center gap-2.5 md:hidden mt-3 px-2">
               {photos.map((_, index) => (
                 <button
                   key={index}
                   className={cn(
-                    "h-2 rounded-full transition-all",
+                    "h-3 rounded-full transition-all min-h-[12px] min-w-[12px] touch-manipulation",
                     index === currentIndex
-                      ? "w-8 bg-primary"
-                      : "w-2 bg-muted-foreground/30"
+                      ? "w-10 bg-primary shadow-md"
+                      : "w-3 bg-muted-foreground/50 hover:bg-muted-foreground/70"
                   )}
                   onClick={() => handleThumbnailClick(index)}
                   aria-label={`Prikaži sliku ${index + 1}`}
+                  style={{ touchAction: 'manipulation' }}
                 />
               ))}
             </div>
@@ -265,12 +278,16 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
             >
               <div className="relative w-full h-full max-w-5xl max-h-full">
                 <Image
+                  key={currentPhoto.id}
                   src={currentPhoto.url}
                   alt={`${title} - Slika ${currentIndex + 1}`}
                   fill
                   className="object-contain"
                   sizes="100vw"
                   priority
+                  style={{
+                    animation: slideDirection === 'right' ? 'slideInRight 0.5s ease-out' : 'slideInLeft 0.5s ease-out'
+                  }}
                 />
               </div>
 

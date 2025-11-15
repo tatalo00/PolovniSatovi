@@ -59,11 +59,11 @@ export function ContactSellerForm({
 
   if (!session) {
     return (
-      <div className="space-y-4">
-        <p className="text-sm text-muted-foreground">
+      <div className="space-y-3 sm:space-y-4">
+        <p className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
           Prijavite se da biste kontaktirali prodavca
         </p>
-        <Button asChild className="w-full">
+        <Button asChild className="w-full min-h-[44px] text-sm sm:text-base">
           <Link href={`/auth/signin?callbackUrl=/listing/${listingId}`}>
             Prijavite se
           </Link>
@@ -84,16 +84,16 @@ export function ContactSellerForm({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2 sm:space-y-3">
       <Button
         onClick={handleStartConversation}
-        className="w-full"
+        className="w-full min-h-[44px] text-sm sm:text-base"
         disabled={loading}
       >
         <MessageSquare className="mr-2 h-4 w-4" />
         {loading ? "Kreiranje konverzacije..." : "Pošalji poruku"}
       </Button>
-      <p className="text-xs text-muted-foreground text-center">
+      <p className="text-[10px] sm:text-xs text-muted-foreground text-center">
         Otvorite konverzaciju sa prodavcem direktno u aplikaciji
       </p>
     </div>

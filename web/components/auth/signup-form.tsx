@@ -83,16 +83,16 @@ export function SignUpForm({ className }: SignUpFormProps = {}) {
         className
       )}
     >
-      <CardHeader className="px-8 pb-0">
-        <CardTitle className="text-2xl font-semibold tracking-tight text-neutral-900">
+      <CardHeader className="px-4 sm:px-6 md:px-8 pb-0">
+        <CardTitle className="text-xl sm:text-2xl font-semibold tracking-tight text-neutral-900">
           Kreirajte nalog
         </CardTitle>
-        <CardDescription className="text-sm text-neutral-600">
+        <CardDescription className="text-xs sm:text-sm text-neutral-600">
           Unesite svoje podatke za registraciju
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit} className="space-y-0">
-        <CardContent className="space-y-4 px-8 pt-6">
+        <CardContent className="space-y-4 px-4 sm:px-6 md:px-8 pt-6">
           {error && (
             <div className="rounded-lg bg-destructive/15 p-3 text-sm text-destructive">
               {error}
@@ -106,12 +106,14 @@ export function SignUpForm({ className }: SignUpFormProps = {}) {
               <Input
                 id="firstName"
                 type="text"
+                inputMode="text"
+                autoComplete="given-name"
                 placeholder="Vaše ime"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 required
                 disabled={loading}
-                className="h-12 rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
+                className="h-12 min-h-[44px] rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
               />
             </div>
             <div className="space-y-2">
@@ -121,12 +123,14 @@ export function SignUpForm({ className }: SignUpFormProps = {}) {
               <Input
                 id="lastName"
                 type="text"
+                inputMode="text"
+                autoComplete="family-name"
                 placeholder="Vaše prezime"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 required
                 disabled={loading}
-                className="h-12 rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
+                className="h-12 min-h-[44px] rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
               />
             </div>
           </div>
@@ -138,12 +142,14 @@ export function SignUpForm({ className }: SignUpFormProps = {}) {
               <Input
                 id="country"
                 type="text"
+                inputMode="text"
+                autoComplete="country-name"
                 placeholder="Država"
                 value={country}
                 onChange={(e) => setCountry(e.target.value)}
                 required
                 disabled={loading}
-                className="h-12 rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
+                className="h-12 min-h-[44px] rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
               />
             </div>
             <div className="space-y-2">
@@ -153,12 +159,14 @@ export function SignUpForm({ className }: SignUpFormProps = {}) {
               <Input
                 id="city"
                 type="text"
+                inputMode="text"
+                autoComplete="address-level2"
                 placeholder="Grad"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
                 required
                 disabled={loading}
-                className="h-12 rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
+                className="h-12 min-h-[44px] rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
               />
             </div>
           </div>
@@ -169,12 +177,14 @@ export function SignUpForm({ className }: SignUpFormProps = {}) {
             <Input
               id="email"
               type="email"
+              inputMode="email"
+              autoComplete="email"
               placeholder="vas@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               disabled={loading}
-              className="h-12 rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
+              className="h-12 min-h-[44px] rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
             />
           </div>
           <div className="space-y-2">
@@ -184,12 +194,13 @@ export function SignUpForm({ className }: SignUpFormProps = {}) {
             <Input
               id="password"
               type="password"
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={loading}
               minLength={8}
-              className="h-12 rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
+              className="h-12 min-h-[44px] rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
             />
             <PasswordStrength password={password} />
           </div>
@@ -200,18 +211,19 @@ export function SignUpForm({ className }: SignUpFormProps = {}) {
             <Input
               id="confirmPassword"
               type="password"
+              autoComplete="new-password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               disabled={loading}
-              className="h-12 rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
+              className="h-12 min-h-[44px] rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
             />
           </div>
         </CardContent>
-        <CardFooter className="flex flex-col gap-4 px-8 pb-8 pt-6">
+        <CardFooter className="flex flex-col gap-4 px-4 sm:px-6 md:px-8 pb-6 sm:pb-8 pt-6">
           <Button
             type="submit"
-            className="h-12 w-full rounded-xl bg-[#D4AF37] text-base font-semibold text-neutral-900 transition hover:bg-[#b6932c] disabled:cursor-not-allowed"
+            className="h-12 min-h-[44px] w-full rounded-xl bg-[#D4AF37] text-base font-semibold text-neutral-900 transition hover:bg-[#b6932c] disabled:cursor-not-allowed"
             disabled={loading}
           >
             {loading ? "Registracija..." : "Registrujte se"}

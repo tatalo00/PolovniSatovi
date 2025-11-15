@@ -8,9 +8,11 @@ import { QuickFilterBar } from "@/components/home/quick-filter-bar";
 import { PaidListings } from "@/components/home/featured-collections";
 import { TrustServices } from "@/components/home/trust-services";
 import { EducationHub } from "@/components/home/education-hub";
+import { unstable_cache } from "next/cache";
+import { CACHE_TAGS, REVALIDATE } from "@/lib/cache";
 
-// Force dynamic rendering to avoid build-time database queries
-export const dynamic = "force-dynamic";
+// Revalidate homepage every 5 minutes
+export const revalidate = REVALIDATE.MEDIUM;
 
 type ListingWithRelations = Listing & {
   photos: ListingPhoto[];
@@ -71,52 +73,10 @@ const formatEuroFromCents = (value?: number | null) => {
   return EURO_FORMATTER.format(value / 100);
 };
 
-export default async function HomePage() {
-  let featuredRaw: ListingWithRelations[] = [];
-  let recentRaw: ListingWithRelations[] = [];
-  let totalListings = 0;
-  let totalSellers = 0;
-  let preferredLocation: string | null = null;
-  let recentListings: Array<{
-    id: string;
-    title: string;
-    brand: string;
-    model: string;
-    reference: string | null;
-    priceEurCents: number;
-    condition: string | null;
-    locationLabel: string | null;
-    createdAt: string;
-    photos: Array<{ url: string }>;
-  }> = [];
-  let favoriteListingIds: string[] = [];
-  let availableBrands: string[] = [];
-  const session = await auth();
-
-  try {
-    if (session?.user?.id) {
-      const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: {
-          locationCity: true,
-          locationCountry: true,
-        },
-      });
-      if (user?.locationCity) {
-        preferredLocation = user.locationCountry
-          ? `${user.locationCity}, ${user.locationCountry}`
-          : user.locationCity;
-      }
-    }
-
-    const favoritesPromise = session?.user?.id
-      ? prisma.favorite.findMany({
-          where: { userId: session.user.id },
-          select: { listingId: true },
-        })
-      : Promise.resolve([]);
-
-    const [featuredResult, recentResult, counts, favorites, distinctBrands] = await Promise.all([
+// Cached function to fetch homepage listings data
+const getHomepageListings = unstable_cache(
+  async () => {
+    const [featuredResult, recentResult, counts, distinctBrands] = await Promise.all([
       prisma.listing.findMany({
         where: { status: "APPROVED" },
         include: {
@@ -168,7 +128,6 @@ export default async function HomePage() {
           },
         }),
       ]),
-      favoritesPromise,
       prisma.listing.findMany({
         where: {
           status: "APPROVED",
@@ -177,6 +136,71 @@ export default async function HomePage() {
         select: { brand: true },
       }),
     ]);
+
+    return {
+      featuredResult,
+      recentResult,
+      counts,
+      distinctBrands,
+    };
+  },
+  ["homepage-listings"],
+  {
+    tags: [CACHE_TAGS.listings],
+    revalidate: REVALIDATE.MEDIUM,
+  }
+);
+
+export default async function HomePage() {
+  let featuredRaw: ListingWithRelations[] = [];
+  let recentRaw: ListingWithRelations[] = [];
+  let totalListings = 0;
+  let totalSellers = 0;
+  let preferredLocation: string | null = null;
+  let recentListings: Array<{
+    id: string;
+    title: string;
+    brand: string;
+    model: string;
+    reference: string | null;
+    priceEurCents: number;
+    condition: string | null;
+    locationLabel: string | null;
+    createdAt: string;
+    photos: Array<{ url: string }>;
+  }> = [];
+  let favoriteListingIds: string[] = [];
+  let availableBrands: string[] = [];
+  const session = await auth();
+
+  try {
+    if (session?.user?.id) {
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: {
+          locationCity: true,
+          locationCountry: true,
+        },
+      });
+      if (user?.locationCity) {
+        preferredLocation = user.locationCountry
+          ? `${user.locationCity}, ${user.locationCountry}`
+          : user.locationCity;
+      }
+    }
+
+    // Fetch cached listings data
+    const { featuredResult, recentResult, counts, distinctBrands } = await getHomepageListings();
+
+    // Fetch user-specific data (not cached, as it's user-specific)
+    const favoritesPromise = session?.user?.id
+      ? prisma.favorite.findMany({
+          where: { userId: session.user.id },
+          select: { listingId: true },
+        })
+      : Promise.resolve([]);
+
+    const favorites = await favoritesPromise;
 
     featuredRaw = featuredResult;
     recentRaw = recentResult;
@@ -197,6 +221,11 @@ export default async function HomePage() {
       const locationLabel = listing.location
         ? listing.location
         : sellerLocation || null;
+      const createdAt = listing.createdAt instanceof Date
+        ? listing.createdAt.toISOString()
+        : typeof listing.createdAt === "string"
+        ? listing.createdAt
+        : new Date(listing.createdAt).toISOString();
       return {
         id: listing.id,
         title: listing.title,
@@ -206,7 +235,7 @@ export default async function HomePage() {
         priceEurCents: listing.priceEurCents,
         condition: listing.condition ?? null,
         locationLabel,
-        createdAt: listing.createdAt.toISOString(),
+        createdAt,
         photos: listing.photos.map((photo) => ({ url: photo.url })),
       };
     });
@@ -238,7 +267,7 @@ export default async function HomePage() {
   }));
 
   return (
-    <main>
+    <main className="pb-20 lg:pb-0">
       <Hero
         featuredListings={featuredListings}
         totalListings={totalListings}

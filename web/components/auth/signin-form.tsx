@@ -61,16 +61,16 @@ export function SignInForm({ className }: SignInFormProps = {}) {
         className
       )}
     >
-      <CardHeader className="px-8 pb-0">
-        <CardTitle className="text-2xl font-semibold tracking-tight text-neutral-900">
+      <CardHeader className="px-4 sm:px-6 md:px-8 pb-0">
+        <CardTitle className="text-xl sm:text-2xl font-semibold tracking-tight text-neutral-900">
           Prijavite se
         </CardTitle>
-        <CardDescription className="text-sm text-neutral-600">
+        <CardDescription className="text-xs sm:text-sm text-neutral-600">
           Unesite svoje podatke za prijavu
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit} className="space-y-0">
-        <CardContent className="space-y-4 px-8 pt-6">
+        <CardContent className="space-y-4 px-4 sm:px-6 md:px-8 pt-6">
           {error && (
             <div className="rounded-lg bg-destructive/15 p-3 text-sm text-destructive">
               {error}
@@ -83,12 +83,14 @@ export function SignInForm({ className }: SignInFormProps = {}) {
             <Input
               id="email"
               type="email"
+              inputMode="email"
+              autoComplete="email"
               placeholder="vas@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               disabled={loading}
-              className="h-12 rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
+              className="h-12 min-h-[44px] rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
             />
           </div>
           <div className="space-y-2">
@@ -101,18 +103,19 @@ export function SignInForm({ className }: SignInFormProps = {}) {
             <Input
               id="password"
               type="password"
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={loading}
-              className="h-12 rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
+              className="h-12 min-h-[44px] rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
             />
           </div>
         </CardContent>
-        <CardFooter className="flex flex-col gap-4 px-8 pb-8 pt-6">
+        <CardFooter className="flex flex-col gap-4 px-4 sm:px-6 md:px-8 pb-6 sm:pb-8 pt-6">
           <Button
             type="submit"
-            className="h-12 w-full rounded-xl bg-[#D4AF37] text-base font-semibold text-neutral-900 transition hover:bg-[#b6932c] disabled:cursor-not-allowed"
+            className="h-12 min-h-[44px] w-full rounded-xl bg-[#D4AF37] text-base font-semibold text-neutral-900 transition hover:bg-[#b6932c] disabled:cursor-not-allowed"
             disabled={loading}
           >
             {loading ? "Prijavljivanje..." : "Prijavi se"}
