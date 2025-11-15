@@ -12,7 +12,7 @@ import { unstable_cache } from "next/cache";
 import { CACHE_TAGS, REVALIDATE } from "@/lib/cache";
 
 // Revalidate homepage every 5 minutes
-export const revalidate = REVALIDATE.MEDIUM;
+export const revalidate = 300;
 
 type ListingWithRelations = Listing & {
   photos: ListingPhoto[];

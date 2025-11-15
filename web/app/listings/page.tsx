@@ -10,7 +10,7 @@ import { AUTHENTICATION_STATUS, type AuthenticationStatus } from "@/lib/authenti
 import { REVALIDATE } from "@/lib/cache";
 
 // Revalidate listings page every 5 minutes
-export const revalidate = REVALIDATE.MEDIUM;
+export const revalidate = 300;
 
 export const metadata = {
   title: "Oglasi",

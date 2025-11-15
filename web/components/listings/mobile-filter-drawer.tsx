@@ -47,6 +47,7 @@ export function MobileFilterDrawer({ popularBrands, searchParams }: MobileFilter
 
   // Close drawer when search params change (filters applied)
   useEffect(() => {
+    if (!urlSearchParams) return;
     const currentParams = urlSearchParams.toString();
     if (open && prevParamsRef.current && currentParams !== prevParamsRef.current) {
       // Small delay to allow navigation to complete

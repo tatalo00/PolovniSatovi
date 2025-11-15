@@ -49,7 +49,7 @@ type ListingWithSellerDetail = Prisma.ListingGetPayload<{
 }>;
 
 // Revalidate listing pages every 5 minutes
-export const revalidate = REVALIDATE.MEDIUM;
+export const revalidate = 300;
 
 interface ListingPageProps {
   params: Promise<{ id: string }>;
