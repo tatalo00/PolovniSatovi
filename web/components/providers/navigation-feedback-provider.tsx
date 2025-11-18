@@ -14,8 +14,8 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const LOADING_PREFIX = "⌛ Učitavanje – ";
-const START_DELAY_MS = 150;
-const MIN_VISIBLE_MS = 1400;
+const START_DELAY_MS = 0; // Immediate feedback
+const MIN_VISIBLE_MS = 300; // Shorter minimum visibility
 
 type StartOptions = {
   immediate?: boolean;
@@ -86,11 +86,8 @@ export function NavigationFeedbackProvider({ children }: { children: ReactNode }
         setIsLoading(true);
       };
 
-      if (immediate) {
-        trigger();
-      } else {
-        startTimerRef.current = setTimeout(trigger, START_DELAY_MS);
-      }
+      // Always trigger immediately for instant feedback
+      trigger();
     },
     [isLoading]
   );

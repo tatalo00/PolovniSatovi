@@ -31,6 +31,7 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
   return (
     <Link
       href={href}
+      prefetch={true}
       className={cn(
         "relative inline-flex items-center text-base font-medium tracking-tight transition-colors",
         isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
@@ -66,7 +67,7 @@ export function Navbar() {
       <div className="border-b border-border/60">
         <div className="container relative mx-auto flex h-16 items-center justify-between px-4 md:h-20 md:grid md:grid-cols-12">
           <div className="flex items-center md:col-span-3">
-            <Link href="/" className="text-base font-semibold tracking-tight md:text-lg">
+            <Link href="/" prefetch={true} className="text-base font-semibold tracking-tight md:text-lg">
               PolovniSatovi
             </Link>
           </div>

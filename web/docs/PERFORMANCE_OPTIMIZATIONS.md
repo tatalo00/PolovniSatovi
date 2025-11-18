@@ -189,3 +189,4 @@ Potential future improvements:
 6. **Service Worker**: For offline support and caching
 
 
+

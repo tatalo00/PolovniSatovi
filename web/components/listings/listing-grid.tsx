@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { WishlistButton } from "./wishlist-button";
+import { useNavigationFeedback } from "@/components/providers/navigation-feedback-provider";
 import type { ListingSummary } from "@/types/listing";
 import { ShieldCheck, UserCheck, MapPin, Calendar } from "lucide-react";
 
@@ -32,6 +33,7 @@ const ListingGridCard = memo(function ListingGridCard({
   onToggle,
 }: ListingGridCardProps) {
   const [isPressed, setIsPressed] = useState(false);
+  const { start } = useNavigationFeedback();
 
   const CONDITION_LABELS: Record<string, string> = {
     New: "Novo",
@@ -79,9 +81,17 @@ const ListingGridCard = memo(function ListingGridCard({
     setTimeout(() => setIsPressed(false), 200);
   };
 
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    // Start navigation feedback immediately
+    start({ immediate: true });
+    // Let Next.js Link handle the navigation
+  };
+
   return (
     <Link 
       href={`/listing/${listing.id}`}
+      prefetch={true}
+      onClick={handleClick}
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}

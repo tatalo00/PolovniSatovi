@@ -77,7 +77,7 @@ export function Hero({ featuredListings }: HeroProps) {
               size="lg"
               className="rounded-full bg-[#D4AF37] px-6 sm:px-8 py-4 sm:py-5 md:px-10 md:py-6 text-sm sm:text-base md:text-base font-semibold text-neutral-900 transition hover:bg-[#b6932c] min-h-[44px] w-full sm:w-auto"
             >
-              <Link href="/listings" className="inline-flex items-center justify-center gap-2">
+              <Link href="/listings" prefetch={true} className="inline-flex items-center justify-center gap-2">
                 Istraži satove
                 <ArrowRight className="h-4 w-4 sm:h-4 sm:w-4 md:h-5 md:w-5" aria-hidden />
               </Link>
