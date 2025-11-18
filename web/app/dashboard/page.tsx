@@ -14,7 +14,7 @@ export default async function DashboardPage() {
   const user = session.user;
 
   return (
-    <main className="container mx-auto px-4 py-6 md:py-8 pb-20 lg:pb-8">
+    <main className="container mx-auto px-4 py-6 md:py-8 lg:pb-8">
       <div className="mb-6 md:mb-8">
         <h1 className="text-xl md:text-2xl font-semibold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground mt-2 text-sm md:text-base">

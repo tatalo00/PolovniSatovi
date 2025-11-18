@@ -217,17 +217,17 @@
   .page-transition-wrapper {
     opacity: 1;
     transform: translateY(0);
-    transition: opacity 1 ease, transform 1s ease;
+    transition: opacity 0.15s ease, transform 0.15s ease;
   }
 
   .page-transition-wrapper.is-loading {
-    opacity: 0;
-    transform: translateY(14px);
+    opacity: 0.7;
+    transform: translateY(4px);
     pointer-events: none;
   }
 
   .page-transition-content {
-    animation: page-fade-slide-in 1s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: page-fade-slide-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   /* Safe area insets for iOS devices */
@@ -243,9 +243,18 @@
     padding-bottom: calc(7rem + env(safe-area-inset-bottom, 0px));
   }
 
+  /* Padding for mobile bottom navbar - applied to page wrapper */
+  .mobile-bottom-nav-padding {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+  }
+
   @media (min-width: 1024px) {
     .mobile-bottom-padding {
       padding-bottom: revert;
+    }
+    
+    .mobile-bottom-nav-padding {
+      padding-bottom: 0;
     }
   }
 }
@@ -253,7 +262,7 @@
 @keyframes page-fade-slide-in {
   from {
     opacity: 0;
-    transform: translateY(26px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;

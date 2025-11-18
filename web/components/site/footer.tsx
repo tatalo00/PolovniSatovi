@@ -10,7 +10,7 @@ const footerLinks = [
 
 export function Footer() {
   return (
-    <footer className="border-t bg-muted/30">
+    <footer className="border-t bg-muted/30 mobile-bottom-nav-padding">
       <div className="container mx-auto px-4 py-8 md:py-10">
         <div className="grid gap-10 md:grid-cols-[2fr_3fr]">
           <div className="space-y-3">

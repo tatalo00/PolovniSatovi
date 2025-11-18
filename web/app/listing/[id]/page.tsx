@@ -304,7 +304,7 @@ export default async function ListingPage({ params }: ListingPageProps) {
   );
 
   return (
-    <main className="container mx-auto px-4 pt-8 pb-28 lg:pb-12 mobile-bottom-padding">
+    <main className="container mx-auto px-4 pt-8 lg:pb-12">
       <ListingViewTracker listingId={listing.id} listingTitle={listing.title} />
       <script
         type="application/ld+json"
@@ -427,9 +427,14 @@ export default async function ListingPage({ params }: ListingPageProps) {
           </section>
         </div>
 
-        <aside className="hidden lg:contents">
+        <aside className="hidden lg:block">
           <div 
-            className="sticky top-20 flex flex-col gap-6 w-full" 
+            className="sticky top-20 flex flex-col gap-6 w-full"
+            style={{ 
+              position: 'sticky',
+              top: '5rem',
+              alignSelf: 'flex-start'
+            }}
           >
             <div id="contact-seller" tabIndex={-1}>
               <ListingContactCard

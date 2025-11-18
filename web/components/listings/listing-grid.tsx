@@ -1,14 +1,15 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
 import { memo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { PriceDisplay } from "@/components/currency/price-display";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { WishlistButton } from "./wishlist-button";
+import { useNavigationFeedback } from "@/components/providers/navigation-feedback-provider";
 import type { ListingSummary } from "@/types/listing";
 import { ShieldCheck, UserCheck, MapPin, Calendar } from "lucide-react";
 
@@ -32,6 +33,8 @@ const ListingGridCard = memo(function ListingGridCard({
   onToggle,
 }: ListingGridCardProps) {
   const [isPressed, setIsPressed] = useState(false);
+  const router = useRouter();
+  const { start } = useNavigationFeedback();
 
   const CONDITION_LABELS: Record<string, string> = {
     New: "Novo",
@@ -79,15 +82,23 @@ const ListingGridCard = memo(function ListingGridCard({
     setTimeout(() => setIsPressed(false), 200);
   };
 
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    // Start navigation feedback immediately
+    start({ immediate: true });
+    // Navigate immediately - browser will show new page, then load content
+    router.push(`/listing/${listing.id}`);
+  };
+
   return (
-    <Link 
-      href={`/listing/${listing.id}`}
+    <div
+      onClick={handleClick}
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      className="block touch-manipulation"
+      className="block touch-manipulation cursor-pointer"
       style={{ touchAction: 'manipulation' }}
     >
       <Card className={cn(
@@ -191,7 +202,7 @@ const ListingGridCard = memo(function ListingGridCard({
           </div>
         </CardContent>
       </Card>
-    </Link>
+    </div>
   );
 });
 

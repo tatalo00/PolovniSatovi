@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { Heart, Menu, User, List, PlusCircle, BookOpen, Info, Mail, MessageSquare, LayoutDashboard, Shield, LogOut, LogIn, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,12 +27,20 @@ import { cn } from "@/lib/utils";
 
 function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
   const pathname = usePathname() ?? "/";
+  const router = useRouter();
   const isActive = pathname === href || (href !== "/" && pathname.startsWith(href));
+  
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    router.push(href);
+  };
+  
   return (
-    <Link
+    <a
       href={href}
+      onClick={handleClick}
       className={cn(
-        "relative inline-flex items-center text-base font-medium tracking-tight transition-colors",
+        "relative inline-flex items-center text-base font-medium tracking-tight transition-colors cursor-pointer",
         isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
       )}
     >
@@ -40,13 +48,14 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
       {isActive && (
         <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary" />
       )}
-    </Link>
+    </a>
   );
 }
 
 export function Navbar() {
   const { data: session, status } = useSession();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const router = useRouter();
 
   const isLoggedIn = status === "authenticated";
   const user = session?.user;
@@ -66,9 +75,13 @@ export function Navbar() {
       <div className="border-b border-border/60">
         <div className="container relative mx-auto flex h-16 items-center justify-between px-4 md:h-20 md:grid md:grid-cols-12">
           <div className="flex items-center md:col-span-3">
-            <Link href="/" className="text-base font-semibold tracking-tight md:text-lg">
+            <a 
+              href="/" 
+              onClick={(e) => { e.preventDefault(); router.push("/"); }}
+              className="text-base font-semibold tracking-tight md:text-lg cursor-pointer"
+            >
               PolovniSatovi
-            </Link>
+            </a>
           </div>
           <nav className="pointer-events-none absolute left-1/2 top-1/2 hidden w-full max-w-5xl -translate-x-1/2 -translate-y-1/2 md:flex md:col-span-6 md:static md:translate-x-0 md:translate-y-0 md:justify-center">
             <div className="pointer-events-auto flex w-full items-center justify-center gap-8 lg:gap-10">

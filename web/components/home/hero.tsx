@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowRight, ShieldCheck, Watch, Zap } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,7 @@ const TRUST_INDICATORS = [
 const FALLBACK_HERO_IMAGE = "/images/hero-pocket-watch.jpg";
 
 export function Hero({ featuredListings }: HeroProps) {
+  const router = useRouter();
   const heroImage =
     featuredListings.find((listing) => listing.photoUrl)?.photoUrl ?? FALLBACK_HERO_IMAGE;
 
@@ -77,10 +78,17 @@ export function Hero({ featuredListings }: HeroProps) {
               size="lg"
               className="rounded-full bg-[#D4AF37] px-6 sm:px-8 py-4 sm:py-5 md:px-10 md:py-6 text-sm sm:text-base md:text-base font-semibold text-neutral-900 transition hover:bg-[#b6932c] min-h-[44px] w-full sm:w-auto"
             >
-              <Link href="/listings" className="inline-flex items-center justify-center gap-2">
+              <a 
+                href="/listings" 
+                onClick={(e) => { 
+                  e.preventDefault(); 
+                  router.push('/listings');
+                }}
+                className="inline-flex items-center justify-center gap-2 cursor-pointer"
+              >
                 Istraži satove
                 <ArrowRight className="h-4 w-4 sm:h-4 sm:w-4 md:h-5 md:w-5" aria-hidden />
-              </Link>
+              </a>
             </Button>
           </div>
 

@@ -1,13 +1,13 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Home, Search, PlusCircle, MessageSquare, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function MobileBottomNav() {
   const pathname = usePathname() ?? "/";
+  const router = useRouter();
   const { data: session } = useSession();
   const isLoggedIn = !!session?.user;
 
@@ -62,11 +62,15 @@ export function MobileBottomNav() {
           const Icon = item.icon;
           const active = isActive(item.href, item.exact);
           return (
-            <Link
+            <a
               key={item.href}
               href={item.href}
+              onClick={(e) => {
+                e.preventDefault();
+                router.push(item.href);
+              }}
               className={cn(
-                "flex min-h-[44px] min-w-[44px] flex-col items-center justify-center gap-1 rounded-lg px-3 py-2 transition-colors",
+                "flex min-h-[44px] min-w-[44px] flex-col items-center justify-center gap-1 rounded-lg px-3 py-2 transition-colors cursor-pointer",
                 active
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"
@@ -75,7 +79,7 @@ export function MobileBottomNav() {
             >
               <Icon className="h-5 w-5" aria-hidden />
               <span className="text-[10px] font-medium leading-tight">{item.label}</span>
-            </Link>
+            </a>
           );
         })}
       </div>
