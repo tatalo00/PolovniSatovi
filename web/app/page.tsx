@@ -267,7 +267,7 @@ export default async function HomePage() {
   }));
 
   return (
-    <main className="pb-20 lg:pb-0">
+    <main>
       <Hero
         featuredListings={featuredListings}
         totalListings={totalListings}
