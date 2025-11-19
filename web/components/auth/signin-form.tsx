@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +24,9 @@ interface SignInFormProps {
 
 export function SignInForm({ className }: SignInFormProps = {}) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams?.get("redirect") ?? null;
+  const registered = searchParams?.get("registered") === "true";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -44,7 +47,9 @@ export function SignInForm({ className }: SignInFormProps = {}) {
       if (result?.error) {
         setError("Neispravni podaci za prijavu");
       } else {
-        router.push("/dashboard");
+        // Redirect to specified destination or default to dashboard
+        const destination = redirectTo || "/dashboard";
+        router.push(destination);
         router.refresh();
       }
     } catch (err) {
@@ -71,6 +76,11 @@ export function SignInForm({ className }: SignInFormProps = {}) {
       </CardHeader>
       <form onSubmit={handleSubmit} className="space-y-0">
         <CardContent className="space-y-4 px-4 sm:px-6 md:px-8 pt-6">
+          {registered && (
+            <div className="rounded-lg bg-green-500/15 p-3 text-sm text-green-700 dark:text-green-400">
+              Nalog je uspešno kreiran! Prijavite se da biste nastavili.
+            </div>
+          )}
           {error && (
             <div className="rounded-lg bg-destructive/15 p-3 text-sm text-destructive">
               {error}

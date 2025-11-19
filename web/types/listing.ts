@@ -18,6 +18,10 @@ export interface ListingSummary {
     locationCountry: string | null;
     isVerified?: boolean | null;
     isAuthenticated?: boolean | null;
+    profileSlug?: string | null;
+    storeName?: string | null;
+    shortDescription?: string | null;
+    logoUrl?: string | null;
   } | null;
   status?: string;
   favoritedAt?: Date;
