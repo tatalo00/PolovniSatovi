@@ -1,17 +1,17 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { memo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { PriceDisplay } from "@/components/currency/price-display";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { WishlistButton } from "./wishlist-button";
 import { useNavigationFeedback } from "@/components/providers/navigation-feedback-provider";
 import type { ListingSummary } from "@/types/listing";
-import { ShieldCheck, UserCheck, MapPin, Calendar } from "lucide-react";
+import { ShieldCheck, UserCheck, MapPin, Calendar, ArrowUpRight } from "lucide-react";
 
 interface ListingGridProps {
   listings: ListingSummary[];
@@ -25,12 +25,14 @@ interface ListingGridCardProps {
   listing: ListingSummary;
   isFavorite: boolean;
   onToggle?: (nextValue: boolean) => void;
+  imageSizes?: string;
 }
 
 const ListingGridCard = memo(function ListingGridCard({
   listing,
   isFavorite,
   onToggle,
+  imageSizes = "(max-width: 475px) 140px, (max-width: 640px) 160px, (max-width: 768px) 180px, (max-width: 1024px) 200px, (min-width: 1024px) 25vw",
 }: ListingGridCardProps) {
   const [isPressed, setIsPressed] = useState(false);
   const router = useRouter();
@@ -51,15 +53,22 @@ const ListingGridCard = memo(function ListingGridCard({
     ? CONDITION_LABELS[listing.condition] ?? listing.condition
     : undefined;
 
-  const isVerifiedSeller = listing.seller?.isVerified === true;
-  const isAuthenticatedSeller = !isVerifiedSeller && listing.seller?.isAuthenticated === true;
+  // Ensure isVerified is treated as boolean (handle null/undefined)
+  const isVerifiedSeller = Boolean(listing.seller?.isVerified);
+  const isAuthenticatedSeller = !isVerifiedSeller && Boolean(listing.seller?.isAuthenticated);
   const badgeTitle = isVerifiedSeller
     ? "Verifikovani prodavac"
     : isAuthenticatedSeller
-    ? "Autentifikovani korisnik"
-    : null;
+      ? "Autentifikovani korisnik"
+      : null;
 
   const location = listing.seller?.locationCity || listing.location;
+  const sellerProfileSlug = listing.seller?.profileSlug;
+  const sellerDisplayName =
+    listing.seller?.storeName?.trim() ||
+    listing.seller?.name?.trim() ||
+    listing.seller?.email?.split("@")[0] ||
+    "Prodavac";
 
   const handleMouseDown = () => {
     setIsPressed(true);
@@ -73,7 +82,7 @@ const ListingGridCard = memo(function ListingGridCard({
     setIsPressed(false);
   };
 
-  const handleTouchStart = (e: React.TouchEvent) => {
+  const handleTouchStart = () => {
     setIsPressed(true);
     // Don't prevent default to allow navigation
   };
@@ -122,16 +131,27 @@ const ListingGridCard = memo(function ListingGridCard({
         <div className="relative w-[140px] min-[475px]:w-[160px] sm:w-[180px] md:w-[200px] lg:w-full flex-shrink-0 ml-2 sm:ml-3 md:ml-4 lg:ml-0 mt-2 sm:mt-3 md:mt-4 lg:mt-0 mb-2 sm:mb-3 md:mb-4 lg:mb-0 aspect-square sm:aspect-[4/5] md:aspect-square lg:aspect-square">
           <div className="relative w-full h-full overflow-hidden bg-neutral-100 rounded-2xl lg:rounded-t-2xl lg:rounded-b-none">
             {(isVerifiedSeller || isAuthenticatedSeller) && (
-              <div
-                title={badgeTitle ?? undefined}
-                className="absolute left-2 top-2 z-10 rounded-full border border-white/80 bg-white/95 backdrop-blur-sm p-1.5 shadow-md"
-              >
-                {isVerifiedSeller ? (
+              sellerProfileSlug && isVerifiedSeller ? (
+                <Link
+                  href={`/sellers/${sellerProfileSlug}`}
+                  title={badgeTitle ?? undefined}
+                  className="absolute left-2 top-2 z-10 rounded-full border border-white/80 bg-white/95 backdrop-blur-sm p-1.5 shadow-md hover:bg-white transition-colors"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <ShieldCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#D4AF37]" aria-hidden />
-                ) : (
-                  <UserCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-neutral-900" aria-hidden />
-                )}
-              </div>
+                </Link>
+              ) : (
+                <div
+                  title={badgeTitle ?? undefined}
+                  className="absolute left-2 top-2 z-10 rounded-full border border-white/80 bg-white/95 backdrop-blur-sm p-1.5 shadow-md"
+                >
+                  {isVerifiedSeller ? (
+                    <ShieldCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#D4AF37]" aria-hidden />
+                  ) : (
+                    <UserCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-neutral-900" aria-hidden />
+                  )}
+                </div>
+              )
             )}
             {listing.photos && listing.photos.length > 0 ? (
               <Image
@@ -140,7 +160,7 @@ const ListingGridCard = memo(function ListingGridCard({
                 fill
                 className="object-cover transition-transform duration-300 group-hover:scale-[1.05] rounded-2xl lg:rounded-t-2xl lg:rounded-b-none"
                 loading="lazy"
-                sizes="(max-width: 475px) 140px, (max-width: 640px) 160px, (max-width: 768px) 180px, (max-width: 1024px) 200px, (min-width: 1024px) 100%"
+                sizes={imageSizes}
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.style.display = "none";
@@ -158,7 +178,7 @@ const ListingGridCard = memo(function ListingGridCard({
             )}
           </div>
         </div>
-        
+
         {/* Content on right (mobile) / bottom (desktop) */}
         <CardContent className="flex flex-1 flex-col py-2 sm:py-3 md:py-4 lg:py-4 px-3 sm:px-4 md:px-5 lg:px-6 min-w-0 justify-between lg:justify-between h-full lg:h-full">
           {/* Top section - Title and Reference */}
@@ -166,14 +186,14 @@ const ListingGridCard = memo(function ListingGridCard({
             <h3 className="line-clamp-2 text-base sm:text-lg md:text-xl lg:text-xl font-bold leading-tight text-neutral-900 transition-colors group-hover:text-[#D4AF37]">
               {listing.title}
             </h3>
-            
+
             {listing.reference && (
               <p className="text-[10px] sm:text-xs md:text-sm lg:text-xs font-mono text-muted-foreground">
                 Ref: <span className="font-semibold">{listing.reference}</span>
               </p>
             )}
           </div>
-          
+
           {/* Bottom section - Info, Price */}
           <div className="mt-auto space-y-2">
             {/* Small info row - Condition, Year, Location */}
@@ -194,11 +214,28 @@ const ListingGridCard = memo(function ListingGridCard({
                 </span>
               )}
             </div>
-            
+
             {/* Price */}
             <div className="text-lg sm:text-xl md:text-2xl lg:text-2xl font-bold text-neutral-900 leading-none">
               <PriceDisplay amountEurCents={listing.priceEurCents} />
             </div>
+            {isVerifiedSeller && sellerProfileSlug && (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  start({ immediate: true });
+                  router.push(`/sellers/${sellerProfileSlug}`);
+                }}
+                className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border-2 border-[#D4AF37]/30 bg-[#D4AF37]/10 px-3 py-1.5 text-[10px] sm:text-xs font-semibold text-neutral-900 hover:border-[#D4AF37]/60 hover:bg-[#D4AF37]/20 transition-all group/seller"
+                title="Kliknite za pregled profila prodavca"
+              >
+                <ShieldCheck className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-[#D4AF37] flex-shrink-0" aria-hidden />
+                <span className="truncate max-w-[120px] sm:max-w-[180px]">{sellerDisplayName}</span>
+                <ArrowUpRight className="h-3 w-3 sm:h-3.5 sm:w-3.5 opacity-60 group-hover/seller:opacity-100 group-hover/seller:translate-x-0.5 group-hover/seller:-translate-y-0.5 transition-all flex-shrink-0" aria-hidden />
+              </button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -245,6 +282,8 @@ function ListingGridBase({
           listing={listing}
           isFavorite={favoriteIds?.has(listing.id) ?? false}
           onToggle={(next) => onToggleFavorite?.(listing.id, next)}
+          imageSizes={`(max-width: 475px) 140px, (max-width: 640px) 160px, (max-width: 768px) 180px, (max-width: 1024px) 200px, (min-width: 1024px) ${columns === 5 ? "20vw" : columns === 4 ? "25vw" : "33vw"
+            }`}
         />
       ))}
     </div>
