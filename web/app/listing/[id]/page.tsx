@@ -151,7 +151,16 @@ function SellerInfoCard({
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-base font-semibold flex items-center gap-2 flex-wrap">
-              {displayName}
+              {showProfileLink ? (
+                <Link
+                  href={`/sellers/${seller.profileSlug}`}
+                  className="hover:underline hover:text-[#D4AF37] transition-colors"
+                >
+                  {displayName}
+                </Link>
+              ) : (
+                displayName
+              )}
               {badge && (
                 <Badge
                   variant="secondary"

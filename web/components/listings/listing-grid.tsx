@@ -228,10 +228,12 @@ const ListingGridCard = memo(function ListingGridCard({
                   start({ immediate: true });
                   router.push(`/sellers/${sellerProfileSlug}`);
                 }}
-                className="mt-1 inline-flex items-center gap-1 rounded-full border border-neutral-200/70 bg-neutral-50 px-2.5 py-1 text-[10px] sm:text-xs font-semibold text-neutral-700 hover:border-[#D4AF37]/80 hover:text-neutral-900 transition-colors"
+                className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border-2 border-[#D4AF37]/30 bg-[#D4AF37]/10 px-3 py-1.5 text-[10px] sm:text-xs font-semibold text-neutral-900 hover:border-[#D4AF37]/60 hover:bg-[#D4AF37]/20 transition-all group/seller"
+                title="Kliknite za pregled profila prodavca"
               >
-                <ArrowUpRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" aria-hidden />
-                <span className="truncate max-w-[140px] sm:max-w-[200px]">{sellerDisplayName}</span>
+                <ShieldCheck className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-[#D4AF37] flex-shrink-0" aria-hidden />
+                <span className="truncate max-w-[120px] sm:max-w-[180px]">{sellerDisplayName}</span>
+                <ArrowUpRight className="h-3 w-3 sm:h-3.5 sm:w-3.5 opacity-60 group-hover/seller:opacity-100 group-hover/seller:translate-x-0.5 group-hover/seller:-translate-y-0.5 transition-all flex-shrink-0" aria-hidden />
               </button>
             )}
           </div>
