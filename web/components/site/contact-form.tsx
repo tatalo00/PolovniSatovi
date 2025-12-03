@@ -152,7 +152,7 @@ export function ContactForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Vrsta upita</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value} modal={false}>
                     <FormControl>
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Odaberite kategoriju" />

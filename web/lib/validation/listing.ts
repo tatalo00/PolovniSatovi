@@ -20,7 +20,7 @@ export const BOX_PAPERS_VALUES = [
   "No Box or Papers",
 ] as const;
 
-export const SUPPORTED_CURRENCIES = ["EUR", "RSD", "BAM", "HRK"] as const;
+export const SUPPORTED_CURRENCIES = ["EUR", "RSD"] as const;
 
 export const GENDER_VALUES = ["MALE", "FEMALE", "UNISEX"] as const;
 

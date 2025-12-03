@@ -64,8 +64,11 @@ export default async function AdminVerificationsPage({
       </div>
 
       <AdminVerificationsList
-        applications={applications}
-        currentStatus={status}
+        applications={applications.map(app => ({
+          ...app,
+          status: app.status as "PENDING" | "APPROVED" | "REJECTED"
+        })) as any}
+        currentStatus={status as any}
         pendingCount={pendingCount}
         approvedCount={approvedCount}
         rejectedCount={rejectedCount}

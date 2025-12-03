@@ -69,8 +69,8 @@ export default async function VerifiedSellerPage() {
               application
                 ? {
                     id: application.id,
-                    status: application.status,
-                    sellerType: application.sellerType,
+                    status: application.status as any,
+                    sellerType: application.sellerType as any,
                     storeName: application.storeName,
                     shortDescription: application.shortDescription,
                     locationCountry: application.locationCountry,

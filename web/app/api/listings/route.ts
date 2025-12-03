@@ -73,6 +73,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (min || max) {
+      // Price filter is always in EUR, so we need to convert RSD listings
+      // Since priceEurCents is stored in EUR, we can filter directly
+      // But we need to account for listings that were entered in RSD
+      // For now, we filter by EUR cents directly since all prices are stored in EUR cents
       where.priceEurCents = {};
 
       if (min) {

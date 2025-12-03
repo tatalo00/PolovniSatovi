@@ -121,6 +121,10 @@
   html {
     overflow-x: hidden;
     max-width: 100vw;
+    scrollbar-gutter: stable;
+  }
+  body {
+    scrollbar-gutter: stable;
   }
   body {
     @apply bg-background text-foreground;
@@ -132,6 +136,12 @@
     overflow-x: hidden;
     max-width: 100vw;
     position: relative;
+    /* Prevent layout shift - scrollbar-gutter handles scrollbar space */
+    /* Ensure no padding is added that would cause horizontal shift */
+    padding-left: 0;
+    padding-right: 0;
+    margin-left: 0;
+    margin-right: 0;
   }
   
   h1,

@@ -1,15 +1,14 @@
 "use client";
 
-// Supported currencies for Balkan region
-export type Currency = "EUR" | "RSD" | "BAM" | "HRK";
+// Supported currencies
+export type Currency = "EUR" | "RSD";
 
-// Exchange rates (as of 2024, should be updated periodically or fetched from API)
-// These are approximate rates - in production, fetch from an API like exchangerate-api.com
+// Fixed exchange rate: 1 EUR = 117 RSD
+const EXCHANGE_RATE_EUR_TO_RSD = 117.0;
+
 const exchangeRates: Record<Currency, number> = {
   EUR: 1.0,
-  RSD: 117.0, // Serbian Dinar
-  BAM: 1.96, // Bosnian Mark
-  HRK: 7.45, // Croatian Kuna
+  RSD: EXCHANGE_RATE_EUR_TO_RSD,
 };
 
 // Get exchange rate from EUR to target currency
@@ -43,8 +42,6 @@ export function formatCurrency(
   const currencyLocales: Record<Currency, string> = {
     EUR: "de-DE", // European format
     RSD: "sr-RS", // Serbian
-    BAM: "bs-BA", // Bosnian
-    HRK: "hr-HR", // Croatian
   };
 
   const formatLocale = currencyLocales[currency] || locale;
@@ -57,7 +54,7 @@ export function formatCurrency(
   }).format(amount);
 }
 
-// Format price with EUR and converted currency
+// Format price with currency
 export function formatPriceWithConversion(
   amountEurCents: number,
   showCurrency: Currency = "EUR",
@@ -68,6 +65,16 @@ export function formatPriceWithConversion(
     showCurrency,
     locale
   );
+}
+
+// Convert RSD cents to EUR cents
+export function convertRsdToEur(rsdCents: number): number {
+  return Math.round(rsdCents / EXCHANGE_RATE_EUR_TO_RSD);
+}
+
+// Convert EUR cents to RSD cents
+export function convertEurToRsd(eurCents: number): number {
+  return Math.round(eurCents * EXCHANGE_RATE_EUR_TO_RSD);
 }
 
 // Get all supported currencies

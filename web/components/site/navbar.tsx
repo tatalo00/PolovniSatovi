@@ -71,7 +71,7 @@ export function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-background/90 backdrop-blur">
+    <header className="fixed top-0 left-0 right-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="border-b border-border/60">
         <div className="container relative mx-auto flex h-16 items-center justify-between px-4 md:h-20 md:grid md:grid-cols-12">
           <div className="flex items-center md:col-span-3">
@@ -111,7 +111,7 @@ export function Navbar() {
                 <Button variant="ghost" asChild>
                   <Link href="/dashboard">Dashboard</Link>
                 </Button>
-                <DropdownMenu>
+                <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                       <Avatar className="h-8 w-8">
@@ -122,7 +122,7 @@ export function Navbar() {
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56" align="end">
+                  <DropdownMenuContent className="w-56" align="end" onCloseAutoFocus={(e) => e.preventDefault()}>
                     <DropdownMenuLabel>
                       <div className="flex flex-col space-y-1">
                         <p className="text-sm font-medium">{user?.name || "Korisnik"}</p>

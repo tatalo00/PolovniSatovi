@@ -113,7 +113,9 @@ const {
         movement: listing.movement || "",
         condition: (listing.condition as ListingFormData["condition"]) ?? CONDITION_VALUES[0],
         gender: (listing.gender as ListingFormData["gender"]) ?? "UNISEX",
-        priceEurCents: (listing.priceEurCents / 100).toFixed(2),
+        priceEurCents: listing.currency === "RSD" 
+          ? ((listing.priceEurCents * 117) / 100).toFixed(2) // Convert EUR cents to RSD for display
+          : (listing.priceEurCents / 100).toFixed(2),
         currency: (listing.currency as ListingFormData["currency"]) ?? SUPPORTED_CURRENCIES[0],
         boxPapers: (listing.boxPapers as ListingFormData["boxPapers"]) ?? undefined,
         description: listing.description || "",
@@ -137,8 +139,14 @@ const {
     }
     setLoading(true);
     try {
-      const priceInEur = parseFloat(data.priceEurCents);
-      const priceEurCents = Math.round(priceInEur * 100);
+      const priceValue = parseFloat(data.priceEurCents);
+      const priceCents = Math.round(priceValue * 100);
+      
+      // Convert to EUR cents if currency is RSD
+      // 1 EUR = 117 RSD, so RSD cents / 117 = EUR cents
+      const priceEurCents = data.currency === "RSD" 
+        ? Math.round(priceCents / 117)
+        : priceCents;
 
       const payload = {
         ...data,
@@ -147,6 +155,7 @@ const {
         model: data.model.trim(),
         reference: data.reference?.trim() || undefined,
         priceEurCents,
+        currency: data.currency,
         year: data.year ? parseInt(data.year, 10) : null,
         caseDiameterMm: data.caseDiameterMm
           ? parseInt(data.caseDiameterMm, 10)
@@ -228,7 +237,6 @@ const {
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit(onSubmit)}>
-        <input type="hidden" {...register("currency")} />
         <CardContent className="space-y-6">
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Osnovne informacije</h3>
@@ -455,8 +463,37 @@ const {
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
+                <Label htmlFor="currency">
+                  Valuta <span className="text-destructive">*</span>
+                </Label>
+                <Controller
+                  control={control}
+                  name="currency"
+                  render={({ field }) => (
+                    <Select
+                      value={field.value}
+                      onValueChange={(value) =>
+                        field.onChange(value as ListingFormData["currency"])
+                      }
+                      disabled={loading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Izaberite valutu" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="EUR">EUR (Euro)</SelectItem>
+                        <SelectItem value="RSD">RSD (Srpski dinar)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.currency && (
+                  <p className="text-sm text-destructive">{errors.currency.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="priceEurCents">
-                  Cena (EUR) <span className="text-destructive">*</span>
+                  Cena <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="priceEurCents"
@@ -467,7 +504,7 @@ const {
                   disabled={loading}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Unesite cenu u evrima (npr. 10500.00)
+                  Unesite cenu u izabranoj valuti
                 </p>
                 {errors.priceEurCents && (
                   <p className="text-sm text-destructive">{errors.priceEurCents.message}</p>

@@ -424,6 +424,7 @@ export default async function ListingPage({ params }: ListingPageProps) {
           <div id="contact-seller" tabIndex={-1} className="lg:hidden">
             <ListingContactCard
               priceEurCents={listing.priceEurCents}
+              currency={listing.currency as "EUR" | "RSD" | undefined}
               listingId={listing.id}
               listingTitle={listing.title}
               sellerEmail={listing.seller.email}
