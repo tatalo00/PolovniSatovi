@@ -1,6 +1,13 @@
 import type { NextConfig } from "next";
+import bundleAnalyzer from "@next/bundle-analyzer";
+
+const withBundleAnalyzer = bundleAnalyzer({
+  enabled: process.env.ANALYZE === "true",
+});
 
 const nextConfig: NextConfig = {
+  // Fix workspace root detection for monorepo-like setups
+  outputFileTracingRoot: __dirname,
   images: {
     remotePatterns: [
       {
@@ -67,4 +74,4 @@ const nextConfig: NextConfig = {
   turbopack: {},
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);

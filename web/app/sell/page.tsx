@@ -103,8 +103,8 @@ export default async function SellPage() {
                 <h2 className="text-xl font-semibold tracking-tight">Zvanični ste prodavac?</h2>
               </div>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                Otvorite verified profil i istaknite svoje oglase. Dobijate trust badge, javnu profil
-                stranicu i prioritetnu podršku.
+              Otvorite profil verifikovanog prodavca i istaknite svoje oglase. Dobijate trust ikonicu, javnu profil
+              stranicu i prioritetnu podršku od admin tima.
               </p>
               <Button asChild variant="outline" size="lg" className="border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-neutral-900">
                 <Link href="/sell/verified">Prijavi prodavnicu</Link>

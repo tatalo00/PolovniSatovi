@@ -229,18 +229,36 @@ export async function POST(request: Request) {
 
     const data = validation.data;
 
+    // Generate title from brand and model if not provided
+    const title = data.title || `${data.brand} ${data.model}`.trim();
+
     // Create listing with photos
     const listing = await prisma.listing.create({
       data: {
         sellerId: userId,
-        title: data.title,
+        title,
         brand: data.brand,
         model: data.model,
         reference: data.reference || null,
         year: data.year || null,
         caseDiameterMm: data.caseDiameterMm || null,
+        caseThicknessMm: data.caseThicknessMm || null,
         caseMaterial: data.caseMaterial?.trim() || null,
+        waterResistanceM: data.waterResistanceM || null,
         movement: data.movement?.trim() || null,
+        movementType: data.movementType || null,
+        caliber: data.caliber?.trim() || null,
+        dialColor: data.dialColor || null,
+        dateDisplay: data.dateDisplay || null,
+        bezelType: data.bezelType || null,
+        bezelMaterial: data.bezelMaterial?.trim() || null,
+        strapType: data.strapType || null,
+        braceletMaterial: data.braceletMaterial?.trim() || null,
+        strapWidthMm: data.strapWidthMm || null,
+        warranty: data.warranty || null,
+        warrantyCard: data.warrantyCard ?? null,
+        originalOwner: data.originalOwner ?? null,
+        runningCondition: data.runningCondition || null,
         condition: data.condition,
         gender: data.gender,
         priceEurCents: data.priceEurCents,

@@ -1,12 +1,12 @@
 "use client";
 
-import { CreditCard, ShieldCheck, Sparkles, Wrench } from "lucide-react";
+import { CheckCircle2, Megaphone, ShieldCheck, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const SERVICES = [
   {
-    title: "Autentikacija",
-    description: "Stručna provera svakog sata uz digitalni zapis o autentičnosti.",
+    title: "Autentifikacija korisnika",
+    description: "Provera autentičnosti korisnika i verifikacija identiteta.",
     icon: <ShieldCheck className="h-6 w-6" aria-hidden />,
     gradient: "from-emerald-50 to-teal-50",
     iconGradient: "from-emerald-500 to-teal-600",
@@ -14,24 +14,24 @@ const SERVICES = [
   },
   {
     title: "Verifikovani prodavci",
-    description: "Samo proverenim prodavcima sa 5★ recenzijama dozvoljavamo da objavljuju.",
+    description: "Provereni prodavci sa oficijalnim radnjama za prodaju satova.",
     icon: <Sparkles className="h-6 w-6" aria-hidden />,
     gradient: "from-amber-50 to-yellow-50",
     iconGradient: "from-amber-500 to-yellow-600",
     borderColor: "border-amber-200/50",
   },
   {
-    title: "Sigurna plaćanja",
-    description: "Escrow opcije, osiguranje pošiljki i mogućnost plaćanja na rate.",
-    icon: <CreditCard className="h-6 w-6" aria-hidden />,
+    title: "Promocija oglasa",
+    description: "Mogućnost promovisanja oglasa na početnoj strani.",
+    icon: <Megaphone className="h-6 w-6" aria-hidden />,
     gradient: "from-blue-50 to-indigo-50",
     iconGradient: "from-blue-500 to-indigo-600",
     borderColor: "border-blue-200/50",
   },
   {
-    title: "Servis i održavanje",
-    description: "Partneri za servisiranje i poliranje sa garancijom na radove.",
-    icon: <Wrench className="h-6 w-6" aria-hidden />,
+    title: "Provera oglasa",
+    description: "Svaki oglas mora proći kroz proveru od strane admin tima.",
+    icon: <CheckCircle2 className="h-6 w-6" aria-hidden />,
     gradient: "from-purple-50 to-pink-50",
     iconGradient: "from-purple-500 to-pink-600",
     borderColor: "border-purple-200/50",
@@ -44,14 +44,14 @@ export function TrustServices() {
       <div className="container mx-auto space-y-8 sm:space-y-10 md:space-y-12 px-3 sm:px-4 md:px-6">
         <div className="space-y-2 sm:space-y-3 text-center">
           <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em] sm:tracking-[0.35em] text-muted-foreground">
-            Sigurnost i podrška
+            Platforma i usluge
           </p>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight text-foreground leading-tight sm:leading-normal px-2 sm:px-0">
-            Potpuna usluga od prve pretrage do isporuke
+            Sve što vam treba za sigurnu i uspešnu kupovinu ili prodaju
           </h2>
           <p className="mx-auto max-w-2xl text-xs sm:text-sm md:text-base text-muted-foreground leading-relaxed px-2 sm:px-0">
-            Transparentnost, osiguranje i partnerstva sa sertifikovanim časovničarima garantuju da
-            vaša kupovina protiče bez stresa – online i uživo.
+            Naša platforma nudi kompletan set alata i usluga koji vam pomažu da brzo i lako prodate ili kupite
+            satove uz potpunu sigurnost i podršku.
           </p>
         </div>
 

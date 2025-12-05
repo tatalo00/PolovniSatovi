@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight, Sparkles } from "lucide-react";
+import { BLUR_DATA_URL } from "@/lib/image-utils";
 
 export type PaidListing = {
   id: string;
@@ -31,11 +32,11 @@ export function PaidListings({ listings }: PaidListingsProps) {
             Promovisani Oglasi
           </p>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight text-foreground leading-tight sm:leading-normal">
-            Plaćene istaknute objave na početnoj strani
+            Plaćeni istaknuti oglasi na početnoj strani
           </h2>
           <p className="mx-auto max-w-2xl text-xs sm:text-sm md:text-base text-muted-foreground leading-relaxed px-2 sm:px-0">
             Prodavci koji žele dodatnu vidljivost mogu promovisati svoje oglase i pojaviti se na
-            vrhu početne stranice. Ovo su trenutno aktivne plaćene pozicije.
+            vrhu početne stranice.
           </p>
         </div>
 
@@ -55,6 +56,8 @@ export function PaidListings({ listings }: PaidListingsProps) {
                       fill
                       sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                       className="object-cover transition duration-700 group-hover:scale-105"
+                      placeholder="blur"
+                      blurDataURL={BLUR_DATA_URL}
                     />
                   ) : (
                     <div

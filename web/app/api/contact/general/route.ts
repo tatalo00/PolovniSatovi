@@ -24,7 +24,7 @@ const generalContactSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const rateLimitResult = rateLimit(10, 15 * 60 * 1000)(request);
+  const rateLimitResult = await rateLimit(10, 15 * 60 * 1000)(request);
   if (!rateLimitResult.allowed) {
     logger.warn("Rate limit exceeded for general contact form");
     return NextResponse.json(

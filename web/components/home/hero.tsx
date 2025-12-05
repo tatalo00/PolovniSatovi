@@ -1,9 +1,6 @@
-"use client";
-
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { ArrowRight, ShieldCheck, Watch, Zap } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
 
 type FeaturedListing = {
@@ -41,7 +38,6 @@ const TRUST_INDICATORS = [
 const FALLBACK_HERO_IMAGE = "/images/hero-pocket-watch.jpg";
 
 export function Hero({ featuredListings }: HeroProps) {
-  const router = useRouter();
   const heroImage =
     featuredListings.find((listing) => listing.photoUrl)?.photoUrl ?? FALLBACK_HERO_IMAGE;
 
@@ -57,18 +53,18 @@ export function Hero({ featuredListings }: HeroProps) {
       />
       <div className="absolute inset-0 bg-black/45" aria-hidden />
 
-      <div className="relative z-10 mx-auto flex min-h-[450px] sm:min-h-[500px] md:min-h-[600px] max-w-6xl items-center justify-center px-3 sm:px-4 py-6 sm:py-8 md:py-12 text-center md:px-6">
+      <div className="relative z-10 mx-auto flex min-h-[450px] sm:min-h-[500px] md:min-h-[600px] w-full items-center justify-center px-3 sm:px-4 py-6 sm:py-8 md:py-12 text-center md:px-6">
         <div className="w-full max-w-4xl rounded-xl sm:rounded-2xl md:rounded-[32px] bg-black/55 px-3 py-8 sm:px-4 sm:py-10 md:px-6 md:py-14 shadow-2xl ring-1 ring-white/10 backdrop-blur-[18px] md:px-8 md:py-16 lg:px-16">
           <div className="space-y-3 sm:space-y-4 md:space-y-6 lg:space-y-8">
             <p className="text-[9px] sm:text-[10px] md:text-xs uppercase tracking-[0.25em] sm:tracking-[0.3em] md:tracking-[0.4em] text-white/70">
-              Kurirana selekcija luksuznih satova
+              Jedinstvena platforma za prodaju polovnih satova u regionu
             </p>
             <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-semibold tracking-[0.02em] sm:tracking-[0.05em] leading-tight sm:leading-normal">
               Pronađite sledeći sat u svojoj kolekciji
             </h1>
             <p className="mx-auto max-w-2xl text-xs sm:text-sm md:text-base lg:text-lg text-white/75 leading-relaxed px-2 sm:px-0">
-              Ekskluzivni izbor verificiranih polovnih i vintage satova iz celog regiona. Povežite se
-              sa stručnim prodavcima i kupujte bez kompromisa po pitanju autentičnosti.
+              Veliki izbor polovnih i vintage satova iz celog regiona. Povežite se
+              sa verifikovanim prodavcima i kupujte od autentifikovanih korisnika.
             </p>
           </div>
 
@@ -78,17 +74,13 @@ export function Hero({ featuredListings }: HeroProps) {
               size="lg"
               className="rounded-full bg-[#D4AF37] px-6 sm:px-8 py-4 sm:py-5 md:px-10 md:py-6 text-sm sm:text-base md:text-base font-semibold text-neutral-900 transition hover:bg-[#b6932c] min-h-[44px] w-full sm:w-auto"
             >
-              <a 
-                href="/listings" 
-                onClick={(e) => { 
-                  e.preventDefault(); 
-                  router.push('/listings');
-                }}
-                className="inline-flex items-center justify-center gap-2 cursor-pointer"
+              <Link 
+                href="/listings"
+                className="inline-flex items-center justify-center gap-2"
               >
                 Istraži satove
                 <ArrowRight className="h-4 w-4 sm:h-4 sm:w-4 md:h-5 md:w-5" aria-hidden />
-              </a>
+              </Link>
             </Button>
           </div>
 

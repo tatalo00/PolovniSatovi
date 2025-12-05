@@ -96,8 +96,14 @@ export default async function WishlistPage() {
           } | null;
         });
 
+      const listing = favorite.listing!;
+      const currency: "EUR" | "RSD" = (listing.currency === "EUR" || listing.currency === "RSD") 
+        ? listing.currency 
+        : "EUR";
+
       return {
-        ...favorite.listing!,
+        ...listing,
+        currency,
         favoritedAt: favorite.createdAt,
         seller: sellerWithAuth
           ? {

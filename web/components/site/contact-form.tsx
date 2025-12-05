@@ -5,6 +5,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { MessageSquare } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -95,17 +96,23 @@ export function ContactForm() {
   };
 
   return (
-    <Card className="border border-neutral-200/70 shadow-lg">
-      <CardHeader>
-        <CardTitle className="text-xl sm:text-2xl">Pošaljite nam poruku</CardTitle>
-        <CardDescription className="text-sm text-muted-foreground leading-relaxed">
+    <Card className="group relative overflow-hidden border-2 border-[#D4AF37]/30 bg-white/98 backdrop-blur-sm shadow-2xl transition-all duration-300 hover:shadow-[#D4AF37]/20 hover:shadow-2xl hover:border-[#D4AF37]/50">
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#D4AF37] via-[#D4AF37]/60 to-transparent" />
+      <CardHeader className="relative z-10 pb-4 sm:pb-6">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="rounded-full bg-[#D4AF37]/10 p-2">
+            <MessageSquare className="h-5 w-5 text-[#D4AF37]" aria-hidden />
+          </div>
+          <CardTitle className="text-lg sm:text-xl md:text-2xl">Pošaljite nam poruku</CardTitle>
+        </div>
+        <CardDescription className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
           Popunite formu za opšte upite, podršku ili saradnju. Odgovaramo u roku od 1 radnog dana,
           a često i brže.
         </CardDescription>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
-          <CardContent className="space-y-5">
+          <CardContent className="relative z-10 space-y-4 sm:space-y-5">
             <FormField
               control={form.control}
               name="name"
@@ -152,7 +159,7 @@ export function ContactForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Vrsta upita</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value} modal={false}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Odaberite kategoriju" />
@@ -189,14 +196,18 @@ export function ContactForm() {
               )}
             />
           </CardContent>
-          <CardFooter className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs text-muted-foreground sm:text-sm">
-              Slanjem poruke prihvatate da obrađujemo vaše podatke u skladu sa Politikom privatnosti.
+          <CardFooter className="relative z-10 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-4 sm:pt-6 border-t border-border/50">
+            <p className="text-xs text-muted-foreground sm:text-sm leading-relaxed">
+              Slanjem poruke prihvatate da obrađujemo vaše podatke u skladu sa{" "}
+              <a href="/privacy" className="text-[#D4AF37] hover:text-[#b6932c] underline underline-offset-2 transition-colors">
+                Politikom privatnosti
+              </a>
+              .
             </p>
             <Button
               type="submit"
               size="lg"
-              className="w-full sm:w-auto min-w-[180px]"
+              className="w-full sm:w-auto min-w-[180px] bg-[#D4AF37] hover:bg-[#b6932c] text-neutral-900 font-semibold shadow-md hover:shadow-lg transition-all duration-200"
               disabled={isSubmitting}
             >
               {isSubmitting ? "Slanje..." : "Pošalji poruku"}

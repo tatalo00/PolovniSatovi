@@ -87,9 +87,14 @@ function mapListingToSummary(listing: Awaited<ReturnType<typeof getSellerListing
   const sellerEntity = listing.seller;
   const isAuthenticated =
     sellerEntity.authentication?.status === AUTHENTICATION_STATUS.APPROVED;
+  
+  const currency: "EUR" | "RSD" = (listing.currency === "EUR" || listing.currency === "RSD") 
+    ? listing.currency 
+    : "EUR";
 
   return {
     ...listing,
+    currency,
     photos: listing.photos.map((photo) => ({ url: photo.url })),
     seller: {
       name: sellerEntity.name,

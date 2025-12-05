@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BLUR_DATA_URL, GALLERY_IMAGE_SIZES } from "@/lib/image-utils";
 import { Lens } from "@/components/ui/lens";
 
 
@@ -160,7 +161,9 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
                   fill
                   className="object-cover"
                   priority={currentIndex === 0}
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 60vw"
+                  sizes={GALLERY_IMAGE_SIZES.main}
+                  placeholder="blur"
+                  blurDataURL={BLUR_DATA_URL}
                   style={{
                     animation: slideDirection === 'right' ? 'slideInRight 0.5s ease-out' : 'slideInLeft 0.5s ease-out'
                   }}
@@ -176,7 +179,9 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-105 md:hidden"
               priority={currentIndex === 0}
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 60vw"
+              sizes={GALLERY_IMAGE_SIZES.main}
+              placeholder="blur"
+              blurDataURL={BLUR_DATA_URL}
               style={{
                 animation: slideDirection === 'right' ? 'slideInRight 0.5s ease-out' : 'slideInLeft 0.5s ease-out'
               }}
@@ -266,7 +271,9 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
                   alt={`${title} - Minijatura ${index + 1}`}
                   fill
                   className="object-cover"
-                  sizes="(max-width: 768px) 25vw, 15vw"
+                  sizes={GALLERY_IMAGE_SIZES.thumbnail}
+                  placeholder="blur"
+                  blurDataURL={BLUR_DATA_URL}
                 />
               </button>
             ))}
@@ -311,8 +318,10 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
                   alt={`${title} - Slika ${currentIndex + 1}`}
                   fill
                   className="object-contain"
-                  sizes="100vw"
+                  sizes={GALLERY_IMAGE_SIZES.lightbox}
                   priority
+                  placeholder="blur"
+                  blurDataURL={BLUR_DATA_URL}
                   style={{
                     animation: slideDirection === 'right' ? 'slideInRight 0.5s ease-out' : 'slideInLeft 0.5s ease-out'
                   }}
@@ -364,7 +373,9 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
                       alt={`${title} - Minijatura ${index + 1}`}
                       fill
                       className="object-cover"
-                      sizes="80px"
+                      sizes={GALLERY_IMAGE_SIZES.lightboxThumbnail}
+                      placeholder="blur"
+                      blurDataURL={BLUR_DATA_URL}
                     />
                   </button>
                 ))}

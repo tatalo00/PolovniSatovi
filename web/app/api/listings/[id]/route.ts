@@ -103,17 +103,56 @@ export async function PATCH(
 
     // Prepare update data
     const updateData: any = {};
-    if (data.title !== undefined) updateData.title = data.title;
-    if (data.brand !== undefined) updateData.brand = data.brand;
-    if (data.model !== undefined) updateData.model = data.model;
+    
+    // Generate title from brand and model if brand/model are updated
+    if (data.brand !== undefined || data.model !== undefined) {
+      const currentBrand = data.brand !== undefined ? data.brand.trim() : listing.brand;
+      const currentModel = data.model !== undefined ? data.model.trim() : listing.model;
+      updateData.title = `${currentBrand} ${currentModel}`.trim();
+    } else if (data.title !== undefined) {
+      updateData.title = data.title.trim();
+    }
+    
+    if (data.brand !== undefined) updateData.brand = data.brand.trim();
+    if (data.model !== undefined) updateData.model = data.model.trim();
     if (data.reference !== undefined) updateData.reference = data.reference || null;
     if (data.year !== undefined) updateData.year = data.year || null;
     if (data.caseDiameterMm !== undefined)
       updateData.caseDiameterMm = data.caseDiameterMm || null;
+    if (data.caseThicknessMm !== undefined)
+      updateData.caseThicknessMm = data.caseThicknessMm || null;
     if (data.caseMaterial !== undefined)
       updateData.caseMaterial = data.caseMaterial?.trim() || null;
+    if (data.waterResistanceM !== undefined)
+      updateData.waterResistanceM = data.waterResistanceM || null;
     if (data.movement !== undefined)
       updateData.movement = data.movement?.trim() || null;
+    if (data.movementType !== undefined)
+      updateData.movementType = data.movementType || null;
+    if (data.caliber !== undefined)
+      updateData.caliber = data.caliber?.trim() || null;
+    if (data.dialColor !== undefined)
+      updateData.dialColor = data.dialColor || null;
+    if (data.dateDisplay !== undefined)
+      updateData.dateDisplay = data.dateDisplay || null;
+    if (data.bezelType !== undefined)
+      updateData.bezelType = data.bezelType || null;
+    if (data.bezelMaterial !== undefined)
+      updateData.bezelMaterial = data.bezelMaterial?.trim() || null;
+    if (data.strapType !== undefined)
+      updateData.strapType = data.strapType || null;
+    if (data.braceletMaterial !== undefined)
+      updateData.braceletMaterial = data.braceletMaterial?.trim() || null;
+    if (data.strapWidthMm !== undefined)
+      updateData.strapWidthMm = data.strapWidthMm || null;
+    if (data.warranty !== undefined)
+      updateData.warranty = data.warranty || null;
+    if (data.warrantyCard !== undefined)
+      updateData.warrantyCard = data.warrantyCard ?? null;
+    if (data.originalOwner !== undefined)
+      updateData.originalOwner = data.originalOwner ?? null;
+    if (data.runningCondition !== undefined)
+      updateData.runningCondition = data.runningCondition || null;
     if (data.condition !== undefined) updateData.condition = data.condition;
     if (data.priceEurCents !== undefined) updateData.priceEurCents = data.priceEurCents;
     if (data.gender !== undefined) updateData.gender = data.gender;

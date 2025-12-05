@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PriceDisplay } from "@/components/currency/price-display";
 import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "@/lib/utils";
+import { BLUR_DATA_URL } from "@/lib/image-utils";
 import { WishlistButton } from "./wishlist-button";
 import { useNavigationFeedback } from "@/components/providers/navigation-feedback-provider";
 import type { ListingSummary } from "@/types/listing";
@@ -168,6 +169,8 @@ const ListingGridCard = memo(function ListingGridCard({
                 className="object-cover transition-transform duration-300 group-hover:scale-[1.05]"
                 loading="lazy"
                 sizes={imageSizes}
+                placeholder="blur"
+                blurDataURL={BLUR_DATA_URL}
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.style.display = "none";

@@ -11,26 +11,36 @@ export const CACHE_TAGS = {
   brands: "brands",
   user: (id: string) => `user-${id}`,
   favorites: (id: string) => `favorites-${id}`,
+  sellers: "sellers",
+  seller: (id: string) => `seller-${id}`,
+  reviews: "reviews",
+  stats: "stats",
 } as const;
 
 /**
  * Revalidation times in seconds
+ * Tiered caching strategy for different data freshness requirements
  */
 export const REVALIDATE = {
-  // Short cache for frequently changing data
-  SHORT: 60, // 1 minute
-  // Medium cache for moderately changing data
-  MEDIUM: 300, // 5 minutes
-  // Long cache for rarely changing data
-  LONG: 3600, // 1 hour
-  // Very long cache for static data
-  VERY_LONG: 86400, // 24 hours
+  /** Real-time data that needs frequent updates (30 seconds) */
+  INSTANT: 30,
+  /** User-specific or frequently changing data (1 minute) */
+  SHORT: 60,
+  /** Listings and moderately changing data (5 minutes) */
+  MEDIUM: 300,
+  /** Brands, categories, and rarely changing data (1 hour) */
+  LONG: 3600,
+  /** Static content like blog posts, about pages (24 hours) */
+  STATIC: 86400,
 } as const;
 
 /**
  * Create a cached function with automatic revalidation
+ * @param fn - The async function to cache
+ * @param options - Cache configuration options
+ * @returns Cached version of the function
  */
-export function createCachedFunction<T extends (...args: any[]) => Promise<any>>(
+export function createCachedFunction<T extends (...args: unknown[]) => Promise<unknown>>(
   fn: T,
   options: {
     key: string | string[];
@@ -54,13 +64,20 @@ export function createCachedFunction<T extends (...args: any[]) => Promise<any>>
  */
 export const requestCache = cache;
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * Helper to generate cache keys with parameters
+ * @param base - Base key name
+ * @param params - Parameters to include in the key
+ * @returns Array of cache key segments
+ */
+export function generateCacheKey(base: string, params?: Record<string, unknown>): string[] {
+  if (!params) return [base];
+  
+  const sortedParams = Object.entries(params)
+    .filter(([, value]) => value !== undefined && value !== null)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, value]) => `${key}:${String(value)}`)
+    .join(",");
+  
+  return sortedParams ? [base, sortedParams] : [base];
+}

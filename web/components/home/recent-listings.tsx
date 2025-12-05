@@ -1,15 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { ArrowRight, Clock3, Eye, MapPin } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Clock3, MapPin } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { PriceDisplay } from "@/components/currency/price-display";
 import { Button } from "@/components/ui/button";
 import { WishlistButton } from "@/components/listings/wishlist-button";
+import { cn } from "@/lib/utils";
 
 interface RecentListing {
   id: string;
@@ -28,10 +28,6 @@ interface RecentListingsProps {
   listings: RecentListing[];
   favoriteIds?: string[];
 }
-
-const MOBILE_BREAKPOINT = 768;
-const INITIAL_VISIBLE = 8;
-const PAGE_SIZE = 4;
 
 function formatRelativeTime(isoDate: string) {
   const date = new Date(isoDate);
@@ -57,61 +53,22 @@ function formatRelativeTime(isoDate: string) {
   return `pre ${years} god.`;
 }
 
+
 export function RecentListings({ listings, favoriteIds = [] }: RecentListingsProps) {
-  const router = useRouter();
-  const [visibleCount, setVisibleCount] = useState(
-    Math.min(INITIAL_VISIBLE, listings.length)
-  );
-  const [isMobile, setIsMobile] = useState(false);
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const mq = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
-    const update = () => setIsMobile(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
+  const scroll = useCallback((direction: "left" | "right") => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    
+    const cardWidth = 320;
+    const scrollAmount = direction === "left" ? -cardWidth * 2 : cardWidth * 2;
+    
+    container.scrollBy({
+      left: scrollAmount,
+      behavior: "smooth",
+    });
   }, []);
-
-  useEffect(() => {
-    if (!isMobile) return;
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            setVisibleCount((prev) =>
-              Math.min(prev + PAGE_SIZE, listings.length)
-            );
-          }
-        }
-      },
-      { rootMargin: "200px 0px" }
-    );
-
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [isMobile, listings.length]);
-
-  const displayed = useMemo(
-    () => listings.slice(0, visibleCount),
-    [listings, visibleCount]
-  );
-
-  const handleLoadMore = useCallback(() => {
-    setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, listings.length));
-  }, [listings.length]);
-
-  const handleQuickView = useCallback(
-    (event: React.MouseEvent<HTMLButtonElement>, id: string) => {
-      event.preventDefault();
-      event.stopPropagation();
-      router.push(`/listing/${id}`);
-    },
-    [router]
-  );
 
   if (!listings || listings.length === 0) {
     return null;
@@ -126,110 +83,133 @@ export function RecentListings({ listings, favoriteIds = [] }: RecentListingsPro
               Nedavno dodati satovi
             </h2>
             <p className="text-muted-foreground">
-              Real-time feed najnovijih oglasa. Pratite stanje, lokaciju i cene čim se pojave.
+              Najnoviji oglasi na platformi. Pratite stanje, lokaciju i cene čim se pojave.
             </p>
           </div>
-          <Button asChild variant="outline" className="w-full sm:w-auto">
-            <Link href="/listings">
-              Vidi sve oglase
-              <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
-            </Link>
-          </Button>
-        </div>
-
-        <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-          {displayed.map((listing) => {
-            const primaryPhoto = listing.photos?.[0]?.url ?? null;
-            const isFavorite = favoriteIds.includes(listing.id);
-            return (
-              <Link
-                key={listing.id}
-                href={`/listing/${listing.id}`}
-                className="group"
+          <div className="flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-2 mr-4">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => scroll("left")}
+                className="h-10 w-10 rounded-full"
+                aria-label="Prethodni"
               >
-                <Card className="relative flex h-full flex-col overflow-hidden border-border/60 bg-background/80 shadow-sm transition hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg">
-                  <div className="relative h-56 w-full overflow-hidden bg-muted">
-                    {primaryPhoto ? (
-                      <Image
-                        src={primaryPhoto}
-                        alt={`${listing.brand} ${listing.model}`}
-                        fill
-                        className="object-cover transition-transform duration-300 group-hover:scale-105"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
-                        Nema fotografije
-                      </div>
-                    )}
-
-                    <div className="absolute left-3 top-3 flex items-center gap-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                      <WishlistButton
-                        listingId={listing.id}
-                        initialIsFavorite={isFavorite}
-                        size="sm"
-                        className="border border-white/40 bg-white/80 backdrop-blur hover:bg-white"
-                      />
-                      <button
-                        type="button"
-                        onClick={(event) => handleQuickView(event, listing.id)}
-                        className="flex h-8 w-8 items-center justify-center rounded-full border border-white/40 bg-white/80 text-foreground transition hover:bg-white"
-                        aria-label="Brzi prikaz"
-                      >
-                        <Eye className="h-4 w-4" aria-hidden />
-                      </button>
-                    </div>
-                  </div>
-
-                  <CardContent className="flex flex-1 flex-col gap-4 p-5">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-primary/80">
-                        <span>{listing.brand}</span>
-                        <span className="text-muted-foreground">/</span>
-                        <span className="text-muted-foreground">{listing.model}</span>
-                      </div>
-                      <h3 className="line-clamp-2 text-base font-semibold text-foreground">
-                        {listing.title}
-                      </h3>
-                      {listing.reference && (
-                        <p className="text-xs text-muted-foreground">Ref. {listing.reference}</p>
-                      )}
-                    </div>
-
-                    <div className="flex items-center justify-between gap-3">
-                      <PriceDisplay amountEurCents={listing.priceEurCents} />
-                      {listing.condition && (
-                        <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                          {listing.condition}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="mt-auto flex items-center justify-between text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <MapPin className="h-3.5 w-3.5" aria-hidden />
-                        {listing.locationLabel ?? "Online"}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock3 className="h-3.5 w-3.5" aria-hidden />
-                        {formatRelativeTime(listing.createdAt)}
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => scroll("right")}
+                className="h-10 w-10 rounded-full"
+                aria-label="Sledeći"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+            </div>
+            <Button asChild variant="outline" className="w-full sm:w-auto">
+              <Link href="/listings?sort=newest">
+                Vidi sve oglase
+                <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
               </Link>
-            );
-          })}
-        </div>
-
-        {visibleCount < listings.length && !isMobile && (
-          <div className="mt-8 flex justify-center">
-            <Button onClick={handleLoadMore} variant="outline" size="lg">
-              Učitaj još satova
             </Button>
           </div>
-        )}
-        <div ref={sentinelRef} />
+        </div>
+
+        <div className="relative -mx-4 px-4">
+          <div
+            ref={scrollContainerRef}
+            className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
+            {listings.map((listing) => {
+              const primaryPhoto = listing.photos?.[0]?.url ?? null;
+              const isFavorite = favoriteIds.includes(listing.id);
+              return (
+                <Link
+                  key={listing.id}
+                  href={`/listing/${listing.id}`}
+                  className="group flex-shrink-0 snap-start"
+                >
+                  <Card className={cn(
+                    "relative flex h-full w-[280px] sm:w-[300px] flex-col overflow-hidden",
+                    "border-border/60 bg-background/80 shadow-sm",
+                    "transition-all duration-200 hover:-translate-y-1 hover:border-[#D4AF37]/40 hover:shadow-lg"
+                  )}>
+                    <div className="relative h-48 w-full overflow-hidden bg-muted">
+                      {primaryPhoto ? (
+                        <Image
+                          src={primaryPhoto}
+                          alt={`${listing.brand} ${listing.model}`}
+                          fill
+                          className="object-cover transition-transform duration-300 group-hover:scale-105"
+                          sizes="300px"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
+                          Nema fotografije
+                        </div>
+                      )}
+                      <div className="absolute right-3 top-3">
+                        <WishlistButton
+                          listingId={listing.id}
+                          initialIsFavorite={isFavorite}
+                          size="sm"
+                          className={cn(
+                            "border border-white/40 bg-white/90 backdrop-blur hover:bg-white",
+                            "md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+                          )}
+                        />
+                      </div>
+                      <div className="absolute left-3 bottom-3">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white backdrop-blur">
+                          <Clock3 className="h-3 w-3" aria-hidden />
+                          {formatRelativeTime(listing.createdAt)}
+                        </span>
+                      </div>
+                    </div>
+                    <CardContent className="flex flex-1 flex-col gap-3 p-4">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-[#D4AF37]">
+                          <span>{listing.brand}</span>
+                          <span className="text-muted-foreground">/</span>
+                          <span className="text-muted-foreground">{listing.model}</span>
+                        </div>
+                        <h3 className="line-clamp-2 text-sm font-semibold text-foreground leading-tight">
+                          {listing.title}
+                        </h3>
+                      </div>
+                      <div className="mt-auto flex items-center justify-between gap-2">
+                        <PriceDisplay amountEurCents={listing.priceEurCents} className="text-base font-bold" />
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <MapPin className="h-3 w-3" aria-hidden />
+                          <span className="truncate max-w-[80px]">{listing.locationLabel ?? "Online"}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              );
+            })}
+            <Link href="/listings?sort=newest" className="flex-shrink-0 snap-start">
+              <Card className={cn(
+                "flex h-full w-[280px] sm:w-[300px] flex-col items-center justify-center",
+                "border-dashed border-2 border-border/60 bg-muted/30",
+                "transition-all duration-200 hover:border-[#D4AF37]/40 hover:bg-muted/50"
+              )}>
+                <CardContent className="flex flex-col items-center justify-center gap-4 p-8 text-center h-full min-h-[320px]">
+                  <div className="rounded-full bg-[#D4AF37]/10 p-4">
+                    <ArrowRight className="h-8 w-8 text-[#D4AF37]" />
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-lg font-semibold">Vidi sve oglase</p>
+                    <p className="text-sm text-muted-foreground">Pregledaj kompletnu ponudu satova</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          </div>
+        </div>
       </div>
     </section>
   );

@@ -6,6 +6,7 @@ import { Hero } from "@/components/home/hero";
 import type { PaidListing } from "@/components/home/featured-collections";
 import { QuickFilterBar } from "@/components/home/quick-filter-bar";
 import { PaidListings } from "@/components/home/featured-collections";
+import { RecentListings } from "@/components/home/recent-listings";
 import { TrustServices } from "@/components/home/trust-services";
 import { EducationHub } from "@/components/home/education-hub";
 import { unstable_cache } from "next/cache";
@@ -276,6 +277,7 @@ export default async function HomePage() {
       />
       <QuickFilterBar brands={availableBrands} />
       <PaidListings listings={paidListingsContent} />
+      <RecentListings listings={recentListings} favoriteIds={favoriteListingIds} />
       <TrustServices />
       <EducationHub />
     </main>

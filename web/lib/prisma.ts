@@ -2,30 +2,48 @@ import "server-only";
 
 import { PrismaClient } from "@prisma/client";
 
+/**
+ * PrismaClient singleton for serverless environments
+ * 
+ * In serverless (Vercel), each function invocation may create a new instance.
+ * We use a global singleton to reuse connections within the same process.
+ * 
+ * Connection pooling is handled by Supabase PgBouncer (configured in DATABASE_URL).
+ */
+
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-// Prisma client configuration with connection handling
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
-    datasources: {
-      db: {
-        url: process.env.DATABASE_URL,
-      },
-    },
+function createPrismaClient(): PrismaClient {
+  return new PrismaClient({
+    // Only log errors in production, more verbose in development
+    log:
+      process.env.NODE_ENV === "development"
+        ? ["query", "error", "warn"]
+        : ["error"],
+    // Datasource is configured via DATABASE_URL env var
+    // which points to Supabase PgBouncer for connection pooling
   });
+}
 
-// Handle connection errors gracefully
+// Use existing instance or create new one
+export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+
+// Prevent multiple instances in development (hot reload)
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
-  
-  // Test connection on startup in development
-  prisma.$connect().catch((error) => {
-    console.error("Failed to connect to database:", error);
-    console.error("\nPlease check your DATABASE_URL in .env.local");
-    console.error("For Supabase, you can find it in: Project Settings > Database > Connection string");
-  });
+}
+
+/**
+ * Graceful shutdown handler
+ * Ensures connections are properly closed when the process exits
+ */
+async function gracefulShutdown() {
+  await prisma.$disconnect();
+}
+
+// Register shutdown handlers (only in long-running processes, not serverless)
+if (typeof process !== "undefined" && process.env.NODE_ENV === "development") {
+  process.on("beforeExit", gracefulShutdown);
 }
