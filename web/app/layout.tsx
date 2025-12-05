@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
+import { auth } from "@/auth";
 import { Navbar } from "@/components/site/navbar";
 import { Footer } from "@/components/site/footer";
 import { MobileBottomNav } from "@/components/site/mobile-bottom-nav";
@@ -14,12 +15,14 @@ import { Toaster } from "sonner";
 const inter = Inter({
   variable: "--font-body",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const playfair = Playfair_Display({
   variable: "--font-heading",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -30,11 +33,19 @@ export const metadata: Metadata = {
   description: "Marketplace za kupovinu i prodaju polovnih i vintage satova na Balkanu.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
+  
+  const user = session?.user ? {
+    id: session.user.id,
+    name: session.user.name,
+    email: session.user.email,
+  } : null;
+
   return (
     <html lang="en" className="h-full overflow-x-hidden">
       <body className={`${inter.variable} ${playfair.variable} antialiased flex min-h-screen flex-col bg-background overflow-x-hidden`}>
@@ -45,7 +56,7 @@ export default function RootLayout({
               <Navbar />
               <PageTransitionWrapper>{children}</PageTransitionWrapper>
               <Footer />
-              <MobileBottomNav />
+              <MobileBottomNav user={user} />
               <Toaster 
                 position="bottom-center"
                 expand={false}

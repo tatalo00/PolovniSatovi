@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PriceDisplay } from "@/components/currency/price-display";
+import { BLUR_DATA_URL } from "@/lib/image-utils";
 import { Edit, Trash2, Eye, Send, CheckCircle2, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -129,6 +130,9 @@ export function ListingList({ listings, showActions = false }: ListingListProps)
                 alt={listing.title}
                 fill
                 className="object-cover"
+                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                placeholder="blur"
+                blurDataURL={BLUR_DATA_URL}
               />
             ) : (
               <div className="flex h-full items-center justify-center bg-muted">

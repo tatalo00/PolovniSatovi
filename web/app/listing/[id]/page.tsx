@@ -1,9 +1,12 @@
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
+import Link from "next/link";
+import Image from "next/image";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { ListingViewTracker } from "@/components/listings/listing-view-tracker";
 import { ListingImageGallery } from "@/components/listings/listing-image-gallery";
@@ -15,7 +18,6 @@ import { ShareButton } from "@/components/listings/share-button";
 import { Prisma } from "@prisma/client";
 import { AUTHENTICATION_STATUS, type AuthenticationStatus } from "@/lib/authentication/status";
 import dynamic from "next/dynamic";
-import { REVALIDATE } from "@/lib/cache";
 
 // Dynamically import heavy components
 const ListingReviewsSection = dynamic(
@@ -41,6 +43,15 @@ type ListingWithSellerDetail = Prisma.ListingGetPayload<{
         authentication: {
           select: {
             status: true;
+          };
+        };
+        sellerProfile: {
+          select: {
+            slug: true;
+            storeName: true;
+            shortDescription: true;
+            logoUrl: true;
+            heroImageUrl: true;
           };
         };
       };
@@ -95,6 +106,10 @@ type SellerSummary = {
   createdAt: Date;
   isVerified: boolean;
   authenticationStatus: AuthenticationStatus | null;
+  storeName?: string | null;
+  shortDescription?: string | null;
+  profileSlug?: string | null;
+  logoUrl?: string | null;
 };
 
 function SellerInfoCard({
@@ -110,38 +125,79 @@ function SellerInfoCard({
   className?: string;
   badge?: { label: string; type: "verified" | "authenticated" } | null;
 }) {
+  const displayName =
+    seller.storeName?.trim() || seller.name?.trim() || seller.email || "Prodavac";
+  const initials = displayName
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+  const showProfileLink = badge?.type === "verified" && seller.profileSlug;
+
   return (
     <Card className={className}>
       <CardHeader className="pb-2">
         <CardTitle className="text-lg">Prodavac</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
-        <div>
-          <p className="text-base font-semibold flex items-center gap-2">
-            {seller.name?.trim() || seller.email}
-            {badge && (
-              <Badge
-                variant="secondary"
-                title={badge.label}
-                className="flex items-center gap-1.5 border border-white/0 bg-neutral-900/5 text-xs font-semibold text-neutral-700 backdrop-blur"
-              >
-                {badge.type === "verified" ? (
-                  <ShieldCheck className="h-3.5 w-3.5 text-[#D4AF37]" aria-hidden />
-                ) : (
-                  <UserCheck className="h-3.5 w-3.5 text-neutral-900" aria-hidden />
-                )}
-                <span>{badge.label}</span>
-              </Badge>
+      <CardContent className="space-y-4">
+        <div className="flex items-start gap-3">
+          <div className="relative h-12 w-12 rounded-full bg-neutral-100 overflow-hidden flex items-center justify-center text-sm font-semibold text-neutral-700">
+            {seller.logoUrl ? (
+              <Image src={seller.logoUrl} alt={displayName} fill sizes="48px" className="object-cover" />
+            ) : (
+              <span>{initials}</span>
             )}
-          </p>
-          {locationLabel && (
-            <p className="text-sm text-muted-foreground">{locationLabel}</p>
-          )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-base font-semibold flex items-center gap-2 flex-wrap">
+              {showProfileLink ? (
+                <Link
+                  href={`/sellers/${seller.profileSlug}`}
+                  className="hover:underline hover:text-[#D4AF37] transition-colors"
+                >
+                  {displayName}
+                </Link>
+              ) : (
+                displayName
+              )}
+              {badge && (
+                <Badge
+                  variant="secondary"
+                  title={badge.label}
+                  className="flex items-center gap-1.5 border border-white/0 bg-neutral-900/5 text-xs font-semibold text-neutral-700 backdrop-blur"
+                >
+                  {badge.type === "verified" ? (
+                    <ShieldCheck className="h-3.5 w-3.5 text-[#D4AF37]" aria-hidden />
+                  ) : (
+                    <UserCheck className="h-3.5 w-3.5 text-neutral-900" aria-hidden />
+                  )}
+                  <span>{badge.label}</span>
+                </Badge>
+              )}
+            </p>
+            {locationLabel && (
+              <p className="text-sm text-muted-foreground">{locationLabel}</p>
+            )}
+          </div>
         </div>
+
+        {seller.shortDescription && (
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            {seller.shortDescription}
+          </p>
+        )}
+
         <div className="rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
           Član od{" "}
           <span className="font-medium text-foreground">{memberSince}</span>
         </div>
+
+        {showProfileLink && (
+          <Button asChild variant="outline" size="sm" className="w-full">
+            <Link href={`/sellers/${seller.profileSlug}`}>Pogledaj profil prodavca</Link>
+          </Button>
+        )}
       </CardContent>
     </Card>
   );
@@ -167,6 +223,15 @@ export default async function ListingPage({ params }: ListingPageProps) {
           authentication: {
             select: {
               status: true,
+            },
+          },
+          sellerProfile: {
+            select: {
+              slug: true,
+              storeName: true,
+              shortDescription: true,
+              logoUrl: true,
+              heroImageUrl: true,
             },
           },
         },
@@ -254,6 +319,21 @@ export default async function ListingPage({ params }: ListingPageProps) {
     month: "long",
     year: "numeric",
   }).format(listing.seller.createdAt);
+  const sellerProfile = listing.seller.sellerProfile;
+  const sellerDetails: SellerSummary = {
+    id: listing.seller.id,
+    name: listing.seller.name,
+    email: listing.seller.email,
+    locationCity: listing.seller.locationCity,
+    locationCountry: listing.seller.locationCountry,
+    createdAt: listing.seller.createdAt,
+    isVerified: listing.seller.isVerified,
+    authenticationStatus: sellerAuthStatus,
+    storeName: sellerProfile?.storeName ?? listing.seller.name,
+    shortDescription: sellerProfile?.shortDescription ?? null,
+    profileSlug: sellerProfile?.slug ?? null,
+    logoUrl: sellerProfile?.logoUrl ?? null,
+  };
 
   const conditionSchemaMap: Record<string, string> = {
     New: "https://schema.org/NewCondition",
@@ -344,6 +424,7 @@ export default async function ListingPage({ params }: ListingPageProps) {
           <div id="contact-seller" tabIndex={-1} className="lg:hidden">
             <ListingContactCard
               priceEurCents={listing.priceEurCents}
+              currency={listing.currency as "EUR" | "RSD" | undefined}
               listingId={listing.id}
               listingTitle={listing.title}
               sellerEmail={listing.seller.email}
@@ -407,10 +488,7 @@ export default async function ListingPage({ params }: ListingPageProps) {
 
             <div className="lg:hidden">
               <SellerInfoCard
-                seller={{
-                  ...listing.seller,
-                  authenticationStatus: sellerAuthStatus,
-                }}
+                seller={sellerDetails}
                 locationLabel={sellerLocation}
                 memberSince={memberSince}
                 badge={sellerBadge}
@@ -450,10 +528,7 @@ export default async function ListingPage({ params }: ListingPageProps) {
               />
             </div>
             <SellerInfoCard
-              seller={{
-                ...listing.seller,
-                authenticationStatus: sellerAuthStatus,
-              }}
+              seller={sellerDetails}
               locationLabel={sellerLocation}
               memberSince={memberSince}
               badge={sellerBadge}

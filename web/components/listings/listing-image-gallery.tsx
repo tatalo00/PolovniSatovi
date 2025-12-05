@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BLUR_DATA_URL, GALLERY_IMAGE_SIZES } from "@/lib/image-utils";
+import { Lens } from "@/components/ui/lens";
 
 
 interface ListingPhoto {
@@ -25,6 +27,7 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right');
+  const [hovering, setHovering] = useState(false);
   const mainImageRef = useRef<HTMLDivElement | null>(null);
 
   // Minimum swipe distance (in pixels)
@@ -124,7 +127,7 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
     <>
       <div className="space-y-3">
         {/* Main Image */}
-        <div className="relative group">
+        <div className="relative group max-w-2xl mx-auto">
           <div
             ref={mainImageRef}
             className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-muted cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:aspect-[3/2]"
@@ -141,14 +144,44 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
               position: 'relative'
             }}
           >
+            {/* Lens wrapper - only on desktop */}
+            <div className="hidden md:block absolute inset-0 z-10 pointer-events-none">
+              <Lens
+                hovering={hovering}
+                setHovering={setHovering}
+                className="w-full h-full pointer-events-auto"
+                zoomFactor={2.5}
+                lensSize={250}
+                imageUrl={currentPhoto.url}
+              >
+                <Image
+                  key={currentPhoto.id}
+                  src={currentPhoto.url}
+                  alt={`${title} - Slika ${currentIndex + 1}`}
+                  fill
+                  className="object-cover"
+                  priority={currentIndex === 0}
+                  sizes={GALLERY_IMAGE_SIZES.main}
+                  placeholder="blur"
+                  blurDataURL={BLUR_DATA_URL}
+                  style={{
+                    animation: slideDirection === 'right' ? 'slideInRight 0.5s ease-out' : 'slideInLeft 0.5s ease-out'
+                  }}
+                />
+              </Lens>
+            </div>
+            
+            {/* Regular image for mobile and fallback */}
             <Image
               key={currentPhoto.id}
               src={currentPhoto.url}
               alt={`${title} - Slika ${currentIndex + 1}`}
               fill
-              className="object-cover transition-transform duration-300 group-hover:scale-105"
+              className="object-cover transition-transform duration-300 group-hover:scale-105 md:hidden"
               priority={currentIndex === 0}
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 60vw"
+              sizes={GALLERY_IMAGE_SIZES.main}
+              placeholder="blur"
+              blurDataURL={BLUR_DATA_URL}
               style={{
                 animation: slideDirection === 'right' ? 'slideInRight 0.5s ease-out' : 'slideInLeft 0.5s ease-out'
               }}
@@ -156,13 +189,13 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
             
             {/* Image Counter */}
             {photos.length > 1 && (
-              <div className="absolute top-3 right-3 bg-black/60 text-white text-xs px-2 py-1 rounded-md backdrop-blur-sm">
+              <div className="absolute top-3 right-3 bg-black/60 text-white text-xs px-2 py-1 rounded-md backdrop-blur-sm z-20">
                 {currentIndex + 1} / {photos.length}
               </div>
             )}
 
-            {/* Zoom Icon Overlay */}
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
+            {/* Zoom Icon Overlay - only on mobile */}
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100 md:hidden">
               <ZoomIn className="w-8 h-8 text-white drop-shadow-lg" />
             </div>
 
@@ -172,7 +205,7 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 md:opacity-0 transition-opacity h-11 w-11 min-h-[44px] min-w-[44px] rounded-full md:h-10 md:w-10 md:min-h-0 md:min-w-0"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 md:opacity-0 transition-opacity h-11 w-11 min-h-[44px] min-w-[44px] rounded-full md:h-10 md:w-10 md:min-h-0 md:min-w-0 z-20"
                   onClick={(e) => {
                     e.stopPropagation();
                     handlePrevious();
@@ -184,7 +217,7 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 md:opacity-0 transition-opacity h-11 w-11 min-h-[44px] min-w-[44px] rounded-full md:h-10 md:w-10 md:min-h-0 md:min-w-0"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 md:opacity-0 transition-opacity h-11 w-11 min-h-[44px] min-w-[44px] rounded-full md:h-10 md:w-10 md:min-h-0 md:min-w-0 z-20"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleNext();
@@ -238,7 +271,9 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
                   alt={`${title} - Minijatura ${index + 1}`}
                   fill
                   className="object-cover"
-                  sizes="(max-width: 768px) 25vw, 15vw"
+                  sizes={GALLERY_IMAGE_SIZES.thumbnail}
+                  placeholder="blur"
+                  blurDataURL={BLUR_DATA_URL}
                 />
               </button>
             ))}
@@ -283,8 +318,10 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
                   alt={`${title} - Slika ${currentIndex + 1}`}
                   fill
                   className="object-contain"
-                  sizes="100vw"
+                  sizes={GALLERY_IMAGE_SIZES.lightbox}
                   priority
+                  placeholder="blur"
+                  blurDataURL={BLUR_DATA_URL}
                   style={{
                     animation: slideDirection === 'right' ? 'slideInRight 0.5s ease-out' : 'slideInLeft 0.5s ease-out'
                   }}
@@ -336,7 +373,9 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
                       alt={`${title} - Minijatura ${index + 1}`}
                       fill
                       className="object-cover"
-                      sizes="80px"
+                      sizes={GALLERY_IMAGE_SIZES.lightboxThumbnail}
+                      placeholder="blur"
+                      blurDataURL={BLUR_DATA_URL}
                     />
                   </button>
                 ))}

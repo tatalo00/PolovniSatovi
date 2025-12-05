@@ -19,6 +19,10 @@ export default async function AdminPage() {
     where: { status: "OPEN" },
   });
 
+  const pendingVerificationsCount = await prisma.sellerApplication.count({
+    where: { status: "PENDING" },
+  });
+
   // Get recent listings for approval
   const pendingListings = await prisma.listing.findMany({
     where: { status: "PENDING" },
@@ -82,6 +86,7 @@ export default async function AdminPage() {
       <AdminDashboard
         pendingCount={pendingCount}
         openReportsCount={openReportsCount}
+        pendingVerificationsCount={pendingVerificationsCount}
         pendingListings={pendingListings}
         recentReports={recentReports}
       />

@@ -31,7 +31,7 @@ export function ListingContent({
   const router = useRouter();
   const { start: startNavigation } = useNavigationFeedback();
   const search = typeof window !== "undefined" ? window.location.search : "";
-  const scrollUpdateRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // const scrollUpdateRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(
     () => new Set(initialFavoriteIds)
   );
@@ -62,61 +62,65 @@ export function ListingContent({
   const favoriteIdSnapshot = useMemo(() => new Set(favoriteIds), [favoriteIds]);
   const deferredScrollKey = useDeferredValue(search);
 
-  const saveScrollPosition = useCallback((position: number) => {
-    if (typeof window === "undefined") return;
-    const currentState = window.history.state ?? {};
-    if (
-      currentState?.listingState?.scroll === position &&
-      currentState?.listingState?.search === window.location.search
-    ) {
-      return;
-    }
-    window.history.replaceState(
-      {
-        ...currentState,
-        listingState: {
-          scroll: position,
-          search: window.location.search,
-          timestamp: Date.now(),
-        },
-      },
-      ""
-    );
-  }, []);
+  /* 
+   * Custom scroll restoration logic removed to rely on Next.js native behavior.
+   * If scroll issues persist, we can re-enable this or use a specialized library.
+   */
+  // const saveScrollPosition = useCallback((position: number) => {
+  //   if (typeof window === "undefined") return;
+  //   const currentState = window.history.state ?? {};
+  //   if (
+  //     currentState?.listingState?.scroll === position &&
+  //     currentState?.listingState?.search === window.location.search
+  //   ) {
+  //     return;
+  //   }
+  //   window.history.replaceState(
+  //     {
+  //       ...currentState,
+  //       listingState: {
+  //         scroll: position,
+  //         search: window.location.search,
+  //         timestamp: Date.now(),
+  //       },
+  //     },
+  //     ""
+  //   );
+  // }, []);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if ("scrollRestoration" in window.history) {
-      window.history.scrollRestoration = "manual";
-    }
-    const state = window.history.state?.listingState;
-    requestAnimationFrame(() => {
-      if (state && state.search === window.location.search) {
-        window.scrollTo(0, state.scroll ?? 0);
-      } else {
-        window.scrollTo(0, 0);
-      }
-    });
-  }, [search]);
+  // useEffect(() => {
+  //   if (typeof window === "undefined") return;
+  //   if ("scrollRestoration" in window.history) {
+  //     window.history.scrollRestoration = "manual";
+  //   }
+  //   const state = window.history.state?.listingState;
+  //   requestAnimationFrame(() => {
+  //     if (state && state.search === window.location.search) {
+  //       window.scrollTo(0, state.scroll ?? 0);
+  //     } else {
+  //       window.scrollTo(0, 0);
+  //     }
+  //   });
+  // }, [search]);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const handleScroll = () => {
-      if (scrollUpdateRef.current) {
-        clearTimeout(scrollUpdateRef.current);
-      }
-      scrollUpdateRef.current = setTimeout(() => {
-        saveScrollPosition(window.scrollY);
-      }, 120);
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => {
-      if (scrollUpdateRef.current) {
-        clearTimeout(scrollUpdateRef.current);
-      }
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, [saveScrollPosition]);
+  // useEffect(() => {
+  //   if (typeof window === "undefined") return;
+  //   const handleScroll = () => {
+  //     if (scrollUpdateRef.current) {
+  //       clearTimeout(scrollUpdateRef.current);
+  //     }
+  //     scrollUpdateRef.current = setTimeout(() => {
+  //       saveScrollPosition(window.scrollY);
+  //     }, 120);
+  //   };
+  //   window.addEventListener("scroll", handleScroll, { passive: true });
+  //   return () => {
+  //     if (scrollUpdateRef.current) {
+  //       clearTimeout(scrollUpdateRef.current);
+  //     }
+  //     window.removeEventListener("scroll", handleScroll);
+  //   };
+  // }, [saveScrollPosition]);
 
   const handleSortChange = (sort: string) => {
     const params = buildSearchParams();
@@ -187,9 +191,8 @@ export function ListingContent({
                 {idx > 0 && arr[idx - 1] !== p - 1 && <span className="px-1 sm:px-2 text-xs sm:text-sm text-muted-foreground">...</span>}
                 <a
                   href={buildPageUrl(p)}
-                  className={`rounded-md border border-input bg-background px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm hover:bg-accent min-h-[36px] sm:min-h-[32px] min-w-[36px] sm:min-w-[32px] flex items-center justify-center transition-colors ${
-                    p === currentPage ? "bg-primary text-primary-foreground border-primary" : ""
-                  }`}
+                  className={`rounded-md border border-input bg-background px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm hover:bg-accent min-h-[36px] sm:min-h-[32px] min-w-[36px] sm:min-w-[32px] flex items-center justify-center transition-colors ${p === currentPage ? "bg-primary text-primary-foreground border-primary" : ""
+                    }`}
                 >
                   {p}
                 </a>

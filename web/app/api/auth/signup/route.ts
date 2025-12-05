@@ -16,7 +16,7 @@ const signupSchema = z.object({
 
 export async function POST(request: Request) {
   // Rate limiting: 5 signups per 15 minutes per IP
-  const rateLimitResult = rateLimit(5, 15 * 60 * 1000)(request);
+  const rateLimitResult = await rateLimit(5, 15 * 60 * 1000)(request);
   if (!rateLimitResult.allowed) {
     logger.warn("Rate limit exceeded for signup", {
       identifier: request.headers.get("x-forwarded-for") || "unknown",

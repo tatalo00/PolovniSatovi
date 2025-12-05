@@ -27,7 +27,6 @@ import {
   Search,
   Sparkles,
   Watch,
-  X,
 } from "lucide-react";
 import { useNavigationFeedback } from "@/components/providers/navigation-feedback-provider";
 
@@ -68,7 +67,6 @@ export function ListingsQuickFilterBar({ brands }: ListingsQuickFilterBarProps) 
   const router = useRouter();
   const searchParams = useSearchParams();
   const { start: startNavigation } = useNavigationFeedback();
-  const [isOpen, setIsOpen] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Initialize from URL params
@@ -278,7 +276,6 @@ export function ListingsQuickFilterBar({ brands }: ListingsQuickFilterBarProps) 
 
     startNavigation({ immediate: true });
     router.push(`/listings?${params.toString()}`);
-    setIsOpen(false);
   };
 
   const hasActiveFiltersFromUrl = useMemo(() => {
@@ -320,35 +317,8 @@ export function ListingsQuickFilterBar({ brands }: ListingsQuickFilterBarProps) 
     Boolean(diameterMin) ||
     Boolean(diameterMax);
 
-  if (!isOpen) {
-    return (
-      <div className="mb-4">
-        <Button
-          onClick={() => setIsOpen(true)}
-          variant={hasActiveFiltersFromUrl ? "default" : "outline"}
-          className="w-full sm:w-auto min-h-[44px]"
-        >
-          <Search className="h-4 w-4 mr-2" />
-          {hasActiveFiltersFromUrl ? "Izmeni pretragu" : "Pretraži oglase"}
-        </Button>
-      </div>
-    );
-  }
-
   return (
     <section className="mb-6 rounded-2xl border border-border/70 bg-white/85 p-4 shadow-lg backdrop-blur-md md:p-6">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Pretraži oglase</h2>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setIsOpen(false)}
-          className="h-10 w-10 min-h-[44px] min-w-[44px]"
-          aria-label="Zatvori pretragu"
-        >
-          <X className="h-5 w-5" />
-        </Button>
-      </div>
       <div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-7 lg:gap-4">
           {/* Brand - First */}
@@ -357,7 +327,7 @@ export function ListingsQuickFilterBar({ brands }: ListingsQuickFilterBarProps) 
               <Watch className="h-4 w-4" aria-hidden />
               <span>Marka</span>
             </div>
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
@@ -370,6 +340,7 @@ export function ListingsQuickFilterBar({ brands }: ListingsQuickFilterBarProps) 
               <DropdownMenuContent
                 className="w-64 rounded-2xl border border-border/70 bg-background/95 p-0 shadow-xl"
                 sideOffset={10}
+                onCloseAutoFocus={(e) => e.preventDefault()}
               >
                 <div className="p-3">
                   <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2">
@@ -499,7 +470,7 @@ export function ListingsQuickFilterBar({ brands }: ListingsQuickFilterBarProps) 
             <div className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
               Mehanizam
             </div>
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
@@ -512,7 +483,10 @@ export function ListingsQuickFilterBar({ brands }: ListingsQuickFilterBarProps) 
                   <ChevronDown className="h-4 w-4 opacity-60 flex-shrink-0" aria-hidden />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-60 rounded-2xl border border-border/70 bg-background/95 p-1 shadow-xl">
+              <DropdownMenuContent 
+                className="w-60 rounded-2xl border border-border/70 bg-background/95 p-1 shadow-xl"
+                onCloseAutoFocus={(e) => e.preventDefault()}
+              >
                 <DropdownMenuItem
                   onSelect={(event) => {
                     event.preventDefault();
@@ -556,7 +530,7 @@ export function ListingsQuickFilterBar({ brands }: ListingsQuickFilterBarProps) 
             <div className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
               Stanje
             </div>
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
@@ -570,7 +544,10 @@ export function ListingsQuickFilterBar({ brands }: ListingsQuickFilterBarProps) 
                   <ChevronDown className="h-4 w-4 opacity-60 flex-shrink-0" aria-hidden />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-60 rounded-2xl border border-border/70 bg-background/95 p-1 shadow-xl">
+              <DropdownMenuContent 
+                className="w-60 rounded-2xl border border-border/70 bg-background/95 p-1 shadow-xl"
+                onCloseAutoFocus={(e) => e.preventDefault()}
+              >
                 <DropdownMenuItem
                   onSelect={(event) => {
                     event.preventDefault();
@@ -826,7 +803,6 @@ export function ListingsQuickFilterBar({ brands }: ListingsQuickFilterBarProps) 
                 setDiameterMax("");
                 startNavigation({ immediate: true });
                 router.push("/listings");
-                setIsOpen(false);
               }}
               className="text-xs"
             >

@@ -4,7 +4,7 @@ import Link from "next/link";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, FileText } from "lucide-react";
+import { AlertCircle, FileText, Shield } from "lucide-react";
 import { PriceDisplay } from "@/components/currency/price-display";
 
 interface PendingListing {
@@ -35,6 +35,7 @@ interface RecentReport {
 interface AdminDashboardProps {
   pendingCount: number;
   openReportsCount: number;
+  pendingVerificationsCount: number;
   pendingListings: PendingListing[];
   recentReports: RecentReport[];
 }
@@ -42,6 +43,7 @@ interface AdminDashboardProps {
 export function AdminDashboard({
   pendingCount,
   openReportsCount,
+  pendingVerificationsCount,
   pendingListings,
   recentReports,
 }: AdminDashboardProps) {
@@ -68,6 +70,20 @@ export function AdminDashboard({
           <CardContent>
             <div className="text-2xl font-bold">{openReportsCount}</div>
             <p className="text-xs text-muted-foreground">Prijava</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Verified prijave</CardTitle>
+            <Shield className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{pendingVerificationsCount}</div>
+            <p className="text-xs text-muted-foreground">Na čekanju</p>
+            <Button asChild variant="outline" size="sm" className="mt-2 w-full">
+              <Link href="/admin/verifications">Pregled prijava</Link>
+            </Button>
           </CardContent>
         </Card>
       </div>

@@ -158,6 +158,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
   session: {
     strategy: "jwt",
+    maxAge: process.env.SESSION_MAX_AGE
+      ? parseInt(process.env.SESSION_MAX_AGE, 10)
+      : 7 * 24 * 60 * 60, // Default: 7 days in seconds
+    updateAge: process.env.SESSION_UPDATE_AGE
+      ? parseInt(process.env.SESSION_UPDATE_AGE, 10)
+      : 24 * 60 * 60, // Default: 1 day in seconds
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -181,41 +187,59 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return extendedToken;
     },
     async session({ session, token }) {
-      if (session.user) {
-        const extendedToken = token as ExtendedToken;
-        session.user.id = token.sub ?? session.user.id;
-        session.user.role = extendedToken.role;
+      try {
+        if (session.user) {
+          const extendedToken = token as ExtendedToken;
+          session.user.id = token.sub ?? session.user.id;
+          session.user.role = extendedToken.role;
 
-        let userRecord: { role: UserRole; isVerified?: boolean | null } | null = null;
-        if (token.sub) {
-          try {
-            userRecord = await prisma.user.findUnique({
-              where: { id: token.sub },
-              select: { isVerified: true, role: true },
-            });
-          } catch (error) {
-            if (
-              error instanceof Prisma.PrismaClientKnownRequestError &&
-              error.code === "P2022"
-            ) {
-              const fallback = await prisma.user.findUnique({
+          let userRecord: { role: UserRole; isVerified?: boolean | null } | null = null;
+          if (token.sub) {
+            try {
+              userRecord = await prisma.user.findUnique({
                 where: { id: token.sub },
-                select: { role: true },
+                select: { isVerified: true, role: true },
               });
-              if (fallback) {
-                userRecord = { role: fallback.role, isVerified: false };
+            } catch (error) {
+              if (
+                error instanceof Prisma.PrismaClientKnownRequestError &&
+                error.code === "P2022"
+              ) {
+                const fallback = await prisma.user.findUnique({
+                  where: { id: token.sub },
+                  select: { role: true },
+                });
+                if (fallback) {
+                  userRecord = { role: fallback.role, isVerified: false };
+                }
+              } else {
+                console.error("Session callback error:", error);
+                // Return session with fallback values instead of throwing
+                session.user.isVerified = extendedToken.isVerified ?? false;
+                session.user.role = extendedToken.role ?? "BUYER";
+                return session;
               }
-            } else {
-              throw error;
             }
           }
-        }
 
-        session.user.isVerified =
-          userRecord?.isVerified ?? extendedToken.isVerified ?? session.user.isVerified ?? false;
-        session.user.role = userRecord?.role ?? extendedToken.role;
+          session.user.isVerified =
+            userRecord?.isVerified ?? extendedToken.isVerified ?? session.user.isVerified ?? false;
+          session.user.role = userRecord?.role ?? extendedToken.role ?? "BUYER";
+        }
+        return session;
+      } catch (error) {
+        console.error("Session callback fatal error:", error);
+        // Return a minimal valid session to prevent JSON parse errors
+        return {
+          ...session,
+          user: {
+            ...session.user,
+            id: token.sub ?? "",
+            role: (token as ExtendedToken).role ?? "BUYER",
+            isVerified: (token as ExtendedToken).isVerified ?? false,
+          },
+        };
       }
-      return session;
     },
   },
   pages: {

@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PriceDisplay } from "@/components/currency/price-display";
+import { BLUR_DATA_URL } from "@/lib/image-utils";
 import { ArrowRight } from "lucide-react";
 
 interface FeaturedListingsProps {
@@ -49,6 +50,8 @@ export function FeaturedListings({ listings }: FeaturedListingsProps) {
                       className="object-cover transition-transform duration-200 group-hover:scale-105"
                       loading="lazy"
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                      placeholder="blur"
+                      blurDataURL={BLUR_DATA_URL}
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         target.style.display = "none";

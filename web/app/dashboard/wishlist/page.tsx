@@ -37,6 +37,14 @@ export default async function WishlistPage() {
                   status: true,
                 },
               },
+              sellerProfile: {
+                select: {
+                  slug: true,
+                  storeName: true,
+                  shortDescription: true,
+                  logoUrl: true,
+                },
+              },
             },
           },
         },
@@ -80,10 +88,22 @@ export default async function WishlistPage() {
         sellerEntity &&
         (sellerEntity as typeof sellerEntity & {
           authentication?: { status: AuthenticationStatus | null } | null;
+          sellerProfile?: {
+            slug: string | null;
+            storeName: string | null;
+            shortDescription: string | null;
+            logoUrl: string | null;
+          } | null;
         });
 
+      const listing = favorite.listing!;
+      const currency: "EUR" | "RSD" = (listing.currency === "EUR" || listing.currency === "RSD") 
+        ? listing.currency 
+        : "EUR";
+
       return {
-        ...favorite.listing!,
+        ...listing,
+        currency,
         favoritedAt: favorite.createdAt,
         seller: sellerWithAuth
           ? {
@@ -91,9 +111,13 @@ export default async function WishlistPage() {
               email: sellerWithAuth.email,
               locationCity: sellerWithAuth.locationCity,
               locationCountry: sellerWithAuth.locationCountry,
-              isVerified: sellerWithAuth.isVerified,
+              isVerified: Boolean(sellerWithAuth.isVerified),
               isAuthenticated:
                 sellerWithAuth.authentication?.status === AUTHENTICATION_STATUS.APPROVED,
+              profileSlug: sellerWithAuth.sellerProfile?.slug ?? null,
+              storeName: sellerWithAuth.sellerProfile?.storeName ?? null,
+              shortDescription: sellerWithAuth.sellerProfile?.shortDescription ?? null,
+              logoUrl: sellerWithAuth.sellerProfile?.logoUrl ?? null,
             }
           : null,
       } satisfies ListingSummary;
