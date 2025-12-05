@@ -1,9 +1,4 @@
 import type { NextConfig } from "next";
-import bundleAnalyzer from "@next/bundle-analyzer";
-
-const withBundleAnalyzer = bundleAnalyzer({
-  enabled: process.env.ANALYZE === "true",
-});
 
 const nextConfig: NextConfig = {
   // Fix workspace root detection for monorepo-like setups
@@ -11,13 +6,13 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: '*.supabase.co',
-        pathname: '/storage/v1/object/public/**',
+        protocol: "https",
+        hostname: "*.supabase.co",
+        pathname: "/storage/v1/object/public/**",
       },
     ],
     // Optimize images
-    formats: ['image/avif', 'image/webp'],
+    formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 60,
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
@@ -70,8 +65,21 @@ const nextConfig: NextConfig = {
     return config;
   },
   // Add empty turbopack config to silence Next.js 16 warning
-  // We're explicitly using webpack via --webpack flag
   turbopack: {},
 };
 
-export default withBundleAnalyzer(nextConfig);
+// Only use bundle analyzer when ANALYZE env var is set (local dev only)
+let exportedConfig = nextConfig;
+
+if (process.env.ANALYZE === "true") {
+  try {
+    // Dynamic import to avoid requiring the package in production
+    const bundleAnalyzer = require("@next/bundle-analyzer");
+    const withBundleAnalyzer = bundleAnalyzer({ enabled: true });
+    exportedConfig = withBundleAnalyzer(nextConfig);
+  } catch {
+    console.warn("Bundle analyzer not available, skipping...");
+  }
+}
+
+export default exportedConfig;
