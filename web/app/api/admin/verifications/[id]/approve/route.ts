@@ -1,10 +1,11 @@
 import "server-only";
 
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { revalidateTag, revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { CACHE_TAGS } from "@/lib/cache";
 import { SellerApplicationStatus } from "@prisma/client";
 
 export async function POST(
@@ -88,6 +89,7 @@ export async function POST(
     });
 
     // Invalidate cache for listings to show updated verified status
+    revalidateTag(CACHE_TAGS.listings);
     revalidatePath("/listings");
     revalidatePath("/");
     revalidatePath(`/sellers/${slug}`);
