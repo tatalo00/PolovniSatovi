@@ -8,6 +8,7 @@ import { ShieldCheck, UserCheck } from "lucide-react";
 
 interface ListingContactCardProps {
   priceEurCents: number;
+  currency?: "EUR" | "RSD";
   listingId: string;
   listingTitle: string;
   sellerEmail: string;
@@ -21,6 +22,7 @@ interface ListingContactCardProps {
 
 export function ListingContactCard({
   priceEurCents,
+  currency = "EUR",
   listingId,
   listingTitle,
   sellerEmail,
@@ -42,7 +44,7 @@ export function ListingContactCard({
               Cena
             </span>
             <CardTitle className="text-lg sm:text-xl md:text-2xl lg:text-3xl mt-0.5 sm:mt-1">
-              <PriceDisplay amountEurCents={priceEurCents} showSwitcher />
+              <PriceDisplay amountEurCents={priceEurCents} currency={currency} />
             </CardTitle>
           </div>
           {sellerBadge && (

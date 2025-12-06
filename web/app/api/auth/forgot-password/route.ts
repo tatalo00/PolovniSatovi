@@ -15,7 +15,7 @@ const forgotPasswordSchema = z.object({
 
 export async function POST(request: Request) {
   // Rate limiting: 5 requests per 15 minutes per IP
-  const rateLimitResult = rateLimit(5, 15 * 60 * 1000)(request);
+  const rateLimitResult = await rateLimit(5, 15 * 60 * 1000)(request);
   if (!rateLimitResult.allowed) {
     logger.warn("Rate limit exceeded for forgot password");
     return NextResponse.json(

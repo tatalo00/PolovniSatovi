@@ -1,8 +1,8 @@
 import "server-only";
 
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { jsonWithCache, errorResponse, CACHE_CONTROL } from "@/lib/api-utils";
 
 interface RouteParams {
   params: Promise<{ sellerId: string }>;
@@ -34,21 +34,22 @@ export async function GET(request: Request, { params }: RouteParams) {
     });
 
     // Calculate average rating
-    const avgRating = reviews.length > 0
-      ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-      : 0;
+    const avgRating =
+      reviews.length > 0
+        ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+        : 0;
 
-    return NextResponse.json({
-      reviews,
-      averageRating: Math.round(avgRating * 100) / 100,
-      totalReviews: reviews.length,
-    });
+    // Reviews are public data - cache for 5 minutes
+    return jsonWithCache(
+      {
+        reviews,
+        averageRating: Math.round(avgRating * 100) / 100,
+        totalReviews: reviews.length,
+      },
+      { cache: CACHE_CONTROL.SHORT }
+    );
   } catch (error) {
     logger.error("Error fetching seller reviews", { error });
-    return NextResponse.json(
-      { error: "Došlo je do greške" },
-      { status: 500 }
-    );
+    return errorResponse("Došlo je do greške", 500);
   }
 }
-

@@ -18,7 +18,7 @@ const contactSchema = z.object({
 
 export async function POST(request: Request) {
   // Rate limiting: 10 contact messages per 15 minutes per IP
-  const rateLimitResult = rateLimit(10, 15 * 60 * 1000)(request);
+  const rateLimitResult = await rateLimit(10, 15 * 60 * 1000)(request);
   if (!rateLimitResult.allowed) {
     logger.warn("Rate limit exceeded for contact form");
     return NextResponse.json(

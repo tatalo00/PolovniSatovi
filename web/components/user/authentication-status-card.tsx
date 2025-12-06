@@ -44,7 +44,7 @@ const statusCopy: Record<AuthenticationStatus, { label: string; description: str
   REJECTED: {
     label: "Odbijeno",
     description:
-      "Didit nije uspeo da potvrdi vaš identitet. Pogledajte razlog i pokušajte ponovo sa jasnim fotografijama i dobrim osvetljenjem.",
+      "Didit nije uspeo da potvrdi vaš identitet. Naš tim za podršku će istražiti vaš slučaj i javiti vam se uskoro.",
   },
   CANCELED: {
     label: "Otkazano",
@@ -137,13 +137,33 @@ export function AuthenticationStatusCard({
         <Badge variant={status === "APPROVED" ? "default" : "secondary"}>{copy.label}</Badge>
       </CardHeader>
       <CardContent className="space-y-4">
-        {status === "REJECTED" && rejectionReason && (
-          <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
-            Razlog odbijanja: {rejectionReason}
+        {status === "REJECTED" && (
+          <div className="rounded-md border border-amber-500/30 bg-amber-50 dark:bg-amber-950/20 p-4 text-sm">
+            <div className="flex items-start gap-2">
+              <ShieldAlert className="h-5 w-5 text-amber-600 dark:text-amber-500 mt-0.5 flex-shrink-0" />
+              <div className="space-y-2">
+                <p className="font-medium text-amber-900 dark:text-amber-100">
+                  Autentifikacija nije uspela
+                </p>
+                <p className="text-amber-800 dark:text-amber-200">
+                  Naš tim za podršku će istražiti vaš slučaj i javiti vam se uskoro. Ne morate ništa da radite - kontaktiraćemo vas kada završimo proveru.
+                </p>
+                {rejectionReason && (
+                  <div className="mt-2 pt-2 border-t border-amber-200 dark:border-amber-800">
+                    <p className="text-xs font-medium text-amber-700 dark:text-amber-300 mb-1">
+                      Razlog od Didit platforme:
+                    </p>
+                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                      {rejectionReason}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
 
-        {statusDetail && (
+        {statusDetail && status !== "REJECTED" && (
           <div className="rounded-md border border-border/60 bg-muted/20 p-3 text-sm text-muted-foreground">
             {statusDetail}
           </div>

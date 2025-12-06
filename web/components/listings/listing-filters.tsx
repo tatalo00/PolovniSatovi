@@ -410,7 +410,7 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
         <form onSubmit={onFormSubmit} className="space-y-5">
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-neutral-600">Brend</Label>
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button
                   type="button"
@@ -428,6 +428,7 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
               <DropdownMenuContent
                 align="start"
                 className="w-[240px] rounded-2xl border border-neutral-200/70 bg-white/95 p-0 shadow-xl"
+                onCloseAutoFocus={(e) => e.preventDefault()}
               >
                 <div className="p-3">
                   <Input
@@ -596,7 +597,7 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
           <div className="grid gap-4 border-t border-neutral-200/70 pt-4">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-neutral-600">Stanje</Label>
-              <DropdownMenu>
+              <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button
                     type="button"
@@ -614,6 +615,7 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
                 <DropdownMenuContent
                   align="start"
                   className="w-[240px] rounded-2xl border border-neutral-200/70 bg-white/95 p-0 shadow-xl"
+                  onCloseAutoFocus={(e) => e.preventDefault()}
                 >
                   <div className="max-h-56 overflow-y-auto py-1 text-sm text-neutral-700">
                     {CONDITION_MULTI_OPTIONS.map((option) => {
@@ -642,7 +644,7 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
 
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-neutral-600">Mehanizam</Label>
-              <DropdownMenu>
+              <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button
                     type="button"
@@ -660,6 +662,7 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
                 <DropdownMenuContent
                   align="start"
                   className="w-[240px] rounded-2xl border border-neutral-200/70 bg-white/95 p-0 shadow-xl"
+                  onCloseAutoFocus={(e) => e.preventDefault()}
                 >
                   <div className="max-h-56 overflow-y-auto py-1 text-sm text-neutral-700">
                     {MOVEMENT_MULTI_OPTIONS.map((option) => {
@@ -688,7 +691,7 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
 
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-neutral-600">Namenjeno</Label>
-              <DropdownMenu>
+              <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button
                     type="button"
@@ -704,6 +707,7 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
                 <DropdownMenuContent
                   align="start"
                   className="w-[240px] rounded-2xl border border-neutral-200/70 bg-white/95 p-0 shadow-xl"
+                  onCloseAutoFocus={(e) => e.preventDefault()}
                 >
                   <div className="max-h-56 overflow-y-auto py-1 text-sm text-neutral-700">
                     {GENDER_MULTI_OPTIONS.map((option) => {
@@ -734,7 +738,7 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
           <div className="grid gap-4 border-t border-neutral-200/70 pt-4">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-neutral-600">Dodatno</Label>
-              <DropdownMenu>
+              <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button
                     type="button"
@@ -752,6 +756,7 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
                 <DropdownMenuContent
                   align="start"
                   className="w-[240px] rounded-2xl border border-neutral-200/70 bg-white/95 p-0 shadow-xl"
+                  onCloseAutoFocus={(e) => e.preventDefault()}
                 >
                   <div className="max-h-56 overflow-y-auto py-1 text-sm text-neutral-700">
                     {EXTRA_OPTIONS.map((option) => {

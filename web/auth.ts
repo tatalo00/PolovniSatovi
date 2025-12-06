@@ -158,6 +158,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
   session: {
     strategy: "jwt",
+    maxAge: process.env.SESSION_MAX_AGE
+      ? parseInt(process.env.SESSION_MAX_AGE, 10)
+      : 7 * 24 * 60 * 60, // Default: 7 days in seconds
+    updateAge: process.env.SESSION_UPDATE_AGE
+      ? parseInt(process.env.SESSION_UPDATE_AGE, 10)
+      : 24 * 60 * 60, // Default: 1 day in seconds
   },
   callbacks: {
     async jwt({ token, user }) {

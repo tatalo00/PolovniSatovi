@@ -14,17 +14,18 @@ export function PageTransitionWrapper({ children }: PageTransitionWrapperProps) 
   const { isLoading } = useNavigationFeedback();
 
   return (
-    <main 
+    <div 
       className={cn(
         "page-transition-wrapper flex-1",
         "mobile-bottom-nav-padding",
+        "pt-16 md:pt-20",
         isLoading && "is-loading"
       )}
     >
       <div key={pathname} className="page-transition-content">
         {children}
       </div>
-    </main>
+    </div>
   );
 }
 

@@ -2,7 +2,6 @@ import { prisma } from "@/lib/prisma";
 import { ListingFilters } from "@/components/listings/listing-filters";
 import { ListingContent } from "@/components/listings/listing-content";
 import { MobileFilterDrawer } from "@/components/listings/mobile-filter-drawer";
-import { ListingsQuickFilterBar } from "@/components/listings/listings-quick-filter-bar";
 import { auth } from "@/auth";
 import type { ListingSummary } from "@/types/listing";
 import { AUTHENTICATION_STATUS, type AuthenticationStatus } from "@/lib/authentication/status";
@@ -84,8 +83,12 @@ export default async function ListingsPage({
       } | null;
     }) | null;
 
+    const { currency: _, ...listingWithoutCurrency } = listing;
+    const currency: "EUR" | "RSD" = (listing.currency === "EUR" || listing.currency === "RSD" ? listing.currency : "EUR");
+
     return {
-      ...listing,
+      ...listingWithoutCurrency,
+      currency,
       photos: listing.photos.map((photo) => ({ url: photo.url })),
       seller: sellerWithAuth
         ? {
@@ -116,8 +119,6 @@ export default async function ListingsPage({
           Pretražite ponudu polovnih i vintage satova
         </p>
       </div>
-
-      <ListingsQuickFilterBar brands={popularBrands} />
 
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)] xl:gap-8 mt-4 sm:mt-6">
         <aside className="hidden lg:block">

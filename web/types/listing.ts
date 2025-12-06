@@ -8,6 +8,7 @@ export interface ListingSummary {
   condition: string | null;
   gender?: "MALE" | "FEMALE" | "UNISEX";
   priceEurCents: number;
+  currency?: "EUR" | "RSD";
   location: string | null;
   boxPapers?: string | null;
   photos: { url: string }[];

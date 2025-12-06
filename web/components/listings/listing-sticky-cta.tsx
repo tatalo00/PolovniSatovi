@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 
 interface ListingStickyCTAProps {
   priceEurCents: number;
+  currency?: "EUR" | "RSD";
   contactTargetId: string;
   isOwner: boolean;
   isSold?: boolean;
@@ -16,6 +17,7 @@ interface ListingStickyCTAProps {
 
 export function ListingStickyCTA({
   priceEurCents,
+  currency = "EUR",
   contactTargetId,
   isOwner,
   isSold = false,
@@ -68,7 +70,7 @@ export function ListingStickyCTA({
             Cena
           </span>
           <span className="text-lg font-semibold truncate">
-            <PriceDisplay amountEurCents={priceEurCents} />
+            <PriceDisplay amountEurCents={priceEurCents} currency={currency} />
           </span>
         </div>
         {listingId && (
