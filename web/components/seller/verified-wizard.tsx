@@ -6,17 +6,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 
-// Define enums locally to avoid importing from @prisma/client in client components
-enum SellerApplicationStatus {
-  PENDING = "PENDING",
-  APPROVED = "APPROVED",
-  REJECTED = "REJECTED",
-}
-
-enum SellerType {
-  OFFICIAL = "OFFICIAL",
-  INDEPENDENT = "INDEPENDENT",
-}
+// Use string literal types to match Prisma's generated enums
+type SellerApplicationStatus = "PENDING" | "APPROVED" | "REJECTED";
+type SellerType = "OFFICIAL" | "INDEPENDENT";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,8 +25,8 @@ import {
 } from "@/components/ui/select";
 
 const SELLER_TYPES = [
-  { value: SellerType.OFFICIAL, label: "Oficijalni butik / registrovana firma" },
-  { value: SellerType.INDEPENDENT, label: "Nezavisni časovničar / online shop" },
+  { value: "OFFICIAL" as SellerType, label: "Oficijalni butik / registrovana firma" },
+  { value: "INDEPENDENT" as SellerType, label: "Nezavisni časovničar / online shop" },
 ] as const;
 
 const STEP_FIELDS: Array<(keyof ApplicationFormValues)[]> = [
@@ -45,7 +37,7 @@ const STEP_FIELDS: Array<(keyof ApplicationFormValues)[]> = [
 const applicationSchema = z
   .object({
     storeName: z.string().min(2, "Unesite naziv prodavnice"),
-    sellerType: z.nativeEnum(SellerType),
+    sellerType: z.enum(["OFFICIAL", "INDEPENDENT"]),
     shortDescription: z
       .string()
       .min(10, "Napišite bar 10 karaktera")
@@ -97,7 +89,7 @@ export function SellerVerifiedWizard({ initialApplication }: SellerVerifiedWizar
     resolver: zodResolver(applicationSchema),
     defaultValues: {
       storeName: initialApplication?.storeName ?? "",
-      sellerType: initialApplication?.sellerType ?? SellerType.OFFICIAL,
+      sellerType: initialApplication?.sellerType ?? "OFFICIAL",
       shortDescription: initialApplication?.shortDescription ?? "",
       locationCountry: initialApplication?.locationCountry ?? "",
       locationCity: initialApplication?.locationCity ?? "",
@@ -109,7 +101,7 @@ export function SellerVerifiedWizard({ initialApplication }: SellerVerifiedWizar
   const instagramValue = form.watch("instagramHandle") ?? "";
 
   const isReadOnly =
-    application && application.status !== SellerApplicationStatus.REJECTED
+    application && application.status !== "REJECTED"
       ? true
       : false;
 
@@ -346,17 +338,17 @@ function ApplicationStatusCard({ application }: { application: ApplicationClient
   }).format(new Date(application.updatedAt));
 
   const statusCopy = {
-    [SellerApplicationStatus.PENDING]: {
+    PENDING: {
       title: "Prijava je u obradi",
       description:
         "Naš tim proverava dostavljene informacije. Obično odgovaramo u roku od 1-2 radna dana.",
     },
-    [SellerApplicationStatus.APPROVED]: {
+    APPROVED: {
       title: "Čestitamo! Postali ste verified prodavac",
       description:
         "Badge i javni profil biće aktivirani čim završimo finalne korake i potvrdimo identitet.",
     },
-    [SellerApplicationStatus.REJECTED]: {
+    REJECTED: {
       title: "Prijava je odbijena",
       description:
         "Možete poslati novu prijavu kada pripremite dodatne informacije. Kontaktirajte tim ako vam je potrebna pomoć.",

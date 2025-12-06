@@ -24,9 +24,9 @@ PolovniSatovi is a watch marketplace with:
 ### Recommendations
 
 #### A. Add Recent Listings Section
-- [ ] Show "Najnoviji oglasi" (newest listings) on homepage
-- [ ] Currently fetched but not displayed (`recentListings` variable exists but unused)
-- [ ] Add horizontal scroll carousel or grid below featured listings
+- [x] Show "Najnoviji oglasi" (newest listings) on homepage
+- [x] Horizontal scroll carousel with smooth navigation
+- [x] Time badges, wishlist buttons, "See all" card at end
 
 #### B. Add Search Bar to Hero
 - [ ] Prominent search input in hero section

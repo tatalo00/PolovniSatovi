@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, ReactNode, useEffect } from "react";
+import { useState, useRef, ReactNode, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 
 interface LensProps {
@@ -18,14 +18,41 @@ export function Lens({
   hovering,
   setHovering,
   className,
-  zoomFactor = 2,
-  lensSize = 200,
+  zoomFactor = 2.5,
+  lensSize = 180,
   imageUrl,
 }: LensProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [smoothPosition, setSmoothPosition] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
   const [imageSrc, setImageSrc] = useState<string>(imageUrl || "");
+  const animationRef = useRef<number | null>(null);
+
+  // Smooth position interpolation
+  useEffect(() => {
+    const lerp = (start: number, end: number, factor: number) => {
+      return start + (end - start) * factor;
+    };
+
+    const animate = () => {
+      setSmoothPosition((prev) => ({
+        x: lerp(prev.x, mousePosition.x, 0.15),
+        y: lerp(prev.y, mousePosition.y, 0.15),
+      }));
+      animationRef.current = requestAnimationFrame(animate);
+    };
+
+    if (isHovering) {
+      animationRef.current = requestAnimationFrame(animate);
+    }
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [isHovering, mousePosition]);
 
   useEffect(() => {
     if (imageUrl) {
@@ -55,7 +82,7 @@ export function Lens({
     }
   }, [children, imageUrl]);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!containerRef.current) return;
 
     const rect = containerRef.current.getBoundingClientRect();
@@ -67,14 +94,18 @@ export function Lens({
     y = Math.max(halfSize, Math.min(rect.height - halfSize, y));
 
     setMousePosition({ x, y });
-    setIsHovering(true);
-    setHovering(true);
-  };
+    
+    if (!isHovering) {
+      setSmoothPosition({ x, y });
+      setIsHovering(true);
+      setHovering(true);
+    }
+  }, [lensSize, isHovering, setHovering]);
 
-  const handleMouseLeave = () => {
+  const handleMouseLeave = useCallback(() => {
     setIsHovering(false);
     setHovering(false);
-  };
+  }, [setHovering]);
 
   return (
     <div
@@ -84,28 +115,48 @@ export function Lens({
       onMouseLeave={handleMouseLeave}
     >
       {children}
+      
+      {/* Lens magnifier */}
       {imageSrc && (
         <div
           className={cn(
-            "pointer-events-none absolute rounded-full border-2 border-white/70 shadow-2xl overflow-hidden transition-all duration-200 ease-out",
-            isHovering ? "opacity-100 scale-100" : "opacity-0 scale-75"
+            "pointer-events-none absolute rounded-full overflow-hidden",
+            "transition-opacity duration-200 ease-out",
+            isHovering ? "opacity-100" : "opacity-0"
           )}
           style={{
             width: lensSize,
             height: lensSize,
-            left: mousePosition.x - lensSize / 2,
-            top: mousePosition.y - lensSize / 2,
+            left: smoothPosition.x - lensSize / 2,
+            top: smoothPosition.y - lensSize / 2,
             backgroundImage: `url(${imageSrc})`,
             backgroundSize: `${zoomFactor * 100}%`,
-            backgroundPosition: `${-mousePosition.x * zoomFactor + lensSize / 2}px ${-mousePosition.y * zoomFactor + lensSize / 2}px`,
+            backgroundPosition: `${-smoothPosition.x * zoomFactor + lensSize / 2}px ${-smoothPosition.y * zoomFactor + lensSize / 2}px`,
             backgroundRepeat: "no-repeat",
-            boxShadow:
-              "0 0 40px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.2) inset",
+            boxShadow: `
+              0 0 0 3px rgba(212, 175, 55, 0.6),
+              0 0 0 4px rgba(255, 255, 255, 0.3),
+              0 8px 32px rgba(0, 0, 0, 0.4),
+              inset 0 0 20px rgba(255, 255, 255, 0.1)
+            `,
             zIndex: 50,
-            clipPath: "circle(50% at 50% 50%)",
+            transform: isHovering ? "scale(1)" : "scale(0.8)",
+            transition: "opacity 200ms ease-out, transform 200ms ease-out",
           }}
         />
       )}
+      
+      {/* Hint text */}
+      <div
+        className={cn(
+          "absolute bottom-3 left-1/2 -translate-x-1/2 z-40",
+          "bg-black/70 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-sm",
+          "transition-all duration-300 pointer-events-none",
+          isHovering ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0"
+        )}
+      >
+        Pređi mišem za zoom
+      </div>
     </div>
   );
 }

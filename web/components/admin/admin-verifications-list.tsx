@@ -5,12 +5,8 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-// Define enum locally to avoid importing from @prisma/client in client components
-enum SellerApplicationStatus {
-  PENDING = "PENDING",
-  APPROVED = "APPROVED",
-  REJECTED = "REJECTED",
-}
+// Use string literal type to match Prisma's generated enum
+type SellerApplicationStatus = "PENDING" | "APPROVED" | "REJECTED";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -59,9 +55,9 @@ interface AdminVerificationsListProps {
 }
 
 const STATUS_TABS = [
-  { value: SellerApplicationStatus.PENDING, label: "Na čekanju", count: "pendingCount" },
-  { value: SellerApplicationStatus.APPROVED, label: "Odobrene", count: "approvedCount" },
-  { value: SellerApplicationStatus.REJECTED, label: "Odbijene", count: "rejectedCount" },
+  { value: "PENDING" as SellerApplicationStatus, label: "Na čekanju", count: "pendingCount" },
+  { value: "APPROVED" as SellerApplicationStatus, label: "Odobrene", count: "approvedCount" },
+  { value: "REJECTED" as SellerApplicationStatus, label: "Odbijene", count: "rejectedCount" },
 ] as const;
 
 export function AdminVerificationsList({
@@ -203,16 +199,16 @@ export function AdminVerificationsList({
                       <CardTitle>{app.storeName}</CardTitle>
                       <Badge
                         variant={
-                          app.status === SellerApplicationStatus.APPROVED
+                          app.status === "APPROVED"
                             ? "default"
-                            : app.status === SellerApplicationStatus.REJECTED
+                            : app.status === "REJECTED"
                               ? "destructive"
                               : "secondary"
                         }
                       >
-                        {app.status === SellerApplicationStatus.PENDING && "Na čekanju"}
-                        {app.status === SellerApplicationStatus.APPROVED && "Odobreno"}
-                        {app.status === SellerApplicationStatus.REJECTED && "Odbijeno"}
+                        {app.status === "PENDING" && "Na čekanju"}
+                        {app.status === "APPROVED" && "Odobreno"}
+                        {app.status === "REJECTED" && "Odbijeno"}
                       </Badge>
                     </div>
                     <CardDescription>
@@ -288,7 +284,7 @@ export function AdminVerificationsList({
                   )}
                 </div>
 
-                {currentStatus === SellerApplicationStatus.PENDING && (
+                {currentStatus === "PENDING" && (
                   <div className="flex gap-2 pt-4 border-t">
                     <Button
                       onClick={() => handleApproveClick(app)}

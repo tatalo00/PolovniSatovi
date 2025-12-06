@@ -45,6 +45,23 @@ export async function POST(
       },
     });
 
+    // Generate a unique slug from store name
+    const baseSlug = application.storeName
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // Remove diacritics
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 50);
+
+    // Check if slug exists and make it unique if needed
+    let slug = baseSlug;
+    let counter = 1;
+    while (await prisma.sellerProfile.findUnique({ where: { slug } })) {
+      slug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+
     // Create or update seller profile
     await prisma.sellerProfile.upsert({
       where: { userId: application.userId },
@@ -53,6 +70,7 @@ export async function POST(
         shortDescription: application.shortDescription,
         locationCountry: application.locationCountry,
         locationCity: application.locationCity,
+        slug, // Update slug if not set
       },
       create: {
         userId: application.userId,
@@ -60,6 +78,7 @@ export async function POST(
         shortDescription: application.shortDescription,
         locationCountry: application.locationCountry,
         locationCity: application.locationCity,
+        slug,
       },
     });
 
@@ -71,7 +90,7 @@ export async function POST(
     // Invalidate cache for listings to show updated verified status
     revalidatePath("/listings");
     revalidatePath("/");
-    revalidatePath(`/sellers/${application.userId}`);
+    revalidatePath(`/sellers/${slug}`);
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

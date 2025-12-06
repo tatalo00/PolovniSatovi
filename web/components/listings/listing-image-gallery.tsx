@@ -4,11 +4,10 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Expand } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BLUR_DATA_URL, GALLERY_IMAGE_SIZES } from "@/lib/image-utils";
 import { Lens } from "@/components/ui/lens";
-
 
 interface ListingPhoto {
   id: string;
@@ -26,30 +25,39 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
-  const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right');
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [hovering, setHovering] = useState(false);
+  const [lightboxZoom, setLightboxZoom] = useState(1);
+  const [lightboxPan, setLightboxPan] = useState({ x: 0, y: 0 });
   const mainImageRef = useRef<HTMLDivElement | null>(null);
 
-  // Minimum swipe distance (in pixels)
   const minSwipeDistance = 50;
 
+  const navigateTo = useCallback((index: number) => {
+    if (isTransitioning || index === currentIndex) return;
+    setIsTransitioning(true);
+    setCurrentIndex(index);
+    setTimeout(() => setIsTransitioning(false), 300);
+  }, [currentIndex, isTransitioning]);
+
   const handlePrevious = useCallback(() => {
-    setSlideDirection('left');
-    setCurrentIndex((prev) => (prev === 0 ? photos.length - 1 : prev - 1));
-  }, [photos.length]);
+    const newIndex = currentIndex === 0 ? photos.length - 1 : currentIndex - 1;
+    navigateTo(newIndex);
+  }, [currentIndex, photos.length, navigateTo]);
 
   const handleNext = useCallback(() => {
-    setSlideDirection('right');
-    setCurrentIndex((prev) => (prev === photos.length - 1 ? 0 : prev + 1));
-  }, [photos.length]);
+    const newIndex = currentIndex === photos.length - 1 ? 0 : currentIndex + 1;
+    navigateTo(newIndex);
+  }, [currentIndex, photos.length, navigateTo]);
 
   const handleThumbnailClick = (index: number) => {
-    setSlideDirection(index > currentIndex ? 'right' : 'left');
-    setCurrentIndex(index);
+    navigateTo(index);
   };
 
   const handleImageClick = () => {
     if (photos.length > 0) {
+      setLightboxZoom(1);
+      setLightboxPan({ x: 0, y: 0 });
       setIsLightboxOpen(true);
     }
   };
@@ -66,52 +74,37 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
 
   const onTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
-
     const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-
-    if (isLeftSwipe) {
-      handleNext();
-    }
-    if (isRightSwipe) {
-      handlePrevious();
-    }
+    if (distance > minSwipeDistance) handleNext();
+    if (distance < -minSwipeDistance) handlePrevious();
   };
+
+  // Lightbox double-tap zoom
+  const handleLightboxDoubleTap = useCallback(() => {
+    if (lightboxZoom === 1) {
+      setLightboxZoom(2);
+    } else {
+      setLightboxZoom(1);
+      setLightboxPan({ x: 0, y: 0 });
+    }
+  }, [lightboxZoom]);
 
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isLightboxOpen) {
-        if (e.key === "ArrowLeft") {
-          handlePrevious();
-        } else if (e.key === "ArrowRight") {
-          handleNext();
-        } else if (e.key === "Escape") {
-          setIsLightboxOpen(false);
+        if (e.key === "ArrowLeft") handlePrevious();
+        else if (e.key === "ArrowRight") handleNext();
+        else if (e.key === "Escape") setIsLightboxOpen(false);
+        else if (e.key === " ") {
+          e.preventDefault();
+          handleLightboxDoubleTap();
         }
       }
     };
-
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isLightboxOpen, handlePrevious, handleNext]);
-
-  const handleKeyboardNavigate = useCallback(
-    (event: React.KeyboardEvent<HTMLDivElement>) => {
-      if (event.key === "ArrowLeft") {
-        event.preventDefault();
-        handlePrevious();
-      } else if (event.key === "ArrowRight") {
-        event.preventDefault();
-        handleNext();
-      } else if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        handleImageClick();
-      }
-    },
-    [handleNext, handlePrevious]
-  );
+  }, [isLightboxOpen, handlePrevious, handleNext, handleLightboxDoubleTap]);
 
   if (photos.length === 0) {
     return (
@@ -130,73 +123,88 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
         <div className="relative group max-w-2xl mx-auto">
           <div
             ref={mainImageRef}
-            className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-muted cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:aspect-[3/2]"
+            className={cn(
+              "relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-muted cursor-zoom-in",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+              "md:aspect-[3/2]"
+            )}
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
             onClick={handleImageClick}
-            onKeyDown={handleKeyboardNavigate}
             role="button"
             tabIndex={0}
             aria-label={`Otvori galeriju, slika ${currentIndex + 1} od ${photos.length}`}
-            aria-haspopup="dialog"
-            style={{
-              position: 'relative'
-            }}
           >
-            {/* Lens wrapper - only on desktop */}
-            <div className="hidden md:block absolute inset-0 z-10 pointer-events-none">
+            {/* Desktop: Lens zoom */}
+            <div className="hidden md:block absolute inset-0 z-10">
               <Lens
                 hovering={hovering}
                 setHovering={setHovering}
-                className="w-full h-full pointer-events-auto"
+                className="w-full h-full"
                 zoomFactor={2.5}
-                lensSize={250}
+                lensSize={180}
                 imageUrl={currentPhoto.url}
               >
-                <Image
-                  key={currentPhoto.id}
-                  src={currentPhoto.url}
-                  alt={`${title} - Slika ${currentIndex + 1}`}
-                  fill
-                  className="object-cover"
-                  priority={currentIndex === 0}
-                  sizes={GALLERY_IMAGE_SIZES.main}
-                  placeholder="blur"
-                  blurDataURL={BLUR_DATA_URL}
-                  style={{
-                    animation: slideDirection === 'right' ? 'slideInRight 0.5s ease-out' : 'slideInLeft 0.5s ease-out'
-                  }}
-                />
+                <div className="relative w-full h-full">
+                  {photos.map((photo, index) => (
+                    <Image
+                      key={photo.id}
+                      src={photo.url}
+                      alt={`${title} - Slika ${index + 1}`}
+                      fill
+                      className={cn(
+                        "object-cover transition-all duration-300 ease-out",
+                        index === currentIndex 
+                          ? "opacity-100 scale-100" 
+                          : "opacity-0 scale-105 absolute"
+                      )}
+                      priority={index === 0}
+                      sizes={GALLERY_IMAGE_SIZES.main}
+                      placeholder="blur"
+                      blurDataURL={BLUR_DATA_URL}
+                    />
+                  ))}
+                </div>
               </Lens>
             </div>
             
-            {/* Regular image for mobile and fallback */}
-            <Image
-              key={currentPhoto.id}
-              src={currentPhoto.url}
-              alt={`${title} - Slika ${currentIndex + 1}`}
-              fill
-              className="object-cover transition-transform duration-300 group-hover:scale-105 md:hidden"
-              priority={currentIndex === 0}
-              sizes={GALLERY_IMAGE_SIZES.main}
-              placeholder="blur"
-              blurDataURL={BLUR_DATA_URL}
-              style={{
-                animation: slideDirection === 'right' ? 'slideInRight 0.5s ease-out' : 'slideInLeft 0.5s ease-out'
-              }}
-            />
+            {/* Mobile: Regular image with swipe */}
+            <div className="md:hidden relative w-full h-full">
+              {photos.map((photo, index) => (
+                <Image
+                  key={photo.id}
+                  src={photo.url}
+                  alt={`${title} - Slika ${index + 1}`}
+                  fill
+                  className={cn(
+                    "object-cover transition-all duration-300 ease-out",
+                    index === currentIndex 
+                      ? "opacity-100 scale-100" 
+                      : "opacity-0 scale-105"
+                  )}
+                  priority={index === 0}
+                  sizes={GALLERY_IMAGE_SIZES.main}
+                  placeholder="blur"
+                  blurDataURL={BLUR_DATA_URL}
+                />
+              ))}
+            </div>
             
-            {/* Image Counter */}
+            {/* Image Counter Badge */}
             {photos.length > 1 && (
-              <div className="absolute top-3 right-3 bg-black/60 text-white text-xs px-2 py-1 rounded-md backdrop-blur-sm z-20">
-                {currentIndex + 1} / {photos.length}
+              <div className="absolute top-3 right-3 bg-black/70 text-white text-xs font-medium px-2.5 py-1 rounded-full backdrop-blur-sm z-20 flex items-center gap-1.5">
+                <span>{currentIndex + 1}</span>
+                <span className="text-white/60">/</span>
+                <span className="text-white/80">{photos.length}</span>
               </div>
             )}
 
-            {/* Zoom Icon Overlay - only on mobile */}
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100 md:hidden">
-              <ZoomIn className="w-8 h-8 text-white drop-shadow-lg" />
+            {/* Fullscreen hint - mobile only */}
+            <div className="absolute bottom-3 right-3 md:hidden z-20">
+              <div className="bg-black/70 text-white p-2 rounded-full backdrop-blur-sm">
+                <Expand className="w-4 h-4" />
+              </div>
             </div>
 
             {/* Navigation Arrows */}
@@ -205,11 +213,14 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 md:opacity-0 transition-opacity h-11 w-11 min-h-[44px] min-w-[44px] rounded-full md:h-10 md:w-10 md:min-h-0 md:min-w-0 z-20"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handlePrevious();
-                  }}
+                  className={cn(
+                    "absolute left-2 top-1/2 -translate-y-1/2 z-20",
+                    "bg-white/90 hover:bg-white text-neutral-900 shadow-lg",
+                    "h-10 w-10 rounded-full",
+                    "opacity-0 group-hover:opacity-100 transition-all duration-200",
+                    "hover:scale-110 active:scale-95"
+                  )}
+                  onClick={(e) => { e.stopPropagation(); handlePrevious(); }}
                   aria-label="Prethodna slika"
                 >
                   <ChevronLeft className="h-5 w-5" />
@@ -217,11 +228,14 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 md:opacity-0 transition-opacity h-11 w-11 min-h-[44px] min-w-[44px] rounded-full md:h-10 md:w-10 md:min-h-0 md:min-w-0 z-20"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleNext();
-                  }}
+                  className={cn(
+                    "absolute right-2 top-1/2 -translate-y-1/2 z-20",
+                    "bg-white/90 hover:bg-white text-neutral-900 shadow-lg",
+                    "h-10 w-10 rounded-full",
+                    "opacity-0 group-hover:opacity-100 transition-all duration-200",
+                    "hover:scale-110 active:scale-95"
+                  )}
+                  onClick={(e) => { e.stopPropagation(); handleNext(); }}
                   aria-label="Sledeća slika"
                 >
                   <ChevronRight className="h-5 w-5" />
@@ -232,36 +246,36 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
 
           {/* Mobile Navigation Dots */}
           {photos.length > 1 && (
-            <div className="flex justify-center gap-2.5 md:hidden mt-3 px-2">
+            <div className="flex justify-center gap-1.5 md:hidden mt-3">
               {photos.map((_, index) => (
                 <button
                   key={index}
                   className={cn(
-                    "h-3 rounded-full transition-all min-h-[12px] min-w-[12px] touch-manipulation",
+                    "h-2 rounded-full transition-all duration-300",
                     index === currentIndex
-                      ? "w-10 bg-primary shadow-md"
-                      : "w-3 bg-muted-foreground/50 hover:bg-muted-foreground/70"
+                      ? "w-6 bg-[#D4AF37]"
+                      : "w-2 bg-neutral-300 hover:bg-neutral-400"
                   )}
                   onClick={() => handleThumbnailClick(index)}
                   aria-label={`Prikaži sliku ${index + 1}`}
-                  style={{ touchAction: 'manipulation' }}
                 />
               ))}
             </div>
           )}
         </div>
 
-        {/* Thumbnail Strip */}
+        {/* Desktop Thumbnail Strip */}
         {photos.length > 1 && (
-          <div className="hidden md:grid grid-cols-5 gap-2">
+          <div className="hidden md:flex gap-2 justify-center">
             {photos.map((photo, index) => (
               <button
                 key={photo.id}
                 className={cn(
-                  "relative aspect-square w-full overflow-hidden rounded-md border-2 transition-all",
+                  "relative w-16 h-16 overflow-hidden rounded-lg transition-all duration-200",
+                  "ring-2 ring-offset-2",
                   index === currentIndex
-                    ? "border-primary ring-2 ring-primary ring-offset-2"
-                    : "border-transparent hover:border-muted-foreground/50"
+                    ? "ring-[#D4AF37] scale-105"
+                    : "ring-transparent hover:ring-neutral-300 opacity-70 hover:opacity-100"
                 )}
                 onClick={() => handleThumbnailClick(index)}
                 aria-label={`Prikaži sliku ${index + 1}`}
@@ -281,22 +295,29 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
         )}
       </div>
 
+
       {/* Lightbox Modal */}
       <Dialog open={isLightboxOpen} onOpenChange={setIsLightboxOpen}>
-        <DialogContent className="max-w-7xl w-full h-full max-h-[90vh] p-0 bg-black/95 border-none">
-          <DialogTitle className="sr-only">
-            Galerija slika - {title}
-          </DialogTitle>
+        <DialogContent className="max-w-[100vw] w-full h-[100dvh] max-h-[100dvh] p-0 bg-black border-none rounded-none">
+          <DialogTitle className="sr-only">Galerija slika - {title}</DialogTitle>
+          
           <div className="relative w-full h-full flex flex-col">
-            {/* Lightbox Header */}
-            <div className="flex items-center justify-between p-4 text-white">
-              <div className="text-sm">
-                {currentIndex + 1} / {photos.length}
+            {/* Header */}
+            <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between p-4 bg-gradient-to-b from-black/80 to-transparent">
+              <div className="flex items-center gap-3">
+                <span className="text-white font-medium">
+                  {currentIndex + 1} / {photos.length}
+                </span>
+                {lightboxZoom > 1 && (
+                  <span className="text-white/60 text-sm">
+                    {Math.round(lightboxZoom * 100)}%
+                  </span>
+                )}
               </div>
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-white hover:bg-white/20"
+                className="text-white hover:bg-white/20 h-10 w-10 rounded-full"
                 onClick={() => setIsLightboxOpen(false)}
                 aria-label="Zatvori"
               >
@@ -304,87 +325,122 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
               </Button>
             </div>
 
-            {/* Lightbox Image Container */}
+            {/* Main Image Area */}
             <div
-              className="relative flex-1 flex items-center justify-center p-4"
+              className="flex-1 flex items-center justify-center overflow-hidden"
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
+              onDoubleClick={handleLightboxDoubleTap}
             >
-              <div className="relative w-full h-full max-w-5xl max-h-full">
-                <Image
-                  key={currentPhoto.id}
-                  src={currentPhoto.url}
-                  alt={`${title} - Slika ${currentIndex + 1}`}
-                  fill
-                  className="object-contain"
-                  sizes={GALLERY_IMAGE_SIZES.lightbox}
-                  priority
-                  placeholder="blur"
-                  blurDataURL={BLUR_DATA_URL}
-                  style={{
-                    animation: slideDirection === 'right' ? 'slideInRight 0.5s ease-out' : 'slideInLeft 0.5s ease-out'
-                  }}
-                />
+              <div 
+                className="relative w-full h-full flex items-center justify-center"
+                style={{
+                  transform: `scale(${lightboxZoom}) translate(${lightboxPan.x}px, ${lightboxPan.y}px)`,
+                  transition: "transform 300ms ease-out",
+                }}
+              >
+                {photos.map((photo, index) => (
+                  <div
+                    key={photo.id}
+                    className={cn(
+                      "absolute inset-0 flex items-center justify-center p-4 md:p-8",
+                      "transition-all duration-300 ease-out",
+                      index === currentIndex
+                        ? "opacity-100 scale-100"
+                        : "opacity-0 scale-95 pointer-events-none"
+                    )}
+                  >
+                    <div className="relative w-full h-full max-w-6xl">
+                      <Image
+                        src={photo.url}
+                        alt={`${title} - Slika ${index + 1}`}
+                        fill
+                        className="object-contain"
+                        sizes="100vw"
+                        priority={index === currentIndex}
+                        placeholder="blur"
+                        blurDataURL={BLUR_DATA_URL}
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
 
-              {/* Lightbox Navigation Arrows */}
+              {/* Navigation Arrows */}
               {photos.length > 1 && (
                 <>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white h-12 w-12 rounded-full"
+                    className={cn(
+                      "absolute left-4 top-1/2 -translate-y-1/2 z-40",
+                      "bg-white/10 hover:bg-white/20 text-white",
+                      "h-14 w-14 rounded-full backdrop-blur-sm",
+                      "transition-all duration-200 hover:scale-110"
+                    )}
                     onClick={handlePrevious}
                     aria-label="Prethodna slika"
                   >
-                    <ChevronLeft className="h-6 w-6" />
+                    <ChevronLeft className="h-7 w-7" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white h-12 w-12 rounded-full"
+                    className={cn(
+                      "absolute right-4 top-1/2 -translate-y-1/2 z-40",
+                      "bg-white/10 hover:bg-white/20 text-white",
+                      "h-14 w-14 rounded-full backdrop-blur-sm",
+                      "transition-all duration-200 hover:scale-110"
+                    )}
                     onClick={handleNext}
                     aria-label="Sledeća slika"
                   >
-                    <ChevronRight className="h-6 w-6" />
+                    <ChevronRight className="h-7 w-7" />
                   </Button>
                 </>
               )}
             </div>
 
-            {/* Lightbox Thumbnails */}
+            {/* Bottom Thumbnails */}
             {photos.length > 1 && (
-              <div className="flex gap-2 p-4 overflow-x-auto bg-black/50">
-                {photos.map((photo, index) => (
-                  <button
-                    key={photo.id}
-                    className={cn(
-                      "relative flex-shrink-0 w-20 h-20 overflow-hidden rounded border-2 transition-all",
-                      index === currentIndex
-                        ? "border-white"
-                        : "border-transparent hover:border-white/50 opacity-70 hover:opacity-100"
-                    )}
-                    onClick={() => handleThumbnailClick(index)}
-                    aria-label={`Prikaži sliku ${index + 1}`}
-                  >
-                    <Image
-                      src={photo.url}
-                      alt={`${title} - Minijatura ${index + 1}`}
-                      fill
-                      className="object-cover"
-                      sizes={GALLERY_IMAGE_SIZES.lightboxThumbnail}
-                      placeholder="blur"
-                      blurDataURL={BLUR_DATA_URL}
-                    />
-                  </button>
-                ))}
+              <div className="absolute bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-black/80 to-transparent p-4">
+                <div className="flex gap-2 justify-center overflow-x-auto pb-safe">
+                  {photos.map((photo, index) => (
+                    <button
+                      key={photo.id}
+                      className={cn(
+                        "relative flex-shrink-0 w-16 h-16 md:w-20 md:h-20 overflow-hidden rounded-lg",
+                        "transition-all duration-200 ring-2 ring-offset-2 ring-offset-black",
+                        index === currentIndex
+                          ? "ring-[#D4AF37] scale-105"
+                          : "ring-transparent opacity-50 hover:opacity-100"
+                      )}
+                      onClick={() => handleThumbnailClick(index)}
+                      aria-label={`Prikaži sliku ${index + 1}`}
+                    >
+                      <Image
+                        src={photo.url}
+                        alt={`${title} - Minijatura ${index + 1}`}
+                        fill
+                        className="object-cover"
+                        sizes="80px"
+                        placeholder="blur"
+                        blurDataURL={BLUR_DATA_URL}
+                      />
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
+
+            {/* Zoom hint */}
+            <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-40 text-white/60 text-xs pointer-events-none">
+              Dupli klik za zoom • Strelice za navigaciju
+            </div>
           </div>
         </DialogContent>
       </Dialog>
     </>
   );
 }
-
