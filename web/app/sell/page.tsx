@@ -70,7 +70,7 @@ export default async function SellPage() {
           </Card>
         </div>
 
-        <div className="text-center">
+        <div className="text-center space-y-8">
           {isLoggedIn ? (
             <div className="space-y-4">
               <p className="text-lg text-muted-foreground">
@@ -95,6 +95,22 @@ export default async function SellPage() {
               </div>
             </div>
           )}
+
+          <div className="rounded-2xl border border-[#D4AF37]/30 bg-[#D4AF37]/5 p-6 md:p-8">
+            <div className="space-y-4">
+              <div className="flex items-center justify-center gap-2">
+                <Shield className="h-6 w-6 text-[#D4AF37]" />
+                <h2 className="text-xl font-semibold tracking-tight">Zvanični ste prodavac?</h2>
+              </div>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                Otvorite verified profil i istaknite svoje oglase. Dobijate trust badge, javnu profil
+                stranicu i prioritetnu podršku.
+              </p>
+              <Button asChild variant="outline" size="lg" className="border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-neutral-900">
+                <Link href="/sell/verified">Prijavi prodavnicu</Link>
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </main>

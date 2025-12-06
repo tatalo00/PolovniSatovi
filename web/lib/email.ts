@@ -95,6 +95,56 @@ export async function sendContactEmail({
   }
 }
 
+const GENERAL_CONTACT_RECIPIENT = "info@polovnisatovi.net";
+const GENERAL_CONTACT_SUBJECTS: Record<
+  "general" | "technical" | "partnership" | "other",
+  string
+> = {
+  general: "Opšta pitanja",
+  technical: "Tehnička podrška",
+  partnership: "Partnerstva i saradnje",
+  other: "Drugo",
+};
+
+export async function sendGeneralContactEmail({
+  name,
+  email,
+  subject,
+  message,
+}: {
+  name: string;
+  email: string;
+  subject: keyof typeof GENERAL_CONTACT_SUBJECTS;
+  message: string;
+}) {
+  try {
+    const subjectLabel = GENERAL_CONTACT_SUBJECTS[subject];
+    const htmlContent = `<div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto;">
+      <h2 style="margin-bottom: 16px;">Novi upit preko kontakt forme</h2>
+      <p style="margin-bottom: 12px;">Pristigla je nova poruka za kategoriju <strong>${subjectLabel}</strong>.</p>
+      <div style="background-color: #f6f6f6; border-radius: 8px; padding: 16px; margin-bottom: 18px;">
+        <p style="margin: 0 0 8px;"><strong>Ime i prezime:</strong> ${name}</p>
+        <p style="margin: 0;"><strong>E-mail:</strong> ${email}</p>
+      </div>
+      <div style="background-color: #ffffff; border-left: 4px solid #D4AF37; border-radius: 6px; padding: 16px;">
+        <p style="margin: 0; white-space: pre-wrap;">${message.replace(/\n/g, "<br />")}</p>
+      </div>
+      <p style="margin-top: 20px; color: #555; font-size: 13px;">Odgovorite direktno na ovu poruku kako biste stupili u kontakt sa pošiljaocem.</p>
+    </div>`;
+
+    return await sendBrevoEmail({
+      to: [{ email: GENERAL_CONTACT_RECIPIENT }],
+      subject: `Novi upit (${subjectLabel})`,
+      htmlContent,
+      replyTo: { email, name },
+      tags: ["general-inquiry", subject],
+    });
+  } catch (error) {
+    console.error("Error sending general contact email:", error);
+    return { success: false as const, error };
+  }
+}
+
 export async function sendListingStatusEmail({
   to,
   listingTitle,

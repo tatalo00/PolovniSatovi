@@ -111,15 +111,25 @@ export async function generateMetadata({ params }: SellerPageProps): Promise<Met
   const profile = await getSellerProfile(slug);
 
   if (!profile || !profile.user.isVerified) {
-    return { title: "Prodavac nije pronađen" };
+    return { 
+      title: "Prodavac nije pronađen",
+      description: "Traženi prodavac ne postoji ili nije verifikovan."
+    };
   }
 
+  const location = [profile.locationCity, profile.locationCountry].filter(Boolean).join(", ");
+
   return {
-    title: `${profile.storeName} | Verified seller`,
+    title: `${profile.storeName} | Verifikovani prodavac`,
     description:
       profile.shortDescription ||
       profile.description ||
-      "Verifikovani prodavac na platformi PolovniSatovi.",
+      `Verifikovani prodavac ${profile.storeName} na platformi PolovniSatovi.${location ? ` Lokacija: ${location}.` : ""}`,
+    openGraph: {
+      title: `${profile.storeName} | Verifikovani prodavac`,
+      description: profile.shortDescription || profile.description || `Verifikovani prodavac na platformi PolovniSatovi`,
+      images: profile.heroImageUrl ? [profile.heroImageUrl] : profile.logoUrl ? [profile.logoUrl] : [],
+    },
   };
 }
 

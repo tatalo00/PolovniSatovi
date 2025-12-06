@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +23,8 @@ interface SignUpFormProps {
 
 export function SignUpForm({ className }: SignUpFormProps = {}) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams?.get("redirect") ?? null;
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [country, setCountry] = useState("");
@@ -67,7 +69,13 @@ export function SignUpForm({ className }: SignUpFormProps = {}) {
       if (!response.ok) {
         setError(data.error || "Došlo je do greške. Pokušajte ponovo.");
       } else {
-        router.push("/auth/signin?registered=true");
+        // If redirect is specified, go to signin with redirect param
+        // After signin, user will be redirected to the original destination
+        if (redirectTo) {
+          router.push(`/auth/signin?registered=true&redirect=${encodeURIComponent(redirectTo)}`);
+        } else {
+          router.push("/auth/signin?registered=true");
+        }
       }
     } catch (err) {
       setError("Došlo je do greške. Pokušajte ponovo.");

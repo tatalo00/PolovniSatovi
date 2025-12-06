@@ -27,14 +27,26 @@ async function main() {
           update: {
             storeName: "MVP Watch Boutique",
             description: "Curated selection of premium pre-owned watches for testing.",
+            shortDescription: "Kurirana selekcija premium satova za kolekcionare regiona.",
             locationCountry: "RS",
             locationCity: "Beograd",
+            slug: "mvp-watch-boutique",
+            logoUrl:
+              "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=400&q=80",
+            heroImageUrl:
+              "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1600&q=80",
           },
           create: {
             storeName: "MVP Watch Boutique",
             description: "Curated selection of premium pre-owned watches for testing.",
+            shortDescription: "Kurirana selekcija premium satova za kolekcionare regiona.",
             locationCountry: "RS",
             locationCity: "Beograd",
+            slug: "mvp-watch-boutique",
+            logoUrl:
+              "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=400&q=80",
+            heroImageUrl:
+              "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1600&q=80",
           },
         },
       },
@@ -51,8 +63,14 @@ async function main() {
         create: {
           storeName: "MVP Watch Boutique",
           description: "Curated selection of premium pre-owned watches for testing.",
+          shortDescription: "Kurirana selekcija premium satova za kolekcionare regiona.",
           locationCountry: "RS",
           locationCity: "Beograd",
+          slug: "mvp-watch-boutique",
+          logoUrl:
+            "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=400&q=80",
+          heroImageUrl:
+            "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1600&q=80",
         },
       },
     },

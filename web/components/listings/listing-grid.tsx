@@ -229,7 +229,8 @@ const ListingGridCard = memo(function ListingGridCard({
                   router.push(`/sellers/${sellerProfileSlug}`);
                 }}
                 className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border-2 border-[#D4AF37]/30 bg-[#D4AF37]/10 px-3 py-1.5 text-[10px] sm:text-xs font-semibold text-neutral-900 hover:border-[#D4AF37]/60 hover:bg-[#D4AF37]/20 transition-all group/seller"
-                title="Kliknite za pregled profila prodavca"
+                title={`Kliknite za pregled profila prodavca ${sellerDisplayName}`}
+                aria-label={`Pogledaj profil verifikovanog prodavca ${sellerDisplayName}`}
               >
                 <ShieldCheck className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-[#D4AF37] flex-shrink-0" aria-hidden />
                 <span className="truncate max-w-[120px] sm:max-w-[180px]">{sellerDisplayName}</span>

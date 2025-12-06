@@ -155,11 +155,12 @@ function SellerInfoCard({
                 <Link
                   href={`/sellers/${seller.profileSlug}`}
                   className="hover:underline hover:text-[#D4AF37] transition-colors"
+                  aria-label={`Pogledaj profil prodavca ${displayName}`}
                 >
                   {displayName}
                 </Link>
               ) : (
-                displayName
+                <span>{displayName}</span>
               )}
               {badge && (
                 <Badge
@@ -195,7 +196,9 @@ function SellerInfoCard({
 
         {showProfileLink && (
           <Button asChild variant="outline" size="sm" className="w-full">
-            <Link href={`/sellers/${seller.profileSlug}`}>Pogledaj profil prodavca</Link>
+            <Link href={`/sellers/${seller.profileSlug}`} aria-label={`Pogledaj profil prodavca ${displayName}`}>
+              Pogledaj profil prodavca
+            </Link>
           </Button>
         )}
       </CardContent>
@@ -329,7 +332,7 @@ export default async function ListingPage({ params }: ListingPageProps) {
     createdAt: listing.seller.createdAt,
     isVerified: listing.seller.isVerified,
     authenticationStatus: sellerAuthStatus,
-    storeName: sellerProfile?.storeName ?? listing.seller.name,
+    storeName: sellerProfile?.storeName ?? listing.seller.name ?? listing.seller.email,
     shortDescription: sellerProfile?.shortDescription ?? null,
     profileSlug: sellerProfile?.slug ?? null,
     logoUrl: sellerProfile?.logoUrl ?? null,
