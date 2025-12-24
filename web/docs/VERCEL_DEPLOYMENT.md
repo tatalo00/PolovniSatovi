@@ -44,7 +44,12 @@ Go to **Settings** → **Environment Variables** and add:
 
 ```env
 # Database
-DATABASE_URL=postgresql://postgres:PASSWORD@db.xxxxx.supabase.co:5432/postgres?sslmode=require
+# Runtime connection (can use pooled connection for better performance)
+DATABASE_URL=postgresql://postgres:PASSWORD@db.xxxxx.supabase.co:6543/postgres?sslmode=require
+
+# Direct connection for migrations (REQUIRED - must use port 5432, not 6543)
+# Migrations cannot use connection poolers and require a direct database connection
+DIRECT_URL=postgresql://postgres:PASSWORD@db.xxxxx.supabase.co:5432/postgres?sslmode=require
 
 # Auth (NextAuth)
 NEXTAUTH_URL=https://your-domain.vercel.app
@@ -71,10 +76,18 @@ Or use an online generator: https://generate-secret.vercel.app/32
 
 ### Important Notes:
 
-- **DATABASE_URL**: Use your Supabase connection string (port 5432 for direct connection)
+- **DATABASE_URL**: Use your Supabase connection string. Can use pooled connection (port 6543) for better performance, or direct connection (port 5432)
+- **DIRECT_URL**: **REQUIRED for migrations**. Must use direct connection on port 5432 (not 6543). This is used by Prisma migrations and cannot use connection poolers
 - **NEXTAUTH_URL**: Set this to your Vercel deployment URL (e.g., `https://polovnisatovi.vercel.app`)
 - **NEXT_PUBLIC_***: These are exposed to the browser - make sure they're safe to expose
 - **BREVO_API_KEY**: Get from Brevo dashboard (see `docs/BREVO_SETUP.md`)
+
+### Getting Connection Strings from Supabase
+
+1. Go to Supabase Dashboard → Settings → Database
+2. Under "Connection string" → "URI" (for DIRECT_URL - port 5432)
+3. Under "Connection pooling" → "URI" (for DATABASE_URL - port 6543, optional)
+4. Replace `[YOUR-PASSWORD]` with your database password
 
 ### Environment-Specific Variables
 
@@ -100,8 +113,28 @@ Run migrations locally pointing to production database:
 
 ```bash
 cd web
-DATABASE_URL="your-production-database-url" npm run prisma:migrate deploy
+# Make sure DIRECT_URL is set to production direct connection (port 5432)
+DIRECT_URL="postgresql://postgres:PASSWORD@db.xxxxx.supabase.co:5432/postgres?sslmode=require" npm run prisma:migrate:deploy
 ```
+
+**Important**: Use `DIRECT_URL` (not `DATABASE_URL`) for migrations, and ensure it uses port 5432.
+
+### Diagnosing Migration Issues
+
+If migrations fail, run the diagnostic script:
+
+```bash
+cd web
+npm run prisma:migrate:diagnose
+```
+
+This will check:
+- Environment variables are set correctly
+- Database connection works
+- Migration status
+- Schema drift
+
+See `docs/PRISMA_MIGRATIONS.md` for detailed troubleshooting.
 
 ### Option 3: Via Supabase Dashboard
 
@@ -203,7 +236,8 @@ Make sure your Supabase Storage bucket is configured:
 
 Before deploying, ensure you have:
 
-- [ ] `DATABASE_URL` - Supabase PostgreSQL connection string
+- [ ] `DATABASE_URL` - Supabase PostgreSQL connection string (runtime, can use port 6543)
+- [ ] `DIRECT_URL` - Supabase direct connection string (migrations, **MUST use port 5432**)
 - [ ] `NEXTAUTH_URL` - Your Vercel deployment URL
 - [ ] `NEXTAUTH_SECRET` - Random 32+ character string
 - [ ] `AUTH_SECRET` - Same as NEXTAUTH_SECRET
@@ -211,10 +245,13 @@ Before deploying, ensure you have:
 - [ ] `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anon key
 - [ ] `BREVO_API_KEY` - Brevo API key (optional but recommended)
 
+**Critical**: `DIRECT_URL` is required for Prisma migrations. Without it, migrations will fail.
+
 ## Additional Resources
 
 - [Vercel Documentation](https://vercel.com/docs)
 - [Next.js Deployment](https://nextjs.org/docs/deployment)
+- [Prisma Migrations Guide](./PRISMA_MIGRATIONS.md) - Comprehensive guide for handling migrations
 - [Prisma with Vercel](https://www.prisma.io/docs/guides/deployment/deployment-guides/deploying-to-vercel)
 - [Supabase Documentation](https://supabase.com/docs)
 

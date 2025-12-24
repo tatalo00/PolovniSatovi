@@ -4,6 +4,9 @@ import { ListingStatus } from "@prisma/client";
 
 const BASE_URL = "https://www.polovnisatovi.net";
 
+// Force dynamic generation to avoid build-time database access
+export const dynamic = "force-dynamic";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Static pages
   const staticPages: MetadataRoute.Sitemap = [

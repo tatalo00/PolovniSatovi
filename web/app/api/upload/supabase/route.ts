@@ -67,7 +67,7 @@ export async function POST(request: Request) {
     }
 
     // Upload to Supabase Storage
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from('listings')
       .upload(filePath, buffer, {
         contentType: file.type,

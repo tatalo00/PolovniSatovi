@@ -110,7 +110,7 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
         handleImageClick();
       }
     },
-    [handleNext, handlePrevious]
+    [handleNext, handlePrevious, handleImageClick]
   );
 
   if (photos.length === 0) {

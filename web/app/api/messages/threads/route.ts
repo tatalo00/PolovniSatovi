@@ -16,12 +16,24 @@ export async function GET() {
     const user = await requireAuth();
     const userId = (user as any).id;
 
+    // First, get thread IDs that have valid listings using raw query to avoid null listingId issues
+    const validThreadIds = await prisma.$queryRaw<{ id: string }[]>`
+      SELECT mt.id 
+      FROM "MessageThread" mt
+      INNER JOIN "Listing" l ON mt."listingId" = l.id
+      WHERE (mt."buyerId" = ${userId} OR mt."sellerId" = ${userId})
+      AND mt."listingId" IS NOT NULL
+    `;
+
+    const threadIds = validThreadIds.map(t => t.id);
+
+    if (threadIds.length === 0) {
+      return NextResponse.json([]);
+    }
+
     const threads = await prisma.messageThread.findMany({
       where: {
-        OR: [
-          { buyerId: userId },
-          { sellerId: userId },
-        ],
+        id: { in: threadIds },
       },
       include: {
         listing: {

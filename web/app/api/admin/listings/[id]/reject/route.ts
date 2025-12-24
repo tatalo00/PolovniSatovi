@@ -92,7 +92,7 @@ export async function POST(
     }
 
     return NextResponse.json(
-      { error: error.message || "Došlo je do greške. Pokušajte ponovo." },
+      { error: "Došlo je do greške. Pokušajte ponovo." },
       { status: 500 }
     );
   }

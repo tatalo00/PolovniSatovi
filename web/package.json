@@ -9,11 +9,18 @@
     "lint": "eslint",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:deploy": "prisma migrate deploy",
+    "prisma:migrate:dev": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:migrate:status": "prisma migrate status",
+    "prisma:migrate:reset": "prisma migrate reset",
+    "prisma:migrate:resolve": "prisma migrate resolve",
+    "prisma:migrate:diagnose": "tsx --tsconfig tsconfig.json scripts/migrate-diagnose.ts",
+    "prisma:db:push": "prisma db push",
     "prisma:seed": "tsx --tsconfig tsconfig.json prisma/seed.ts",
     "create:admin": "prisma generate && tsx --tsconfig tsconfig.json scripts/create-admin.ts",
     "postinstall": "prisma generate",
-    "test:build": "prisma generate && npm run build"
+    "test:build": "prisma generate && npm run build",
+    "test:signin": "tsx --tsconfig tsconfig.json scripts/test-signin.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
@@ -59,6 +66,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.0.1",
     "prisma": "^6.18.0",
+    "supabase": "^2.67.3",
     "tsconfig-paths": "^4.2.0",
     "tsx": "^4.20.6",
     "typescript": "^5"

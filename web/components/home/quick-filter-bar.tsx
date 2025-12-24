@@ -1,4 +1,3 @@
-/* eslint-disable tailwindcss/no-custom-classname */
 "use client";
 
 import { useMemo, useState } from "react";
@@ -298,8 +297,8 @@ export function QuickFilterBar({ brands }: QuickFilterBarProps) {
             </div>
 
             <div className="flex flex-col gap-1.5 sm:gap-2 md:gap-3">
-              <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.25em] sm:tracking-[0.3em] text-muted-foreground">
-                Cena
+              <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.25em] sm:tracking-[0.3em] text-muted-foreground">
+                <span>Cena</span>
               </div>
               <div className="flex w-full items-center gap-1.5 sm:gap-2 md:gap-3">
                 <Input
@@ -321,8 +320,8 @@ export function QuickFilterBar({ brands }: QuickFilterBarProps) {
             </div>
 
             <div className="flex flex-col gap-1.5 sm:gap-2 md:gap-3">
-              <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.25em] sm:tracking-[0.3em] text-muted-foreground">
-                Mehanizam
+              <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.25em] sm:tracking-[0.3em] text-muted-foreground">
+                <span>Mehanizam</span>
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -377,8 +376,8 @@ export function QuickFilterBar({ brands }: QuickFilterBarProps) {
             </div>
 
             <div className="flex flex-col gap-1.5 sm:gap-2 md:gap-3">
-              <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.25em] sm:tracking-[0.3em] text-muted-foreground">
-                Stanje
+              <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.25em] sm:tracking-[0.3em] text-muted-foreground">
+                <span>Stanje</span>
               </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

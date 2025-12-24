@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, ReactNode, useEffect } from "react";
+import { useState, useRef, ReactNode, useLayoutEffect } from "react";
 import { cn } from "@/lib/utils";
 
 interface LensProps {
@@ -15,7 +15,6 @@ interface LensProps {
 
 export function Lens({
   children,
-  hovering,
   setHovering,
   className,
   zoomFactor = 2,
@@ -27,7 +26,7 @@ export function Lens({
   const [isHovering, setIsHovering] = useState(false);
   const [imageSrc, setImageSrc] = useState<string>(imageUrl || "");
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (imageUrl) {
       setImageSrc(imageUrl);
       return;

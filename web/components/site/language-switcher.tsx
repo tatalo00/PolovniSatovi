@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Select,
   SelectContent,
@@ -17,25 +17,30 @@ const LANG_OPTIONS = [
   { value: "mk", label: "Македонски" },
 ] as const;
 
+function getInitialLanguage(): string {
+  if (typeof window === "undefined") {
+    return "en";
+  }
+  const saved = localStorage.getItem("preferredLanguage");
+  if (saved && LANG_OPTIONS.some((lang) => lang.value === saved)) {
+    return saved;
+  }
+  if (typeof navigator !== "undefined") {
+    const browserLang = navigator.language.slice(0, 2).toLowerCase();
+    const fallback = LANG_OPTIONS.find((lang) => lang.value === browserLang);
+    if (fallback) {
+      return fallback.value;
+    }
+  }
+  return "en";
+}
+
 interface LanguageSwitcherProps {
   className?: string;
 }
 
 export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
-  const [language, setLanguage] = useState<string>("en");
-
-  useEffect(() => {
-    const saved = localStorage.getItem("preferredLanguage");
-    if (saved && LANG_OPTIONS.some((lang) => lang.value === saved)) {
-      setLanguage(saved);
-    } else if (typeof navigator !== "undefined") {
-      const browserLang = navigator.language.slice(0, 2).toLowerCase();
-      const fallback = LANG_OPTIONS.find((lang) => lang.value === browserLang);
-      if (fallback) {
-        setLanguage(fallback.value);
-      }
-    }
-  }, []);
+  const [language, setLanguage] = useState<string>(getInitialLanguage);
 
   const handleChange = (value: string) => {
     setLanguage(value);

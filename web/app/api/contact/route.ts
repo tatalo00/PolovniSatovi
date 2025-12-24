@@ -69,7 +69,7 @@ export async function POST(request: Request) {
   } catch (error: any) {
     logger.error("Error sending contact message", { error: error.message, stack: error.stack });
     return NextResponse.json(
-      { error: error.message || "Došlo je do greške" },
+      { error: "Došlo je do greške pri slanju poruke" },
       { status: 500 }
     );
   }

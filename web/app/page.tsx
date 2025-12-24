@@ -1,4 +1,4 @@
-import type { Listing, ListingPhoto, Prisma } from "@prisma/client";
+import type { Listing, ListingPhoto } from "@prisma/client";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -22,7 +22,7 @@ type ListingWithRelations = Listing & {
     locationCountry: string | null;
   } | null;
 };
-const PRICE_SEGMENTS = [
+const _PRICE_SEGMENTS = [
   {
     id: "budget",
     title: "Budget Collectors",

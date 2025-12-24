@@ -309,7 +309,7 @@ export async function POST(request: Request) {
           : issue.message;
       return NextResponse.json({ error: message }, { status: 400 });
     }
-    const message = error instanceof Error ? error.message : "Došlo je do greške pri kreiranju oglasa";
+    const message = "Došlo je do greške pri kreiranju oglasa";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

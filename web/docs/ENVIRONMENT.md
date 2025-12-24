@@ -4,7 +4,12 @@ Create a `.env.local` file in the project root with the following values:
 
 ```
 # Database
+# Runtime connection (can use pooled connection on port 6543 for better performance)
 DATABASE_URL=
+
+# Direct connection for migrations (MUST use port 5432, not 6543)
+# Required for Prisma migrations - must be a direct connection, not a pooler
+DIRECT_URL=
 
 # Auth (NextAuth)
 NEXTAUTH_URL=http://localhost:3000

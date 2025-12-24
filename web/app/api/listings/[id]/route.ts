@@ -265,7 +265,7 @@ export async function PATCH(
       return NextResponse.json({ error: message }, { status: 400 });
     }
     return NextResponse.json(
-      { error: error.message || "Došlo je do greške" },
+      { error: "Došlo je do greške pri ažuriranju oglasa" },
       { status: 500 }
     );
   }
@@ -318,7 +318,7 @@ export async function DELETE(
       );
     }
     return NextResponse.json(
-      { error: error.message || "Došlo je do greške" },
+      { error: "Došlo je do greške pri brisanju oglasa" },
       { status: 500 }
     );
   }

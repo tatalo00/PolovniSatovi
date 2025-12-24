@@ -80,7 +80,7 @@ export function ReportListingForm({ listingId, listingTitle }: ReportListingForm
         <DialogHeader>
           <DialogTitle>Prijavite oglas</DialogTitle>
           <DialogDescription>
-            Prijavite oglas "{listingTitle}" ako smatrate da krši naša pravila ili standarde.
+            Prijavite oglas &quot;{listingTitle}&quot; ako smatrate da krši naša pravila ili standarde.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>

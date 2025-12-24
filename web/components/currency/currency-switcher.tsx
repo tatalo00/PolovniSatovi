@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Select,
   SelectContent,
@@ -21,17 +21,27 @@ export function CurrencySwitcher({
   onChange,
   className,
 }: CurrencySwitcherProps) {
-  const [selectedCurrency, setSelectedCurrency] = useState<Currency>(value);
   const currencies = getSupportedCurrencies();
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+  
+  const [selectedCurrency, setSelectedCurrency] = useState<Currency>(() => {
+    // Initialize from localStorage if available (client-side only)
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("preferredCurrency") as Currency;
+      if (saved && currencies.includes(saved)) {
+        return saved;
+      }
+    }
+    return value;
+  });
 
   useEffect(() => {
-    // Load from localStorage if available
-    const saved = localStorage.getItem("preferredCurrency") as Currency;
-    if (saved && currencies.includes(saved)) {
-      setSelectedCurrency(saved);
-      onChange?.(saved);
+    // Notify parent of initial value from localStorage
+    if (selectedCurrency !== value) {
+      onChangeRef.current?.(selectedCurrency);
     }
-  }, []);
+  }, [selectedCurrency, value]);
 
   const handleChange = (newCurrency: Currency) => {
     setSelectedCurrency(newCurrency);

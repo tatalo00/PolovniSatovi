@@ -71,6 +71,7 @@ export default async function DashboardPage() {
         ]
       },
       include: {
+        listing: true,
         messages: {
           where: {
             senderId: { not: userId },
@@ -79,7 +80,7 @@ export default async function DashboardPage() {
           take: 1
         }
       }
-    }),
+    }).then(threads => threads.filter(t => t.listing !== null)).catch(() => []),
     // Wishlist count
     prisma.favorite.count({ where: { userId } }),
     // User verification status
@@ -162,7 +163,7 @@ export default async function DashboardPage() {
       },
       orderBy: { updatedAt: "desc" },
       take: 3
-    }),
+    }).then(threads => threads.filter(t => t.listing !== null)).catch(() => []),
     // Wishlist items
     prisma.favorite.findMany({
       where: { userId },
@@ -213,7 +214,7 @@ export default async function DashboardPage() {
 
   const isVerified = userWithVerification?.isVerified ?? false;
   const hasApplication = !!application;
-  const userRole = userWithVerification?.role ?? 'BUYER';
+  const _userRole = userWithVerification?.role ?? 'BUYER';
 
   // Stat cards configuration
   type StatCard = {

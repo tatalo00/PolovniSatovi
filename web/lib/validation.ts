@@ -1,4 +1,4 @@
-import { z, ZodIssue } from "zod";
+import { z } from "zod";
 
 // Common validation schemas
 export const emailSchema = z.string().email("Neispravan email format");
