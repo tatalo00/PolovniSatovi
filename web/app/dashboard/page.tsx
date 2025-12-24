@@ -38,18 +38,18 @@ export default async function DashboardPage() {
   const user = session.user;
   const userId = user.id;
 
-  // Fetch all dashboard statistics and tab content in parallel
+  // Optimized: Reduced from 10 queries to 9 by combining user queries
+  // and using more efficient count queries
   const [
     listingStats,
-    allListings,
-    unreadThreads,
+    listingCount,
+    unreadCount,
     wishlistCount,
     userWithVerification,
     application,
     newestListings,
     recentThreads,
     wishlistItems,
-    userProfile
   ] = await Promise.all([
     // Listing counts by status
     prisma.listing.groupBy({
@@ -57,36 +57,34 @@ export default async function DashboardPage() {
       where: { sellerId: userId },
       _count: true
     }),
-    // All listings for total count
-    prisma.listing.findMany({
-      where: { sellerId: userId },
-      select: { id: true }
-    }),
-    // Unread message threads - count threads where user has unread messages
-    prisma.messageThread.findMany({
+    // Total listing count (more efficient than fetching all IDs)
+    prisma.listing.count({ where: { sellerId: userId } }),
+    // Unread message count (more efficient single count query)
+    prisma.message.count({
       where: {
-        OR: [
-          { buyerId: userId },
-          { sellerId: userId }
-        ]
-      },
-      include: {
-        listing: true,
-        messages: {
-          where: {
-            senderId: { not: userId },
-            readAt: null
-          },
-          take: 1
-        }
+        thread: {
+          OR: [
+            { buyerId: userId },
+            { sellerId: userId }
+          ]
+        },
+        senderId: { not: userId },
+        readAt: null
       }
-    }).then(threads => threads.filter(t => t.listing !== null)).catch(() => []),
+    }),
     // Wishlist count
     prisma.favorite.count({ where: { userId } }),
-    // User verification status
+    // User verification status + profile combined (saves 1 query)
     prisma.user.findUnique({
       where: { id: userId },
-      select: { isVerified: true, role: true }
+      select: { 
+        isVerified: true, 
+        role: true,
+        name: true,
+        email: true,
+        locationCountry: true,
+        locationCity: true
+      }
     }),
     // Seller application
     prisma.sellerApplication.findUnique({
@@ -186,21 +184,14 @@ export default async function DashboardPage() {
       orderBy: { createdAt: "desc" },
       take: 6
     }),
-    // User profile for profile tab
-    prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        name: true,
-        email: true,
-        locationCountry: true,
-        locationCity: true
-      }
-    })
   ]);
+
+  // Use combined user data for profile
+  const userProfile = userWithVerification;
 
   // Process listing stats
   const listingCounts = {
-    total: allListings.length,
+    total: listingCount,
     approved: listingStats.find(s => s.status === 'APPROVED')?._count ?? 0,
     pending: listingStats.find(s => s.status === 'PENDING')?._count ?? 0,
     draft: listingStats.find(s => s.status === 'DRAFT')?._count ?? 0,
@@ -209,8 +200,8 @@ export default async function DashboardPage() {
     sold: listingStats.find(s => s.status === 'SOLD')?._count ?? 0,
   };
 
-  // Count unread threads (threads with at least one unread message)
-  const unreadMessagesCount = unreadThreads.filter(thread => thread.messages.length > 0).length;
+  // Use efficient unread count
+  const unreadMessagesCount = unreadCount;
 
   const isVerified = userWithVerification?.isVerified ?? false;
   const hasApplication = !!application;
