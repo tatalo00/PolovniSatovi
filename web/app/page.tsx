@@ -1,6 +1,5 @@
 import type { Listing, ListingPhoto } from "@prisma/client";
 
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Hero } from "@/components/home/hero";
 import type { PaidListing } from "@/components/home/featured-collections";
@@ -157,7 +156,6 @@ export default async function HomePage() {
   let recentRaw: ListingWithRelations[] = [];
   let totalListings = 0;
   let totalSellers = 0;
-  let preferredLocation: string | null = null;
   let recentListings: Array<{
     id: string;
     title: string;
@@ -170,45 +168,15 @@ export default async function HomePage() {
     createdAt: string;
     photos: Array<{ url: string }>;
   }> = [];
-  let favoriteListingIds: string[] = [];
   let availableBrands: string[] = [];
-  const session = await auth();
 
   try {
-    if (session?.user?.id) {
-      const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: {
-          locationCity: true,
-          locationCountry: true,
-        },
-      });
-      if (user?.locationCity) {
-        preferredLocation = user.locationCountry
-          ? `${user.locationCity}, ${user.locationCountry}`
-          : user.locationCity;
-      }
-    }
-
     // Fetch cached listings data
     const { featuredResult, recentResult, counts, distinctBrands } = await getHomepageListings();
-
-    // Fetch user-specific data (not cached, as it's user-specific)
-    const favoritesPromise = session?.user?.id
-      ? prisma.favorite.findMany({
-          where: { userId: session.user.id },
-          select: { listingId: true },
-        })
-      : Promise.resolve([]);
-
-    const favorites = await favoritesPromise;
 
     featuredRaw = featuredResult;
     recentRaw = recentResult;
     [totalListings, totalSellers] = counts;
-    favoriteListingIds = (favorites as Array<{ listingId: string }>).map(
-      (favorite) => favorite.listingId
-    );
     availableBrands = (distinctBrands as Array<{ brand: string | null }>)
       .map((entry) => entry.brand)
       .filter((brandName): brandName is string => Boolean(brandName));
@@ -273,11 +241,10 @@ export default async function HomePage() {
         featuredListings={featuredListings}
         totalListings={totalListings}
         totalSellers={totalSellers}
-        userLocation={preferredLocation}
       />
       <QuickFilterBar brands={availableBrands} />
       <PaidListings listings={paidListingsContent} />
-      <RecentListings listings={recentListings} favoriteIds={favoriteListingIds} />
+      <RecentListings listings={recentListings} />
       <TrustServices />
       <EducationHub />
     </main>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -6,11 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ProfileForm } from "@/components/user/profile-form";
-import { PriceDisplay } from "@/components/currency/price-display";
+import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
-import Image from "next/image";
+import { ListingsPreview } from "@/app/dashboard/_components/listings-preview";
+import { MessagesPreview } from "@/app/dashboard/_components/messages-preview";
+import { WishlistPreview } from "@/app/dashboard/_components/wishlist-preview";
 import { 
   Shield, 
   ShieldCheck, 
@@ -47,9 +48,6 @@ export default async function DashboardPage() {
     wishlistCount,
     userWithVerification,
     application,
-    newestListings,
-    recentThreads,
-    wishlistItems,
   ] = await Promise.all([
     // Listing counts by status
     prisma.listing.groupBy({
@@ -91,103 +89,11 @@ export default async function DashboardPage() {
       where: { userId },
       select: { status: true }
     }),
-    // Newest 3 listings
-    prisma.listing.findMany({
-      where: { sellerId: userId },
-      include: {
-        photos: {
-          orderBy: { order: "asc" },
-          take: 1
-        }
-      },
-      orderBy: { createdAt: "desc" },
-      take: 3
-    }),
-    // Last 3 conversations
-    prisma.messageThread.findMany({
-      where: {
-        OR: [
-          { buyerId: userId },
-          { sellerId: userId }
-        ]
-      },
-      include: {
-        listing: {
-          select: {
-            id: true,
-            title: true,
-            photos: {
-              take: 1,
-              orderBy: { order: "asc" }
-            }
-          }
-        },
-        buyer: {
-          select: {
-            id: true,
-            name: true,
-            image: true
-          }
-        },
-        seller: {
-          select: {
-            id: true,
-            name: true,
-            image: true
-          }
-        },
-        messages: {
-          orderBy: { createdAt: "desc" },
-          take: 1,
-          include: {
-            sender: {
-              select: {
-                id: true,
-                name: true
-              }
-            }
-          }
-        },
-        _count: {
-          select: {
-            messages: {
-              where: {
-                readAt: null,
-                senderId: { not: userId }
-              }
-            }
-          }
-        }
-      },
-      orderBy: { updatedAt: "desc" },
-      take: 3
-    }).then(threads => threads.filter(t => t.listing !== null)).catch(() => []),
-    // Wishlist items
-    prisma.favorite.findMany({
-      where: { userId },
-      include: {
-        listing: {
-          include: {
-            photos: {
-              orderBy: { order: "asc" },
-              take: 1
-            },
-            seller: {
-              select: {
-                name: true,
-                isVerified: true
-              }
-            }
-          }
-        }
-      },
-      orderBy: { createdAt: "desc" },
-      take: 6
-    }),
   ]);
 
   // Use combined user data for profile
   const userProfile = userWithVerification;
+  const needsProfileCompletion = !userProfile?.locationCountry || !userProfile?.locationCity;
 
   // Process listing stats
   const listingCounts = {
@@ -307,6 +213,23 @@ export default async function DashboardPage() {
 
             {/* Overview Tab */}
             <TabsContent value="overview" className="space-y-6 sm:space-y-8 mt-6">
+              {needsProfileCompletion && (
+                <Card className="border-[#D4AF37]/40 bg-[#D4AF37]/5">
+                  <CardContent className="flex flex-col gap-4 p-4 sm:p-6 md:flex-row md:items-center md:justify-between">
+                    <div className="space-y-1">
+                      <h3 className="text-base sm:text-lg font-semibold text-foreground">
+                        Dopunite profil
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        Dodajte državu i grad kako bismo bolje prilagodili iskustvo.
+                      </p>
+                    </div>
+                    <Button asChild className="bg-[#D4AF37] hover:bg-[#b6932c] text-neutral-900">
+                      <Link href="/dashboard/profile">Dopuni profil</Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
               {/* Quick Stats Section */}
               <section className="space-y-4">
                 <div>
@@ -525,59 +448,9 @@ export default async function DashboardPage() {
                     </Button>
                   </div>
                 </div>
-                {newestListings.length === 0 ? (
-                  <Card>
-                    <CardContent className="p-6">
-                      <p className="text-muted-foreground text-center py-8">
-                        Nemate još nijedan oglas.{" "}
-                        <Link href="/dashboard/listings/new" className="text-[#D4AF37] hover:underline font-semibold">
-                          Kreirajte prvi oglas
-                        </Link>
-                      </p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {newestListings.map((listing) => (
-                      <Link key={listing.id} href={`/dashboard/listings/${listing.id}`}>
-                        <Card className="group h-full transition-all duration-200 hover:shadow-lg hover:border-[#D4AF37]/40 cursor-pointer">
-                          <div className="relative aspect-square w-full overflow-hidden rounded-t-lg">
-                            {listing.photos && listing.photos.length > 0 ? (
-                              <Image
-                                src={listing.photos[0].url}
-                                alt={listing.title}
-                                fill
-                                className="object-cover transition-transform duration-200 group-hover:scale-105"
-                                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                              />
-                            ) : (
-                              <div className="flex h-full items-center justify-center bg-muted">
-                                <span className="text-muted-foreground text-sm">Nema slike</span>
-                              </div>
-                            )}
-                          </div>
-                          <CardContent className="p-4">
-                            <div className="flex items-start justify-between gap-2 mb-2">
-                              <h3 className="line-clamp-2 font-semibold text-sm leading-tight transition-colors group-hover:text-[#D4AF37] flex-1">
-                                {listing.title}
-                              </h3>
-                              <Badge variant={listing.status === "APPROVED" ? "default" : "secondary"} className="text-xs shrink-0">
-                                {listing.status}
-                              </Badge>
-                            </div>
-                            <p className="mb-2 text-xs text-muted-foreground">
-                              {listing.brand} {listing.model}
-                              {listing.reference && ` • ${listing.reference}`}
-                            </p>
-                            <div className="text-lg font-bold">
-                              <PriceDisplay amountEurCents={listing.priceEurCents} />
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </Link>
-                    ))}
-                  </div>
-                )}
+                <Suspense fallback={<ListingsSkeleton />}>
+                  <ListingsPreview userId={userId} />
+                </Suspense>
               </div>
             </TabsContent>
 
@@ -598,87 +471,9 @@ export default async function DashboardPage() {
                     </Link>
                   </Button>
                 </div>
-                {recentThreads.length === 0 ? (
-                  <Card>
-                    <CardContent className="p-6">
-                      <p className="text-muted-foreground text-center py-8">
-                        Nemate poruka još.
-                      </p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div className="space-y-2">
-                    {recentThreads.map((thread) => {
-                      const lastMessage = thread.messages[0];
-                      const otherUser = thread.buyerId === userId ? thread.seller : thread.buyer;
-                      const unreadCount = thread._count.messages;
-                      const initials = otherUser.name
-                        ? otherUser.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")
-                            .toUpperCase()
-                            .slice(0, 2)
-                        : "U";
-
-                      return (
-                        <Link key={thread.id} href={`/dashboard/messages/${thread.id}`}>
-                          <Card className="group cursor-pointer transition-colors hover:bg-accent hover:border-[#D4AF37]/40">
-                            <CardContent className="p-4">
-                              <div className="flex gap-3">
-                                <div className="relative w-16 h-16 flex-shrink-0 rounded-md overflow-hidden bg-muted">
-                                  {thread.listing.photos[0] ? (
-                                    <Image
-                                      src={thread.listing.photos[0].url}
-                                      alt={thread.listing.title}
-                                      fill
-                                      className="object-cover"
-                                      sizes="64px"
-                                    />
-                                  ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
-                                      Nema slike
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-start justify-between gap-2">
-                                    <div className="flex-1 min-w-0">
-                                      <h3 className="font-semibold text-sm truncate">
-                                        {thread.listing.title}
-                                      </h3>
-                                      <div className="flex items-center gap-2 mt-1">
-                                        <Avatar className="h-6 w-6">
-                                          <AvatarImage src={otherUser.image || undefined} />
-                                          <AvatarFallback className="text-xs">
-                                            {initials}
-                                          </AvatarFallback>
-                                        </Avatar>
-                                        <span className="text-xs text-muted-foreground truncate">
-                                          {otherUser.name || "Korisnik"}
-                                        </span>
-                                      </div>
-                                    </div>
-                                    {unreadCount > 0 && (
-                                      <span className="rounded-full bg-[#D4AF37] px-2 py-0.5 text-xs font-semibold text-neutral-900 shrink-0">
-                                        {unreadCount}
-                                      </span>
-                                    )}
-                                  </div>
-                                  {lastMessage && (
-                                    <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
-                                      {lastMessage.body}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
+                <Suspense fallback={<MessagesSkeleton />}>
+                  <MessagesPreview userId={userId} />
+                </Suspense>
               </div>
             </TabsContent>
 
@@ -692,7 +487,7 @@ export default async function DashboardPage() {
                       Sačuvani oglasi koji vam se dopadaju
                     </p>
                   </div>
-                  {wishlistItems.length > 0 && (
+                  {wishlistCount > 0 && (
                     <Button asChild variant="outline" size="sm">
                       <Link href="/dashboard/wishlist">
                         Pregled svih
@@ -701,65 +496,9 @@ export default async function DashboardPage() {
                     </Button>
                   )}
                 </div>
-                {wishlistItems.length === 0 ? (
-                  <Card>
-                    <CardContent className="p-6">
-                      <p className="text-muted-foreground text-center py-8">
-                        Nemate sačuvanih oglasa.{" "}
-                        <Link href="/listings" className="text-[#D4AF37] hover:underline font-semibold">
-                          Pretražite oglase
-                        </Link>
-                      </p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {wishlistItems.map((favorite) => {
-                      const listing = favorite.listing;
-                      if (!listing) return null;
-                      
-                      return (
-                        <Link key={favorite.id} href={`/listing/${listing.id}`}>
-                          <Card className="group h-full transition-all duration-200 hover:shadow-lg hover:border-[#D4AF37]/40 cursor-pointer">
-                            <div className="relative aspect-square w-full overflow-hidden rounded-t-lg">
-                              {listing.photos && listing.photos.length > 0 ? (
-                                <Image
-                                  src={listing.photos[0].url}
-                                  alt={listing.title}
-                                  fill
-                                  className="object-cover transition-transform duration-200 group-hover:scale-105"
-                                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                                />
-                              ) : (
-                                <div className="flex h-full items-center justify-center bg-muted">
-                                  <span className="text-muted-foreground text-sm">Nema slike</span>
-                                </div>
-                              )}
-                            </div>
-                            <CardContent className="p-4">
-                              <h3 className="mb-2 line-clamp-2 font-semibold text-sm leading-tight transition-colors group-hover:text-[#D4AF37]">
-                                {listing.title}
-                              </h3>
-                              <p className="mb-2 text-xs text-muted-foreground">
-                                {listing.brand} {listing.model}
-                                {listing.reference && ` • ${listing.reference}`}
-                              </p>
-                              <div className="mb-2 text-lg font-bold">
-                                <PriceDisplay amountEurCents={listing.priceEurCents} />
-                              </div>
-                              {listing.seller?.isVerified && (
-                                <Badge variant="secondary" className="text-xs">
-                                  <ShieldCheck className="mr-1 h-3 w-3" aria-hidden />
-                                  Verifikovan prodavac
-                                </Badge>
-                              )}
-                            </CardContent>
-                          </Card>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
+                <Suspense fallback={<WishlistSkeleton />}>
+                  <WishlistPreview userId={userId} />
+                </Suspense>
               </div>
             </TabsContent>
 
@@ -788,5 +527,60 @@ export default async function DashboardPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+function ListingsSkeleton() {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {[1, 2, 3].map((item) => (
+        <Card key={item} className="overflow-hidden">
+          <Skeleton className="h-48 w-full" />
+          <CardContent className="p-4 space-y-3">
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-3 w-1/2" />
+            <Skeleton className="h-6 w-24" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function MessagesSkeleton() {
+  return (
+    <div className="space-y-2">
+      {[1, 2, 3].map((item) => (
+        <Card key={item}>
+          <CardContent className="p-4">
+            <div className="flex gap-3">
+              <Skeleton className="h-16 w-16 rounded-md" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-3 w-2/3" />
+                <Skeleton className="h-3 w-full" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function WishlistSkeleton() {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {[1, 2, 3].map((item) => (
+        <Card key={item} className="overflow-hidden">
+          <Skeleton className="h-48 w-full" />
+          <CardContent className="p-4 space-y-3">
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-3 w-1/2" />
+            <Skeleton className="h-6 w-24" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
   );
 }
