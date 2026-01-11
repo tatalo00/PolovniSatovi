@@ -112,7 +112,7 @@ const ListingGridCard = memo(function ListingGridCard({
       style={{ touchAction: 'manipulation' }}
     >
       <Card className={cn(
-        "group relative flex w-full flex-row lg:flex-col items-stretch overflow-hidden rounded-2xl border border-neutral-200/70 bg-white/95 shadow-md transition-all duration-200 hover:border-[#D4AF37]/60 hover:shadow-xl",
+        "group relative flex w-full flex-row lg:flex-col items-stretch overflow-hidden rounded-2xl border border-neutral-200/70 bg-white/95 p-0 shadow-md transition-all duration-200 hover:border-[#D4AF37]/60 hover:shadow-xl",
         "h-[180px] sm:h-[200px] md:h-[220px] lg:h-full",
         isPressed && "lg:scale-100 scale-[0.97] lg:shadow-md shadow-sm border-[#D4AF37]/40 lg:border-neutral-200/70"
       )}>
@@ -190,7 +190,7 @@ const ListingGridCard = memo(function ListingGridCard({
         </div>
 
         {/* Content on right (mobile) / bottom (desktop) */}
-        <CardContent className="flex flex-1 flex-col py-3 sm:py-4 md:py-4 lg:py-4 px-3 sm:px-4 md:px-5 lg:px-6 min-w-0 justify-between h-full">
+        <CardContent className="flex flex-1 flex-col pt-1.5 pb-3 sm:pt-2 sm:pb-4 md:pt-2 md:pb-4 lg:pt-2 lg:pb-4 px-3 sm:px-4 md:px-5 lg:px-6 min-w-0 justify-between h-full">
           {/* Top section - Title and Reference */}
           <div className="space-y-1.5 sm:space-y-2 min-w-0">
             <h3 className="line-clamp-2 text-base sm:text-lg md:text-lg lg:text-lg font-bold leading-tight text-neutral-900 transition-colors group-hover:text-[#D4AF37]">
@@ -202,51 +202,60 @@ const ListingGridCard = memo(function ListingGridCard({
                 Ref: <span className="font-semibold">{listing.reference}</span>
               </p>
             )}
+
           </div>
 
-          {/* Bottom section - Info, Price */}
-          <div className="mt-auto space-y-2.5">
-            {/* Details row - Condition, Year, Location - fixed height for consistency */}
-            <div className="flex flex-wrap items-center gap-x-2.5 sm:gap-x-3 gap-y-1.5 min-h-[20px] text-[10px] sm:text-[11px] md:text-xs text-neutral-500">
+          {/* Middle section - Info chips */}
+          <div className="mt-1 space-y-1.5">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[10px] sm:text-[11px] md:text-xs text-neutral-600">
               {conditionLabel && (
-                <span className="font-medium whitespace-nowrap">{conditionLabel}</span>
+                <span className="inline-flex items-center rounded-full border border-neutral-200 bg-white px-2 py-1 font-medium">
+                  {conditionLabel}
+                </span>
               )}
               {listing.year && (
-                <span className="flex items-center gap-1 whitespace-nowrap">
+                <span className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-2 py-1 font-medium">
                   <Calendar className="h-3 w-3 flex-shrink-0" />
                   <span>{listing.year}</span>
                 </span>
               )}
               {location && (
-                <span className="flex items-center gap-1 min-w-0 flex-1">
+                <span className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-2 py-1 font-medium min-w-0">
                   <MapPin className="h-3 w-3 flex-shrink-0" />
-                  <span className="truncate">{location}</span>
+                  <span className="truncate max-w-[120px] sm:max-w-[160px] md:max-w-[200px]">
+                    {location}
+                  </span>
                 </span>
               )}
             </div>
+          </div>
 
-            {/* Price - smaller */}
-            <div className="text-base sm:text-lg md:text-xl font-bold text-neutral-900 leading-none">
-              <PriceDisplay amountEurCents={listing.priceEurCents} currency={listing.currency || "EUR"} />
+          {/* Bottom section - Price and Seller */}
+          <div className="mt-auto space-y-2.5">
+            <div className="flex items-end justify-between gap-2">
+              {isVerifiedSeller && sellerProfileSlug ? (
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    start({ immediate: true });
+                    router.push(`/sellers/${sellerProfileSlug}`);
+                  }}
+                  className="inline-flex max-w-[60%] items-center gap-1 rounded-full border border-[#D4AF37]/40 bg-[#D4AF37]/10 px-2.5 py-1 text-[9px] sm:text-[10px] font-semibold text-neutral-900 hover:border-[#D4AF37]/70 hover:bg-[#D4AF37]/20 transition-all group/seller"
+                  title="Kliknite za pregled profila prodavca"
+                >
+                  <ShieldCheck className="h-3 w-3 text-[#D4AF37] flex-shrink-0" aria-hidden />
+                  <span className="truncate">{sellerDisplayName}</span>
+                  <ArrowUpRight className="h-3 w-3 opacity-60 group-hover/seller:opacity-100 group-hover/seller:translate-x-0.5 group-hover/seller:-translate-y-0.5 transition-all flex-shrink-0" aria-hidden />
+                </button>
+              ) : (
+                <span className="min-h-[20px]" aria-hidden />
+              )}
+              <div className="text-base sm:text-lg md:text-xl font-bold text-neutral-900 leading-none">
+                <PriceDisplay amountEurCents={listing.priceEurCents} currency={listing.currency || "EUR"} />
+              </div>
             </div>
-            
-            {isVerifiedSeller && sellerProfileSlug && (
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  start({ immediate: true });
-                  router.push(`/sellers/${sellerProfileSlug}`);
-                }}
-                className="mt-1 inline-flex items-center gap-1.5 rounded-full border-2 border-[#D4AF37]/30 bg-[#D4AF37]/10 px-3 py-1.5 text-[10px] sm:text-xs font-semibold text-neutral-900 hover:border-[#D4AF37]/60 hover:bg-[#D4AF37]/20 transition-all group/seller"
-                title="Kliknite za pregled profila prodavca"
-              >
-                <ShieldCheck className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-[#D4AF37] flex-shrink-0" aria-hidden />
-                <span className="truncate max-w-[120px] sm:max-w-[180px]">{sellerDisplayName}</span>
-                <ArrowUpRight className="h-3 w-3 sm:h-3.5 sm:w-3.5 opacity-60 group-hover/seller:opacity-100 group-hover/seller:translate-x-0.5 group-hover/seller:-translate-y-0.5 transition-all flex-shrink-0" aria-hidden />
-              </button>
-            )}
           </div>
         </CardContent>
       </Card>
@@ -302,4 +311,3 @@ function ListingGridBase({
 }
 
 export const ListingGrid = memo(ListingGridBase);
-

@@ -108,7 +108,7 @@ export default async function ListingsPage({
     } satisfies ListingSummary;
   });
 
-  const columns = 4;
+  const columns = 3;
   const limit = 24;
 
   return (

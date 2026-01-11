@@ -20,6 +20,8 @@ import { cn } from "@/lib/utils";
 
 interface SignInFormProps {
   className?: string;
+  enableGoogle?: boolean;
+  enableFacebook?: boolean;
 }
 
 function GoogleIcon() {
@@ -62,7 +64,11 @@ function FacebookIcon() {
   );
 }
 
-export function SignInForm({ className }: SignInFormProps = {}) {
+export function SignInForm({
+  className,
+  enableGoogle = false,
+  enableFacebook = false,
+}: SignInFormProps = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams?.get("redirect") ?? null;
@@ -73,9 +79,14 @@ export function SignInForm({ className }: SignInFormProps = {}) {
   const [loading, setLoading] = useState(false);
   const [providerLoading, setProviderLoading] = useState<"google" | "facebook" | null>(null);
 
+  const hasProvider = enableGoogle || enableFacebook;
   const isBusy = loading || providerLoading !== null;
 
   const handleProviderSignIn = async (provider: "google" | "facebook") => {
+    if ((provider === "google" && !enableGoogle) || (provider === "facebook" && !enableFacebook)) {
+      setError("Prijava putem izabranog provajdera trenutno nije dostupna.");
+      return;
+    }
     setError("");
     setProviderLoading(provider);
     try {
@@ -142,42 +153,54 @@ export function SignInForm({ className }: SignInFormProps = {}) {
               {error}
             </div>
           )}
-          <div className="grid gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              className="h-12 min-h-[44px] w-full rounded-xl border-neutral-200 bg-white text-base text-neutral-900 shadow-sm hover:border-neutral-300 hover:bg-neutral-50"
-              onClick={() => handleProviderSignIn("google")}
-              disabled={isBusy}
-            >
-              <span className="flex items-center gap-3">
-                <GoogleIcon />
-                <span className="leading-none">
-                  {providerLoading === "google" ? "Povezivanje..." : "Nastavi sa Google nalogom"}
+          {hasProvider && (
+            <>
+              <div className="grid gap-3">
+                {enableGoogle && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-12 min-h-[44px] w-full rounded-xl border-neutral-200 bg-white text-base text-neutral-900 shadow-sm hover:border-neutral-300 hover:bg-neutral-50"
+                    onClick={() => handleProviderSignIn("google")}
+                    disabled={isBusy}
+                  >
+                    <span className="flex items-center gap-3">
+                      <GoogleIcon />
+                      <span className="leading-none">
+                        {providerLoading === "google"
+                          ? "Povezivanje..."
+                          : "Nastavi sa Google nalogom"}
+                      </span>
+                    </span>
+                  </Button>
+                )}
+                {enableFacebook && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-12 min-h-[44px] w-full rounded-xl border-transparent bg-[#1877F2] text-base font-semibold text-white shadow-sm hover:bg-[#1666d2]"
+                    onClick={() => handleProviderSignIn("facebook")}
+                    disabled={isBusy}
+                  >
+                    <span className="flex items-center gap-3">
+                      <FacebookIcon />
+                      <span className="leading-none">
+                        {providerLoading === "facebook"
+                          ? "Povezivanje..."
+                          : "Nastavi sa Facebook nalogom"}
+                      </span>
+                    </span>
+                  </Button>
+                )}
+              </div>
+              <div className="relative py-2">
+                <div className="h-px w-full bg-neutral-200" />
+                <span className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-3 text-xs text-neutral-500">
+                  ili
                 </span>
-              </span>
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="h-12 min-h-[44px] w-full rounded-xl border-transparent bg-[#1877F2] text-base font-semibold text-white shadow-sm hover:bg-[#1666d2]"
-              onClick={() => handleProviderSignIn("facebook")}
-              disabled={isBusy}
-            >
-              <span className="flex items-center gap-3">
-                <FacebookIcon />
-                <span className="leading-none">
-                  {providerLoading === "facebook" ? "Povezivanje..." : "Nastavi sa Facebook nalogom"}
-                </span>
-              </span>
-            </Button>
-          </div>
-          <div className="relative py-2">
-            <div className="h-px w-full bg-neutral-200" />
-            <span className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-3 text-xs text-neutral-500">
-              ili
-            </span>
-          </div>
+              </div>
+            </>
+          )}
           <div className="space-y-2">
             <Label htmlFor="email" className="text-sm font-medium text-neutral-800">
               Email
