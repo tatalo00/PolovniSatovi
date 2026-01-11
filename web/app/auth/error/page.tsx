@@ -38,12 +38,13 @@ export const metadata = {
   description: "Došlo je do greške u procesu prijave",
 };
 
-export default function AuthErrorPage({
+export default async function AuthErrorPage({
   searchParams,
 }: {
-  searchParams?: { error?: string };
+  searchParams?: Promise<{ error?: string }>;
 }) {
-  const errorKey = searchParams?.error ?? "Default";
+  const resolvedParams = searchParams ? await searchParams : undefined;
+  const errorKey = resolvedParams?.error ?? "Default";
   const message = errorMessages[errorKey] ?? errorMessages.Default;
 
   return (
