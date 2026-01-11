@@ -6,6 +6,13 @@ export const metadata = {
 };
 
 export default function SignInPage() {
+  const enableGoogle = Boolean(
+    process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+  );
+  const enableFacebook = Boolean(
+    process.env.FACEBOOK_CLIENT_ID && process.env.FACEBOOK_CLIENT_SECRET
+  );
+
   return (
     <main className="container mx-auto px-4 py-16">
       <div className="mx-auto max-w-md">
@@ -13,9 +20,8 @@ export default function SignInPage() {
         <p className="mb-8 text-muted-foreground">
           Unesite svoje podatke da biste se prijavili
         </p>
-        <SignInForm />
+        <SignInForm enableGoogle={enableGoogle} enableFacebook={enableFacebook} />
       </div>
     </main>
   );
 }
-
