@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, ChevronLeft, ChevronRight, Clock3, MapPin } from "lucide-react";
@@ -55,7 +55,43 @@ function formatRelativeTime(isoDate: string) {
 
 
 export function RecentListings({ listings, favoriteIds = [] }: RecentListingsProps) {
+  const [resolvedFavoriteIds, setResolvedFavoriteIds] = useState<string[]>(favoriteIds);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setResolvedFavoriteIds(favoriteIds);
+  }, [favoriteIds]);
+
+  useEffect(() => {
+    if (favoriteIds.length > 0) {
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const loadFavorites = async () => {
+      try {
+        const response = await fetch("/api/favorites/ids", {
+          signal: controller.signal,
+        });
+        if (!response.ok) {
+          return;
+        }
+        const data = (await response.json()) as { listingIds?: string[] };
+        if (Array.isArray(data.listingIds)) {
+          setResolvedFavoriteIds(data.listingIds);
+        }
+      } catch (error) {
+        if ((error as Error).name !== "AbortError") {
+          console.error("Failed to load favorite IDs", error);
+        }
+      }
+    };
+
+    loadFavorites();
+
+    return () => controller.abort();
+  }, [favoriteIds.length]);
 
   const scroll = useCallback((direction: "left" | "right") => {
     const container = scrollContainerRef.current;
@@ -124,7 +160,7 @@ export function RecentListings({ listings, favoriteIds = [] }: RecentListingsPro
           >
             {listings.map((listing) => {
               const primaryPhoto = listing.photos?.[0]?.url ?? null;
-              const isFavorite = favoriteIds.includes(listing.id);
+              const isFavorite = resolvedFavoriteIds.includes(listing.id);
               return (
                 <Link
                   key={listing.id}

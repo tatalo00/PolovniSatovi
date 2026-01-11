@@ -22,6 +22,46 @@ interface SignInFormProps {
   className?: string;
 }
 
+function GoogleIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 48 48"
+      className="h-6 w-6 shrink-0"
+    >
+      <path
+        fill="#EA4335"
+        d="M24 20.2v7.6h10.7c-.5 2.5-2.9 7.3-10.7 7.3-6.4 0-11.7-5.3-11.7-11.8S17.6 11.5 24 11.5c3.6 0 6 1.6 7.4 2.9l5-4.8C33.2 6.6 29 5 24 5 14.6 5 7 12.6 7 22s7.6 17 17 17c9.8 0 16.3-6.9 16.3-16.6 0-1.1-.1-1.9-.3-2.7H24z"
+      />
+      <path
+        fill="#34A853"
+        d="M24 39c4.5 0 8.3-1.5 11-4l-5.3-4.1c-1.4 1-3.3 1.7-5.7 1.7-4.4 0-8.1-3-9.4-7.1l-6 4.6C11.9 35.1 17.5 39 24 39z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M14.6 25.6c-.3-.9-.5-1.9-.5-3s.2-2.1.5-3l-6-4.6C7.6 17 7 19.4 7 22s.6 5 1.6 7.1l6-4.5z"
+      />
+      <path
+        fill="#4285F4"
+        d="M24 11.5c2.5 0 4.7.9 6.4 2.6l4.8-4.7C32.9 6.6 29 5 24 5c-6.5 0-12.1 3.9-14.7 9.6l6 4.6c1.3-4.1 5-7.7 8.7-7.7z"
+      />
+    </svg>
+  );
+}
+
+function FacebookIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="h-6 w-6 shrink-0"
+      fill="currentColor"
+    >
+      <path d="M24 12.1C24 5.4 18.6 0 12 0S0 5.4 0 12.1C0 18 4.4 22.9 10.1 24v-8.4H7.1v-3.5h3v-2.7c0-3 1.8-4.7 4.6-4.7 1.3 0 2.7.2 2.7.2v3H16c-1.5 0-2 .9-2 1.9v2.3h3.4l-.5 3.5H14V24C19.6 22.9 24 18 24 12.1z" />
+    </svg>
+  );
+}
+
 export function SignInForm({ className }: SignInFormProps = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -31,6 +71,22 @@ export function SignInForm({ className }: SignInFormProps = {}) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [providerLoading, setProviderLoading] = useState<"google" | "facebook" | null>(null);
+
+  const isBusy = loading || providerLoading !== null;
+
+  const handleProviderSignIn = async (provider: "google" | "facebook") => {
+    setError("");
+    setProviderLoading(provider);
+    try {
+      await signIn(provider, {
+        callbackUrl: redirectTo || "/dashboard",
+      });
+    } catch (err) {
+      setError("Došlo je do greške. Pokušajte ponovo.");
+      setProviderLoading(null);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,6 +142,42 @@ export function SignInForm({ className }: SignInFormProps = {}) {
               {error}
             </div>
           )}
+          <div className="grid gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-12 min-h-[44px] w-full rounded-xl border-neutral-200 bg-white text-base text-neutral-900 shadow-sm hover:border-neutral-300 hover:bg-neutral-50"
+              onClick={() => handleProviderSignIn("google")}
+              disabled={isBusy}
+            >
+              <span className="flex items-center gap-3">
+                <GoogleIcon />
+                <span className="leading-none">
+                  {providerLoading === "google" ? "Povezivanje..." : "Nastavi sa Google nalogom"}
+                </span>
+              </span>
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-12 min-h-[44px] w-full rounded-xl border-transparent bg-[#1877F2] text-base font-semibold text-white shadow-sm hover:bg-[#1666d2]"
+              onClick={() => handleProviderSignIn("facebook")}
+              disabled={isBusy}
+            >
+              <span className="flex items-center gap-3">
+                <FacebookIcon />
+                <span className="leading-none">
+                  {providerLoading === "facebook" ? "Povezivanje..." : "Nastavi sa Facebook nalogom"}
+                </span>
+              </span>
+            </Button>
+          </div>
+          <div className="relative py-2">
+            <div className="h-px w-full bg-neutral-200" />
+            <span className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-3 text-xs text-neutral-500">
+              ili
+            </span>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="email" className="text-sm font-medium text-neutral-800">
               Email
@@ -99,7 +191,7 @@ export function SignInForm({ className }: SignInFormProps = {}) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              disabled={loading}
+              disabled={isBusy}
               className="h-12 min-h-[44px] rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
             />
           </div>
@@ -117,7 +209,7 @@ export function SignInForm({ className }: SignInFormProps = {}) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              disabled={loading}
+              disabled={isBusy}
               className="h-12 min-h-[44px] rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
             />
           </div>
@@ -126,7 +218,7 @@ export function SignInForm({ className }: SignInFormProps = {}) {
           <Button
             type="submit"
             className="h-12 min-h-[44px] w-full rounded-xl bg-[#D4AF37] text-base font-semibold text-neutral-900 transition hover:bg-[#b6932c] disabled:cursor-not-allowed"
-            disabled={loading}
+            disabled={isBusy}
           >
             {loading ? "Prijavljivanje..." : "Prijavi se"}
           </Button>
@@ -141,4 +233,3 @@ export function SignInForm({ className }: SignInFormProps = {}) {
     </Card>
   );
 }
-

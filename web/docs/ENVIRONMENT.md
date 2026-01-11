@@ -17,6 +17,10 @@ NEXTAUTH_SECRET=changeme
 AUTH_SECRET=changeme  # Same as NEXTAUTH_SECRET for NextAuth v5
 SESSION_MAX_AGE=604800  # Session expiration time in seconds (default: 7 days)
 SESSION_UPDATE_AGE=86400  # How often to refresh the session in seconds (default: 1 day)
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+FACEBOOK_CLIENT_ID=
+FACEBOOK_CLIENT_SECRET=
 
 # Supabase Storage (for image uploads)
 NEXT_PUBLIC_SUPABASE_URL=
@@ -37,5 +41,4 @@ DIDIT_CALLBACK_URL=http://localhost:3000/api/authentication/status   # Optional 
 ```
 
 Do not commit `.env.local` to source control.
-
 
