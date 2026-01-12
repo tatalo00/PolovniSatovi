@@ -53,19 +53,16 @@ function formatRelativeTime(isoDate: string) {
   return `pre ${years} god.`;
 }
 
-
-export function RecentListings({ listings, favoriteIds }: RecentListingsProps) {
-  const [resolvedFavoriteIds, setResolvedFavoriteIds] = useState<string[]>(() => favoriteIds ?? []);
+export function RecentListings({ listings, favoriteIds = [] }: RecentListingsProps) {
+  const [resolvedFavoriteIds, setResolvedFavoriteIds] = useState<string[]>(favoriteIds);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (favoriteIds && favoriteIds.length > 0) {
-      setResolvedFavoriteIds(favoriteIds);
-    }
-  }, [favoriteIds?.length]);
+    setResolvedFavoriteIds(favoriteIds);
+  }, [favoriteIds]);
 
   useEffect(() => {
-    if (favoriteIds && favoriteIds.length > 0) {
+    if (favoriteIds.length > 0) {
       return;
     }
 
@@ -93,7 +90,7 @@ export function RecentListings({ listings, favoriteIds }: RecentListingsProps) {
     loadFavorites();
 
     return () => controller.abort();
-  }, [favoriteIds?.length]);
+  }, [favoriteIds.length]);
 
   const scroll = useCallback((direction: "left" | "right") => {
     const container = scrollContainerRef.current;
