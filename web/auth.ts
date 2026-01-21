@@ -184,6 +184,58 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       : 24 * 60 * 60, // Default: 1 day in seconds
   },
   callbacks: {
+    async signIn({ user, account }) {
+      // Allow credentials sign-in without additional checks
+      if (account?.provider === "credentials") {
+        return true;
+      }
+
+      // For OAuth providers, check if an account with this email already exists
+      if (account?.provider && user.email) {
+        const existingUser = await prisma.user.findUnique({
+          where: { email: user.email },
+          include: {
+            accounts: {
+              where: { provider: account.provider },
+            },
+          },
+        });
+
+        // If user exists but doesn't have this OAuth provider linked
+        if (existingUser && existingUser.accounts.length === 0) {
+          // Check if the user registered with email/password (has a password set)
+          if (existingUser.password) {
+            // User has a password-based account, don't auto-link for security
+            // They need to link the account manually from settings
+            return `/auth/error?error=OAuthAccountNotLinked&email=${encodeURIComponent(user.email)}`;
+          }
+
+          // User exists but was created via another OAuth provider
+          // Link this new OAuth account to the existing user
+          await prisma.account.create({
+            data: {
+              userId: existingUser.id,
+              type: account.type,
+              provider: account.provider,
+              providerAccountId: account.providerAccountId,
+              refresh_token: account.refresh_token,
+              access_token: account.access_token,
+              expires_at: account.expires_at,
+              token_type: account.token_type,
+              scope: account.scope,
+              id_token: account.id_token,
+              session_state: account.session_state as string | null,
+            },
+          });
+
+          // Update user object to use existing user's ID
+          user.id = existingUser.id;
+          return true;
+        }
+      }
+
+      return true;
+    },
     async jwt({ token, user }) {
       const extendedToken = token as ExtendedToken;
 
