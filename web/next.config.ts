@@ -86,6 +86,8 @@ export default async function nextConfig(): Promise<NextConfig> {
   if (process.env.ANALYZE !== "true") return baseConfig;
 
   try {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore - @next/bundle-analyzer is an optional dev dependency
     const bundleAnalyzer = (await import("@next/bundle-analyzer")).default;
     const withBundleAnalyzer = bundleAnalyzer({ enabled: true });
     return withBundleAnalyzer(baseConfig);
