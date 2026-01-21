@@ -5,10 +5,6 @@ import { requireAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { logger } from "@/lib/logger";
 
-if (!supabase) {
-  throw new Error('Supabase client not initialized. Check environment variables.');
-}
-
 export async function POST(request: Request) {
   try {
     await requireAuth();
@@ -93,11 +89,13 @@ export async function POST(request: Request) {
       url: publicUrl,
       path: filePath,
     });
-  } catch (error: any) {
-    logger.error("Error uploading image", { error: error.message, stack: error.stack });
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error("Unknown error");
+
+    logger.error("Error uploading image", { error: err.message, stack: err.stack });
     
     // Check if it's an auth error
-    if (error.message?.includes("Unauthorized") || error.message?.includes("auth")) {
+    if (err.message.includes("Unauthorized") || err.message.includes("auth")) {
       return NextResponse.json(
         { error: "Morate biti prijavljeni da biste uploadovali slike" },
         { status: 401 }
@@ -105,9 +103,8 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(
-      { error: error.message || "Greška pri uploadu slike. Pokušajte ponovo." },
+      { error: err.message || "Greška pri uploadu slike. Pokušajte ponovo." },
       { status: 500 }
     );
   }
 }
-

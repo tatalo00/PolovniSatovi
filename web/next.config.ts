@@ -1,6 +1,20 @@
 import type { NextConfig } from "next";
+import { config as loadDotenv } from "dotenv";
+import { existsSync } from "fs";
+import path from "path";
 
-const nextConfig: NextConfig = {
+for (const envPath of [
+  path.resolve(__dirname, ".env.local"),
+  path.resolve(__dirname, ".env"),
+  path.resolve(__dirname, "..", ".env.local"),
+  path.resolve(__dirname, "..", ".env"),
+]) {
+  if (existsSync(envPath)) {
+    loadDotenv({ path: envPath, override: false });
+  }
+}
+
+const baseConfig: NextConfig = {
   // Fix workspace root detection for monorepo-like setups
   outputFileTracingRoot: __dirname,
   images: {
@@ -51,7 +65,7 @@ const nextConfig: NextConfig = {
     // Ensure path aliases work correctly
     config.resolve.alias = {
       ...config.resolve.alias,
-      "@": require("path").resolve(__dirname),
+      "@": path.resolve(__dirname),
       ...(isServer
         ? {}
         : {
@@ -68,18 +82,17 @@ const nextConfig: NextConfig = {
   turbopack: {},
 };
 
-// Only use bundle analyzer when ANALYZE env var is set (local dev only)
-let exportedConfig = nextConfig;
+export default async function nextConfig(): Promise<NextConfig> {
+  if (process.env.ANALYZE !== "true") return baseConfig;
 
-if (process.env.ANALYZE === "true") {
   try {
-    // Dynamic import to avoid requiring the package in production
-    const bundleAnalyzer = require("@next/bundle-analyzer");
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore - @next/bundle-analyzer is an optional dev dependency
+    const bundleAnalyzer = (await import("@next/bundle-analyzer")).default;
     const withBundleAnalyzer = bundleAnalyzer({ enabled: true });
-    exportedConfig = withBundleAnalyzer(nextConfig);
+    return withBundleAnalyzer(baseConfig);
   } catch {
     console.warn("Bundle analyzer not available, skipping...");
+    return baseConfig;
   }
 }
-
-export default exportedConfig;

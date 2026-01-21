@@ -10,6 +10,7 @@ import { Providers } from "@/components/providers/session-provider";
 import { PageViewTracker } from "@/components/analytics/page-view-tracker";
 import { NavigationFeedbackProvider } from "@/components/providers/navigation-feedback-provider";
 import { PageTransitionWrapper } from "@/components/providers/page-transition-wrapper";
+import { VibeKanbanCompanion } from "@/components/providers/vibe-kanban-companion";
 import { Toaster } from "sonner";
 
 const inter = Inter({
@@ -53,6 +54,7 @@ export default async function RootLayout({
           <Suspense fallback={null}>
             <NavigationFeedbackProvider>
               <PageViewTracker />
+              <VibeKanbanCompanion />
               <Navbar />
               <PageTransitionWrapper>{children}</PageTransitionWrapper>
               <Footer />

@@ -53,19 +53,23 @@ function formatRelativeTime(isoDate: string) {
   return `pre ${years} god.`;
 }
 
-
 export function RecentListings({ listings, favoriteIds }: RecentListingsProps) {
-  const [resolvedFavoriteIds, setResolvedFavoriteIds] = useState<string[]>(() => favoriteIds ?? []);
+  const [resolvedFavoriteIds, setResolvedFavoriteIds] = useState<string[]>(
+    () => favoriteIds ?? []
+  );
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  // Sync with prop only when it actually has values
+  const favoriteIdsLength = favoriteIds?.length ?? 0;
   useEffect(() => {
     if (favoriteIds && favoriteIds.length > 0) {
       setResolvedFavoriteIds(favoriteIds);
     }
-  }, [favoriteIds?.length]);
+  }, [favoriteIdsLength]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (favoriteIds && favoriteIds.length > 0) {
+    // Skip fetch if favoriteIds were provided from props
+    if (favoriteIdsLength > 0) {
       return;
     }
 
@@ -93,7 +97,7 @@ export function RecentListings({ listings, favoriteIds }: RecentListingsProps) {
     loadFavorites();
 
     return () => controller.abort();
-  }, [favoriteIds?.length]);
+  }, [favoriteIdsLength]);
 
   const scroll = useCallback((direction: "left" | "right") => {
     const container = scrollContainerRef.current;

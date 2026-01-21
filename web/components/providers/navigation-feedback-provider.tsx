@@ -73,14 +73,18 @@ export function NavigationFeedbackProvider({ children }: { children: ReactNode }
     restoreTitleRef.current = null;
   };
 
+  const isLoadingRef = useRef(isLoading);
+  useEffect(() => {
+    isLoadingRef.current = isLoading;
+  }, [isLoading]);
+
   const start = useCallback(
     (options?: StartOptions) => {
-      const { immediate = false } = options ?? {};
       clearStartTimer();
       clearStopTimer();
 
       const trigger = () => {
-        if (isLoading) return;
+        if (isLoadingRef.current) return;
         applyLoadingTitle();
         startTimeRef.current = Date.now();
         setIsLoading(true);
@@ -89,7 +93,7 @@ export function NavigationFeedbackProvider({ children }: { children: ReactNode }
       // Always trigger immediately for instant feedback
       trigger();
     },
-    [isLoading]
+    []
   );
 
   const stop = useCallback(() => {
@@ -101,7 +105,7 @@ export function NavigationFeedbackProvider({ children }: { children: ReactNode }
       restoreTitle();
     };
 
-    if (!isLoading) {
+    if (!isLoadingRef.current) {
       finalize();
       return;
     }
@@ -112,7 +116,7 @@ export function NavigationFeedbackProvider({ children }: { children: ReactNode }
 
     clearStopTimer();
     stopTimerRef.current = setTimeout(finalize, remaining);
-  }, [isLoading]);
+  }, []);
 
   useEffect(() => {
     startRef.current = start;
@@ -173,12 +177,14 @@ export function NavigationFeedbackProvider({ children }: { children: ReactNode }
     };
   }, []);
 
+  // Stop loading when location changes (navigation completed)
+  const prevLocationKeyRef = useRef(locationKey);
   useEffect(() => {
-    if (!isLoading) {
-      return;
+    if (prevLocationKeyRef.current !== locationKey) {
+      prevLocationKeyRef.current = locationKey;
+      stopRef.current?.();
     }
-    stopRef.current?.();
-  }, [locationKey, isLoading]);
+  }, [locationKey]);
 
   useEffect(() => {
     return () => {
