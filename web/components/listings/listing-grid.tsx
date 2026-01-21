@@ -12,7 +12,7 @@ import { BLUR_DATA_URL } from "@/lib/image-utils";
 import { WishlistButton } from "./wishlist-button";
 import { useNavigationFeedback } from "@/components/providers/navigation-feedback-provider";
 import type { ListingSummary } from "@/types/listing";
-import { ShieldCheck, UserCheck, MapPin, Calendar, ArrowUpRight } from "lucide-react";
+import { ShieldCheck, MapPin } from "lucide-react";
 
 interface ListingGridProps {
   listings: ListingSummary[];
@@ -54,22 +54,9 @@ const ListingGridCard = memo(function ListingGridCard({
     ? CONDITION_LABELS[listing.condition] ?? listing.condition
     : undefined;
 
-  // Ensure isVerified is treated as boolean (handle null/undefined)
   const isVerifiedSeller = Boolean(listing.seller?.isVerified);
-  const isAuthenticatedSeller = !isVerifiedSeller && Boolean(listing.seller?.isAuthenticated);
-  const badgeTitle = isVerifiedSeller
-    ? "Verifikovani prodavac"
-    : isAuthenticatedSeller
-      ? "Autentifikovani korisnik"
-      : null;
-
   const location = listing.seller?.locationCity || listing.location;
   const sellerProfileSlug = listing.seller?.profileSlug;
-  const sellerDisplayName =
-    listing.seller?.storeName?.trim() ||
-    listing.seller?.name?.trim() ||
-    listing.seller?.email?.split("@")[0] ||
-    "Prodavac";
 
   const handleMouseDown = () => {
     setIsPressed(true);
@@ -85,7 +72,6 @@ const ListingGridCard = memo(function ListingGridCard({
 
   const handleTouchStart = () => {
     setIsPressed(true);
-    // Don't prevent default to allow navigation
   };
 
   const handleTouchEnd = () => {
@@ -94,9 +80,7 @@ const ListingGridCard = memo(function ListingGridCard({
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    // Start navigation feedback immediately
     start({ immediate: true });
-    // Navigate immediately - browser will show new page, then load content
     router.push(`/listing/${listing.id}`);
   };
 
@@ -109,153 +93,160 @@ const ListingGridCard = memo(function ListingGridCard({
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       className="block touch-manipulation cursor-pointer"
-      style={{ touchAction: 'manipulation' }}
+      style={{ touchAction: "manipulation" }}
     >
-      <Card className={cn(
-        "group relative flex w-full flex-row lg:flex-col items-stretch overflow-hidden rounded-2xl border border-neutral-200/70 bg-white/95 p-0 shadow-md transition-all duration-200 hover:border-[#D4AF37]/60 hover:shadow-xl",
-        "h-[180px] sm:h-[200px] md:h-[220px] lg:h-full",
-        isPressed && "lg:scale-100 scale-[0.97] lg:shadow-md shadow-sm border-[#D4AF37]/40 lg:border-neutral-200/70"
-      )}>
-        {/* Image on left (mobile) / top (desktop) - goes to upper border */}
-        <div className="relative w-[140px] min-[475px]:w-[160px] sm:w-[180px] md:w-[200px] lg:w-full flex-shrink-0 lg:flex-shrink aspect-square sm:aspect-[4/5] md:aspect-square lg:aspect-square">
-          <div className="relative w-full h-full overflow-hidden bg-neutral-100 lg:rounded-t-2xl">
-            {/* Badge and Wishlist button - both in upper corners at same height */}
-            <div className="absolute top-2 left-2 right-2 z-20 flex items-center justify-between pointer-events-none">
-              {/* Badge - upper left */}
-              <div className="pointer-events-auto">
-                {(isVerifiedSeller || isAuthenticatedSeller) && (
-                  sellerProfileSlug && isVerifiedSeller ? (
-                    <Link
-                      href={`/sellers/${sellerProfileSlug}`}
-                      title={badgeTitle ?? undefined}
-                      className="inline-flex rounded-full border border-white/80 bg-white/95 backdrop-blur-sm p-1.5 shadow-md hover:bg-white transition-colors"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <ShieldCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#D4AF37]" aria-hidden />
-                    </Link>
-                  ) : (
-                    <div
-                      title={badgeTitle ?? undefined}
-                      className="inline-flex rounded-full border border-white/80 bg-white/95 backdrop-blur-sm p-1.5 shadow-md"
-                    >
-                      {isVerifiedSeller ? (
-                        <ShieldCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#D4AF37]" aria-hidden />
-                      ) : (
-                        <UserCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-neutral-900" aria-hidden />
-                      )}
-                    </div>
-                  )
-                )}
-              </div>
-              
-              {/* Wishlist button - upper right */}
-              <div className="pointer-events-auto">
-                <WishlistButton
-                  listingId={listing.id}
-                  isFavorite={isFavorite}
-                  initialIsFavorite={isFavorite}
-                  size="sm"
-                  className="rounded-full border border-white/80 bg-white/95 backdrop-blur-sm shadow-md hover:bg-white [&_svg]:h-3 [&_svg]:w-3"
-                  onToggle={onToggle}
-                />
-              </div>
+      <Card
+        className={cn(
+          "group relative flex w-full flex-row lg:flex-col items-stretch overflow-hidden",
+          "rounded-xl border border-neutral-200/80 bg-white",
+          "shadow-sm transition-all duration-300 ease-out",
+          "hover:border-[#D4AF37]/50 hover:shadow-lg",
+          "h-[160px] sm:h-[180px] md:h-[200px] lg:h-full",
+          // Override Card's default padding and gap
+          "p-0 gap-0",
+          isPressed &&
+            "scale-[0.98] lg:scale-100 shadow-none lg:shadow-sm border-[#D4AF37]/40"
+        )}
+      >
+        {/* Image section - rounded corners matching card */}
+        <div
+          className={cn(
+            "relative overflow-hidden bg-neutral-100",
+            "w-[140px] sm:w-[160px] md:w-[180px] flex-shrink-0",
+            "lg:w-full lg:aspect-square",
+            // Mobile: round left corners (horizontal layout)
+            "rounded-l-xl lg:rounded-l-none",
+            // Desktop: round top corners (vertical layout)
+            "lg:rounded-t-xl"
+          )}
+        >
+          {/* Overlay badges */}
+          <div className="absolute top-2 left-2 right-2 z-20 flex items-start justify-between pointer-events-none">
+            {/* Verified badge - top left */}
+            <div className="pointer-events-auto">
+              {isVerifiedSeller && sellerProfileSlug ? (
+                <Link
+                  href={`/sellers/${sellerProfileSlug}`}
+                  title="Verifikovani prodavac"
+                  className="inline-flex rounded-full bg-white/95 backdrop-blur-sm p-1.5 shadow-sm border border-white/80 hover:bg-white transition-colors"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <ShieldCheck
+                    className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#D4AF37]"
+                    aria-hidden
+                  />
+                </Link>
+              ) : isVerifiedSeller ? (
+                <div
+                  title="Verifikovani prodavac"
+                  className="inline-flex rounded-full bg-white/95 backdrop-blur-sm p-1.5 shadow-sm border border-white/80"
+                >
+                  <ShieldCheck
+                    className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#D4AF37]"
+                    aria-hidden
+                  />
+                </div>
+              ) : null}
             </div>
 
-            {listing.photos && listing.photos.length > 0 ? (
-              <Image
-                src={listing.photos[0].url}
-                alt={listing.title}
-                fill
-                className="object-cover transition-transform duration-300 group-hover:scale-[1.05]"
-                loading="lazy"
-                sizes={imageSizes}
-                placeholder="blur"
-                blurDataURL={BLUR_DATA_URL}
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = "none";
-                  const parent = target.parentElement;
-                  if (parent) {
-                    parent.innerHTML =
-                      '<div class="flex h-full items-center justify-center bg-muted"><span class="text-muted-foreground text-xs">Greška pri učitavanju</span></div>';
-                  }
-                }}
+            {/* Wishlist - top right */}
+            <div className="pointer-events-auto">
+              <WishlistButton
+                listingId={listing.id}
+                isFavorite={isFavorite}
+                initialIsFavorite={isFavorite}
+                size="sm"
+                className={cn(
+                  "rounded-full border border-white/80 bg-white/95 backdrop-blur-sm shadow-sm hover:bg-white",
+                  "[&_svg]:h-3 [&_svg]:w-3",
+                  "lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-200"
+                )}
+                onToggle={onToggle}
               />
-            ) : (
-              <div className="flex h-full items-center justify-center bg-gradient-to-br from-neutral-100 to-neutral-200">
-                <span className="text-muted-foreground text-xs font-medium">Nema slike</span>
-              </div>
-            )}
+            </div>
           </div>
+
+          {listing.photos && listing.photos.length > 0 ? (
+            <Image
+              src={listing.photos[0].url}
+              alt={listing.title}
+              fill
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
+              loading="lazy"
+              sizes={imageSizes}
+              placeholder="blur"
+              blurDataURL={BLUR_DATA_URL}
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = "none";
+                const parent = target.parentElement;
+                if (parent) {
+                  parent.innerHTML =
+                    '<div class="flex h-full items-center justify-center bg-muted"><span class="text-muted-foreground text-xs">Greška pri učitavanju</span></div>';
+                }
+              }}
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center bg-gradient-to-br from-neutral-100 to-neutral-200">
+              <span className="text-muted-foreground text-xs font-medium">
+                Nema slike
+              </span>
+            </div>
+          )}
         </div>
 
-        {/* Content on right (mobile) / bottom (desktop) */}
-        <CardContent className="flex flex-1 flex-col pt-1.5 pb-3 sm:pt-2 sm:pb-4 md:pt-2 md:pb-4 lg:pt-2 lg:pb-4 px-3 sm:px-4 md:px-5 lg:px-6 min-w-0 justify-between h-full">
-          {/* Top section - Title and Reference */}
-          <div className="space-y-1.5 sm:space-y-2 min-w-0">
-            <h3 className="line-clamp-2 text-base sm:text-lg md:text-lg lg:text-lg font-bold leading-tight text-neutral-900 transition-colors group-hover:text-[#D4AF37]">
-              {listing.title}
+        {/* Content section - new luxury hierarchy */}
+        <CardContent
+          className={cn(
+            "flex flex-col flex-1 min-w-0",
+            "p-3 sm:p-4 lg:p-5",
+            "gap-1 sm:gap-1.5"
+          )}
+        >
+          {/* Section 1: Brand + Model */}
+          <div className="space-y-0.5 min-w-0">
+            <p className="text-[11px] sm:text-xs uppercase tracking-wider text-[#D4AF37] font-semibold truncate">
+              {listing.brand}
+            </p>
+            <h3 className="text-sm sm:text-base font-semibold text-neutral-900 leading-tight line-clamp-1 group-hover:text-[#D4AF37] transition-colors">
+              {listing.model}
             </h3>
+          </div>
 
-            {listing.reference && (
-              <p className="text-[10px] sm:text-xs font-mono text-muted-foreground">
-                Ref: <span className="font-semibold">{listing.reference}</span>
-              </p>
+          {/* Section 2: Reference (always reserve space) */}
+          <p className="h-4 text-[10px] sm:text-xs font-mono text-muted-foreground truncate">
+            {listing.reference ? `Ref: ${listing.reference}` : "\u00A0"}
+          </p>
+
+          {/* Section 3: Condition + Year chips */}
+          <div className="flex items-center gap-1.5 min-h-[1.25rem]">
+            {conditionLabel && (
+              <span className="inline-flex items-center rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] sm:text-xs font-medium text-neutral-600 flex-shrink-0">
+                {conditionLabel}
+              </span>
             )}
-
+            {listing.year && (
+              <span className="inline-flex items-center rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] sm:text-xs font-medium text-neutral-600 flex-shrink-0">
+                {listing.year}
+              </span>
+            )}
           </div>
 
-          {/* Middle section - Info chips */}
-          <div className="mt-1 space-y-1.5">
-            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[10px] sm:text-[11px] md:text-xs text-neutral-600">
-              {conditionLabel && (
-                <span className="inline-flex items-center rounded-full border border-neutral-200 bg-white px-2 py-1 font-medium">
-                  {conditionLabel}
+          {/* Section 4: Price + Location (pushed to bottom) */}
+          <div className="mt-auto flex items-end justify-between gap-2 pt-1">
+            <PriceDisplay
+              amountEurCents={listing.priceEurCents}
+              currency={listing.currency || "EUR"}
+              className="text-base sm:text-lg lg:text-xl font-bold text-neutral-900"
+            />
+            {location && (
+              <span className="flex items-center gap-1 text-[10px] sm:text-xs text-muted-foreground flex-shrink-0">
+                <MapPin className="h-3 w-3" />
+                <span className="truncate max-w-[60px] sm:max-w-[80px]">
+                  {location}
                 </span>
-              )}
-              {listing.year && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-2 py-1 font-medium">
-                  <Calendar className="h-3 w-3 flex-shrink-0" />
-                  <span>{listing.year}</span>
-                </span>
-              )}
-              {location && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-2 py-1 font-medium min-w-0">
-                  <MapPin className="h-3 w-3 flex-shrink-0" />
-                  <span className="truncate max-w-[120px] sm:max-w-[160px] md:max-w-[200px]">
-                    {location}
-                  </span>
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Bottom section - Price and Seller */}
-          <div className="mt-auto space-y-2.5">
-            <div className="flex items-end justify-between gap-2">
-              {isVerifiedSeller && sellerProfileSlug ? (
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    start({ immediate: true });
-                    router.push(`/sellers/${sellerProfileSlug}`);
-                  }}
-                  className="inline-flex max-w-[60%] items-center gap-1 rounded-full border border-[#D4AF37]/40 bg-[#D4AF37]/10 px-2.5 py-1 text-[9px] sm:text-[10px] font-semibold text-neutral-900 hover:border-[#D4AF37]/70 hover:bg-[#D4AF37]/20 transition-all group/seller"
-                  title="Kliknite za pregled profila prodavca"
-                >
-                  <ShieldCheck className="h-3 w-3 text-[#D4AF37] flex-shrink-0" aria-hidden />
-                  <span className="truncate">{sellerDisplayName}</span>
-                  <ArrowUpRight className="h-3 w-3 opacity-60 group-hover/seller:opacity-100 group-hover/seller:translate-x-0.5 group-hover/seller:-translate-y-0.5 transition-all flex-shrink-0" aria-hidden />
-                </button>
-              ) : (
-                <span className="min-h-[20px]" aria-hidden />
-              )}
-              <div className="text-base sm:text-lg md:text-xl font-bold text-neutral-900 leading-none">
-                <PriceDisplay amountEurCents={listing.priceEurCents} currency={listing.currency || "EUR"} />
-              </div>
-            </div>
+              </span>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -285,7 +276,11 @@ function ListingGridBase({
   }
 
   const gridColumnClass =
-    columns === 5 ? "lg:grid-cols-5" : columns === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3";
+    columns === 5
+      ? "lg:grid-cols-5"
+      : columns === 4
+        ? "lg:grid-cols-4"
+        : "lg:grid-cols-3";
 
   return (
     <div
@@ -302,8 +297,7 @@ function ListingGridBase({
           listing={listing}
           isFavorite={favoriteIds?.has(listing.id) ?? false}
           onToggle={(next) => onToggleFavorite?.(listing.id, next)}
-          imageSizes={`(max-width: 475px) 140px, (max-width: 640px) 160px, (max-width: 768px) 180px, (max-width: 1024px) 200px, (min-width: 1024px) ${columns === 5 ? "20vw" : columns === 4 ? "25vw" : "33vw"
-            }`}
+          imageSizes={`(max-width: 475px) 140px, (max-width: 640px) 160px, (max-width: 768px) 180px, (max-width: 1024px) 200px, (min-width: 1024px) ${columns === 5 ? "20vw" : columns === 4 ? "25vw" : "33vw"}`}
         />
       ))}
     </div>
