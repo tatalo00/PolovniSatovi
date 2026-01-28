@@ -43,8 +43,10 @@ export default async function RootLayout({
   
   const user = session?.user ? {
     id: session.user.id,
-    name: session.user.name,
-    email: session.user.email,
+    name: session.user.name ?? null,
+    email: session.user.email ?? null,
+    role: session.user.role,
+    isVerified: session.user.isVerified ?? false,
   } : null;
 
   return (
@@ -55,7 +57,7 @@ export default async function RootLayout({
             <NavigationFeedbackProvider>
               <PageViewTracker />
               <VibeKanbanCompanion />
-              <Navbar />
+              <Navbar user={user} />
               <PageTransitionWrapper>{children}</PageTransitionWrapper>
               <Footer />
               <MobileBottomNav user={user} />

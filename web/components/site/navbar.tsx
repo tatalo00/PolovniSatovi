@@ -1,19 +1,21 @@
 import Link from "next/link";
-import { auth } from "@/auth";
 import { NavLinks } from "./navbar-links";
 import { NavUserMenu } from "./navbar-user-menu";
 import { NavMobileMenu } from "./navbar-mobile-menu";
 
-export async function Navbar() {
-  const session = await auth();
-  
-  const user = session?.user ? {
-    id: session.user.id,
-    name: session.user.name ?? null,
-    email: session.user.email ?? null,
-    role: session.user.role,
-    isVerified: session.user.isVerified ?? false,
-  } : null;
+interface NavbarUser {
+  id: string;
+  name: string | null;
+  email: string | null;
+  role?: string;
+  isVerified?: boolean;
+}
+
+interface NavbarProps {
+  user: NavbarUser | null;
+}
+
+export function Navbar({ user }: NavbarProps) {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">

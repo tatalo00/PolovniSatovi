@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { ListingForm } from "@/components/listings/listing-form";
+import { ListingWizard } from "@/components/listings/listing-wizard";
 import { Plus, Watch } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -67,9 +67,9 @@ export default async function NewListingPage() {
             </div>
           </div>
 
-          {/* Form Section */}
+          {/* Wizard Section */}
           <div className="relative">
-            <ListingForm />
+            <ListingWizard />
           </div>
         </div>
       </div>

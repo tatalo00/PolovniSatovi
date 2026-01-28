@@ -2,14 +2,13 @@ import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { ListingForm } from "@/components/listings/listing-form";
+import { ListingWizard } from "@/components/listings/listing-wizard";
 import {
   BOX_PAPERS_VALUES,
   CONDITION_VALUES,
   SUPPORTED_CURRENCIES,
+  GENDER_VALUES,
 } from "@/lib/validation/listing";
-
-type ListingFormInput = NonNullable<Parameters<typeof ListingForm>[0]["listing"]>;
 
 export const metadata = {
   title: "Izmeni Oglas",
@@ -44,11 +43,37 @@ export default async function EditListingPage({
     redirect("/dashboard/listings");
   }
 
-  const listingForForm: ListingFormInput = {
-    ...listing,
+  const listingForWizard = {
+    id: listing.id,
+    brand: listing.brand,
+    model: listing.model,
+    reference: listing.reference,
+    year: listing.year,
+    caseDiameterMm: listing.caseDiameterMm,
+    caseThicknessMm: listing.caseThicknessMm,
+    caseMaterial: listing.caseMaterial,
+    waterResistanceM: listing.waterResistanceM,
+    movement: listing.movement,
+    movementType: listing.movementType,
+    caliber: listing.caliber,
+    dialColor: listing.dialColor,
+    dateDisplay: listing.dateDisplay,
+    bezelType: listing.bezelType,
+    bezelMaterial: listing.bezelMaterial,
+    strapType: listing.strapType,
+    braceletMaterial: listing.braceletMaterial,
+    strapWidthMm: listing.strapWidthMm,
+    warranty: listing.warranty,
+    warrantyCard: listing.warrantyCard,
+    originalOwner: listing.originalOwner,
+    runningCondition: listing.runningCondition,
     condition: listing.condition as (typeof CONDITION_VALUES)[number],
+    gender: listing.gender as (typeof GENDER_VALUES)[number],
+    priceEurCents: listing.priceEurCents,
     currency: listing.currency as (typeof SUPPORTED_CURRENCIES)[number],
     boxPapers: listing.boxPapers as (typeof BOX_PAPERS_VALUES)[number] | null,
+    description: listing.description,
+    location: listing.location,
     photos: listing.photos.map((photo) => ({ url: photo.url })),
   };
 
@@ -58,16 +83,18 @@ export default async function EditListingPage({
   }
 
   return (
-    <main className="container mx-auto px-4 py-8">
-      <div className="mx-auto max-w-4xl">
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold tracking-tight">Izmeni Oglas</h1>
-          <p className="text-muted-foreground mt-2">
-            Ažurirajte informacije o oglasu
-          </p>
-        </div>
+    <main className="min-h-screen bg-gradient-to-b from-background via-[#FAFAFA] to-background">
+      <div className="container mx-auto px-3 sm:px-4 md:px-6 py-6 sm:py-8 md:py-12">
+        <div className="mx-auto max-w-5xl space-y-6 sm:space-y-8">
+          <div className="mb-8">
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Izmeni Oglas</h1>
+            <p className="text-muted-foreground mt-2">
+              Ažurirajte informacije o oglasu
+            </p>
+          </div>
 
-        <ListingForm listing={listingForForm} />
+          <ListingWizard listing={listingForWizard} />
+        </div>
       </div>
     </main>
   );

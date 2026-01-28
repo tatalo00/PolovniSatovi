@@ -4,6 +4,8 @@ import { PriceDisplay } from "@/components/currency/price-display";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ContactSellerForm } from "@/components/listings/contact-seller-form";
 import { ReportListingForm } from "@/components/listings/report-listing-form";
+import { TrustBadges } from "@/components/listings/trust-badges";
+import { BuyerProtectionInfo } from "@/components/listings/buyer-protection-info";
 import { ShieldCheck, UserCheck } from "lucide-react";
 
 interface ListingContactCardProps {
@@ -18,6 +20,7 @@ interface ListingContactCardProps {
   className?: string;
   isSold?: boolean;
   sellerBadge?: { label: string; type: "verified" | "authenticated" } | null;
+  showTrustBadges?: boolean;
 }
 
 export function ListingContactCard({
@@ -32,6 +35,7 @@ export function ListingContactCard({
   className,
   isSold = false,
   sellerBadge,
+  showTrustBadges = true,
 }: ListingContactCardProps) {
   const contactDisabled = isOwner || isSold;
 
@@ -58,6 +62,15 @@ export function ListingContactCard({
             </div>
           )}
         </div>
+        {/* Trust Badges */}
+        {showTrustBadges && !contactDisabled && (
+          <TrustBadges
+            badges={["buyer_protection", "secure_messaging"]}
+            layout="horizontal"
+            showLabels={false}
+            className="mt-2"
+          />
+        )}
       </CardHeader>
       <CardContent className="px-3 pb-3 sm:px-4 sm:pb-4 md:px-6 md:pb-6 space-y-2.5 sm:space-y-3 md:space-y-4">
         {isOwner ? (
@@ -75,12 +88,16 @@ export function ListingContactCard({
             </p>
           </div>
         ) : (
-          <ContactSellerForm
-            listingId={listingId}
-            listingTitle={listingTitle}
-            sellerEmail={sellerEmail}
-            sellerId={sellerId}
-          />
+          <>
+            <ContactSellerForm
+              listingId={listingId}
+              listingTitle={listingTitle}
+              sellerEmail={sellerEmail}
+              sellerId={sellerId}
+            />
+            {/* Buyer Protection Info - Compact */}
+            <BuyerProtectionInfo variant="compact" />
+          </>
         )}
         {showReport && !contactDisabled && (
           <div className="border-t pt-3 sm:pt-4">

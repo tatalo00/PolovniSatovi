@@ -266,7 +266,7 @@ export async function POST(request: Request) {
         boxPapers: data.boxPapers || null,
         description: data.description || null,
         location: data.location || null,
-        status: "DRAFT",
+        status: data.status || "DRAFT",
         photos: {
           create: data.photos.map((url, index) => ({
             url,

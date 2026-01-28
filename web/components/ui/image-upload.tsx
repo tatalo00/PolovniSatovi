@@ -131,6 +131,7 @@ export function ImageUpload({
                 src={url}
                 alt={`Upload ${index + 1}`}
                 fill
+                sizes="128px"
                 className="object-cover"
               />
             </div>
