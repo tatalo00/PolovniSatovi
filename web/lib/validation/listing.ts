@@ -411,6 +411,8 @@ export const listingCreateSchema = z.object({
   description: descriptionServerSchema,
   location: locationServerSchema,
   photos: listingPhotosSchema,
+  // Status for direct submission (PENDING) vs save as draft (DRAFT)
+  status: z.enum(["DRAFT", "PENDING"]).optional(),
 });
 
 export const listingUpdateSchema = listingCreateSchema

@@ -4,10 +4,16 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, ZoomIn, Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BLUR_DATA_URL, GALLERY_IMAGE_SIZES } from "@/lib/image-utils";
 import { Lens } from "@/components/ui/lens";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 
 interface ListingPhoto {
@@ -21,6 +27,9 @@ interface ListingImageGalleryProps {
   title: string;
 }
 
+const ZOOM_LEVELS = [2, 2.5, 3] as const;
+type ZoomLevel = typeof ZOOM_LEVELS[number];
+
 export function ListingImageGallery({ photos, title }: ListingImageGalleryProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
@@ -28,7 +37,9 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right');
   const [hovering, setHovering] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState<ZoomLevel>(2.5);
   const mainImageRef = useRef<HTMLDivElement | null>(null);
+  const thumbnailRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   // Minimum swipe distance (in pixels)
   const minSwipeDistance = 50;
@@ -46,6 +57,21 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
   const handleThumbnailClick = (index: number) => {
     setSlideDirection(index > currentIndex ? 'right' : 'left');
     setCurrentIndex(index);
+    // Scroll thumbnail into view
+    thumbnailRefs.current[index]?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'center',
+    });
+  };
+
+  const handleZoomChange = (direction: 'in' | 'out') => {
+    const currentIdx = ZOOM_LEVELS.indexOf(zoomLevel);
+    if (direction === 'in' && currentIdx < ZOOM_LEVELS.length - 1) {
+      setZoomLevel(ZOOM_LEVELS[currentIdx + 1]);
+    } else if (direction === 'out' && currentIdx > 0) {
+      setZoomLevel(ZOOM_LEVELS[currentIdx - 1]);
+    }
   };
 
   const handleImageClick = () => {
@@ -150,7 +176,7 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
                 hovering={hovering}
                 setHovering={setHovering}
                 className="w-full h-full pointer-events-auto"
-                zoomFactor={2.5}
+                zoomFactor={zoomLevel}
                 lensSize={250}
                 imageUrl={currentPhoto.url}
               >
@@ -228,6 +254,51 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
                 </Button>
               </>
             )}
+
+            {/* Zoom Controls - Desktop only */}
+            <TooltipProvider delayDuration={300}>
+              <div className="absolute bottom-3 left-3 hidden md:flex items-center gap-1 bg-black/60 rounded-full px-1 py-1 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-white hover:bg-white/20 rounded-full"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleZoomChange('out');
+                      }}
+                      disabled={zoomLevel === ZOOM_LEVELS[0]}
+                      aria-label="Umanji zumiranje"
+                    >
+                      <Minus className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Umanji zum</TooltipContent>
+                </Tooltip>
+                <span className="text-white text-xs font-medium min-w-[32px] text-center">
+                  {zoomLevel}x
+                </span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-white hover:bg-white/20 rounded-full"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleZoomChange('in');
+                      }}
+                      disabled={zoomLevel === ZOOM_LEVELS[ZOOM_LEVELS.length - 1]}
+                      aria-label="Uvećaj zumiranje"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Uvećaj zum</TooltipContent>
+                </Tooltip>
+              </div>
+            </TooltipProvider>
           </div>
 
           {/* Mobile Navigation Dots */}
@@ -251,16 +322,23 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
           )}
         </div>
 
-        {/* Thumbnail Strip */}
+        {/* Thumbnail Strip - scrollable for many images */}
         {photos.length > 1 && (
-          <div className="hidden md:grid grid-cols-5 gap-2">
+          <div
+            className={cn(
+              "hidden md:flex gap-2 overflow-x-auto scrollbar-hide pb-1",
+              photos.length <= 5 ? "justify-center" : ""
+            )}
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
             {photos.map((photo, index) => (
               <button
                 key={photo.id}
+                ref={(el) => { thumbnailRefs.current[index] = el; }}
                 className={cn(
-                  "relative aspect-square w-full overflow-hidden rounded-md border-2 transition-all",
+                  "relative flex-shrink-0 w-[calc((100%-2rem)/5)] min-w-[80px] max-w-[120px] aspect-square overflow-hidden rounded-md border-2 transition-all",
                   index === currentIndex
-                    ? "border-primary ring-2 ring-primary ring-offset-2"
+                    ? "border-primary ring-2 ring-primary ring-offset-2 scale-105"
                     : "border-transparent hover:border-muted-foreground/50"
                 )}
                 onClick={() => handleThumbnailClick(index)}

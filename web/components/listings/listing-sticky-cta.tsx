@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback } from "react";
-import { Share2 } from "lucide-react";
+import { Share2, ShieldCheck, UserCheck } from "lucide-react";
 import { PriceDisplay } from "@/components/currency/price-display";
 import { Button } from "@/components/ui/button";
+import { TrustBadgesInline } from "@/components/listings/trust-badges";
 
 interface ListingStickyCTAProps {
   priceEurCents: number;
@@ -13,6 +14,7 @@ interface ListingStickyCTAProps {
   isSold?: boolean;
   listingId?: string;
   listingTitle?: string;
+  sellerBadge?: { label: string; type: "verified" | "authenticated" } | null;
 }
 
 export function ListingStickyCTA({
@@ -23,6 +25,7 @@ export function ListingStickyCTA({
   isSold = false,
   listingId,
   listingTitle,
+  sellerBadge,
 }: ListingStickyCTAProps) {
   const handleClick = useCallback(() => {
     const target = document.getElementById(contactTargetId);
@@ -63,12 +66,30 @@ export function ListingStickyCTA({
   }
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 px-4 py-3 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/70 lg:hidden safe-area-inset-bottom">
-      <div className="container mx-auto flex items-center justify-between gap-3">
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 px-4 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/70 lg:hidden" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
+      {/* Trust badges row */}
+      <div className="container mx-auto flex items-center justify-center gap-2 py-1.5 border-b border-border/50">
+        <TrustBadgesInline />
+        <span className="text-[10px] text-muted-foreground">Zaštićena kupovina</span>
+      </div>
+
+      {/* Main CTA row */}
+      <div className="container mx-auto flex items-center justify-between gap-3 pt-2.5 pb-1">
         <div className="flex flex-col min-w-0 flex-1">
-          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Cena
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Cena
+            </span>
+            {sellerBadge && (
+              <span className="flex items-center">
+                {sellerBadge.type === "verified" ? (
+                  <ShieldCheck className="h-3 w-3 text-[#D4AF37]" aria-label="Verifikovani prodavac" />
+                ) : (
+                  <UserCheck className="h-3 w-3 text-neutral-600" aria-label="Autentifikovani korisnik" />
+                )}
+              </span>
+            )}
+          </div>
           <span className="text-lg font-semibold truncate">
             <PriceDisplay amountEurCents={priceEurCents} currency={currency} />
           </span>

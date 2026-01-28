@@ -1,19 +1,16 @@
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
-import Link from "next/link";
-import Image from "next/image";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { ListingViewTracker } from "@/components/listings/listing-view-tracker";
 import { ListingImageGallery } from "@/components/listings/listing-image-gallery";
-import { ListingSpecsTable } from "@/components/listings/listing-specs-table";
+import { ListingSpecsAccordion } from "@/components/listings/listing-specs-accordion";
 import { ListingContactCard } from "@/components/listings/listing-contact-card";
+import { SellerInfoCard, type SellerSummary } from "@/components/listings/seller-info-card";
 import { WishlistButton } from "@/components/listings/wishlist-button";
-import { ShieldCheck, UserCheck } from "lucide-react";
 import { ShareButton } from "@/components/listings/share-button";
 import { Prisma } from "@prisma/client";
 import { AUTHENTICATION_STATUS, type AuthenticationStatus } from "@/lib/authentication/status";
@@ -22,10 +19,15 @@ import dynamic from "next/dynamic";
 // Dynamically import heavy components
 const ListingReviewsSection = dynamic(
   () => import("@/components/reviews/listing-reviews-section").then((mod) => ({ default: mod.ListingReviewsSection })),
-  { 
+  {
     ssr: true,
     loading: () => <div className="h-32 animate-pulse rounded-lg bg-muted" />
   }
+);
+
+const ListingStickyCTA = dynamic(
+  () => import("@/components/listings/listing-sticky-cta").then((mod) => ({ default: mod.ListingStickyCTA })),
+  { ssr: true }
 );
 
 type ListingWithSellerDetail = Prisma.ListingGetPayload<{
@@ -97,112 +99,6 @@ export async function generateMetadata({ params }: ListingPageProps): Promise<Me
   };
 }
 
-type SellerSummary = {
-  id: string;
-  name: string | null;
-  email: string;
-  locationCity: string | null;
-  locationCountry: string | null;
-  createdAt: Date;
-  isVerified: boolean;
-  authenticationStatus: AuthenticationStatus | null;
-  storeName?: string | null;
-  shortDescription?: string | null;
-  profileSlug?: string | null;
-  logoUrl?: string | null;
-};
-
-function SellerInfoCard({
-  seller,
-  locationLabel,
-  memberSince,
-  className,
-  badge,
-}: {
-  seller: SellerSummary;
-  locationLabel: string | null;
-  memberSince: string;
-  className?: string;
-  badge?: { label: string; type: "verified" | "authenticated" } | null;
-}) {
-  const displayName =
-    seller.storeName?.trim() || seller.name?.trim() || seller.email || "Prodavac";
-  const initials = displayName
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("");
-  const showProfileLink = badge?.type === "verified" && seller.profileSlug;
-
-  return (
-    <Card className={className}>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg">Prodavac</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-start gap-3">
-          <div className="relative h-12 w-12 rounded-full bg-neutral-100 overflow-hidden flex items-center justify-center text-sm font-semibold text-neutral-700">
-            {seller.logoUrl ? (
-              <Image src={seller.logoUrl} alt={displayName} fill sizes="48px" className="object-cover" />
-            ) : (
-              <span>{initials}</span>
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-base font-semibold flex items-center gap-2 flex-wrap">
-              {showProfileLink ? (
-                <Link
-                  href={`/sellers/${seller.profileSlug}`}
-                  className="hover:underline hover:text-[#D4AF37] transition-colors"
-                >
-                  {displayName}
-                </Link>
-              ) : (
-                displayName
-              )}
-              {badge && (
-                <Badge
-                  variant="secondary"
-                  title={badge.label}
-                  className="flex items-center gap-1.5 border border-white/0 bg-neutral-900/5 text-xs font-semibold text-neutral-700 backdrop-blur"
-                >
-                  {badge.type === "verified" ? (
-                    <ShieldCheck className="h-3.5 w-3.5 text-[#D4AF37]" aria-hidden />
-                  ) : (
-                    <UserCheck className="h-3.5 w-3.5 text-neutral-900" aria-hidden />
-                  )}
-                  <span>{badge.label}</span>
-                </Badge>
-              )}
-            </p>
-            {locationLabel && (
-              <p className="text-sm text-muted-foreground">{locationLabel}</p>
-            )}
-          </div>
-        </div>
-
-        {seller.shortDescription && (
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            {seller.shortDescription}
-          </p>
-        )}
-
-        <div className="rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
-          Član od{" "}
-          <span className="font-medium text-foreground">{memberSince}</span>
-        </div>
-
-        {showProfileLink && (
-          <Button asChild variant="outline" size="sm" className="w-full">
-            <Link href={`/sellers/${seller.profileSlug}`}>Pogledaj profil prodavca</Link>
-          </Button>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
 export default async function ListingPage({ params }: ListingPageProps) {
   const { id } = await params;
   const listing = (await prisma.listing.findUnique({
@@ -263,14 +159,6 @@ export default async function ListingPage({ params }: ListingPageProps) {
     isFavorited = Boolean(favorite);
   }
   const isSold = listing.status === "SOLD";
-  const conditionLabels: Record<string, string> = {
-    New: "Novo",
-    "Like New": "Kao novo",
-    Excellent: "Odlično",
-    "Very Good": "Vrlo dobro",
-    Good: "Dobro",
-    Fair: "Zadovoljavajuće",
-  };
 
   const sellerLocationParts = [
     listing.seller.locationCity,
@@ -280,29 +168,6 @@ export default async function ListingPage({ params }: ListingPageProps) {
     sellerLocationParts.length > 0 ? sellerLocationParts.join(", ") : null;
   const overallLocation =
     listing.location || sellerLocation || null;
-
-  const specs = [
-    { label: "Marka", value: listing.brand },
-    { label: "Model", value: listing.model },
-    { label: "Referenca", value: listing.reference },
-    {
-      label: "Godina proizvodnje",
-      value: listing.year ? listing.year.toString() : null,
-    },
-    {
-      label: "Prečnik kućišta",
-      value: listing.caseDiameterMm
-        ? `${listing.caseDiameterMm} mm`
-        : null,
-    },
-    { label: "Materijal kućišta", value: listing.caseMaterial },
-    { label: "Mehanizam", value: listing.movement },
-    {
-      label: "Stanje",
-      value: conditionLabels[listing.condition] || listing.condition,
-    },
-    { label: "Lokacija", value: overallLocation },
-  ];
 
   const isOwner = session?.user?.id === listing.seller.id;
   const isVerifiedSeller = listing.seller.isVerified;
@@ -468,9 +333,9 @@ export default async function ListingPage({ params }: ListingPageProps) {
               </p>
             </header>
 
-            <ListingSpecsTable
-              specs={specs}
-              boxPapersStatus={listing.boxPapers || null}
+            <ListingSpecsAccordion
+              listing={listing}
+              location={overallLocation}
             />
 
             {listing.description && (
@@ -536,6 +401,18 @@ export default async function ListingPage({ params }: ListingPageProps) {
           </div>
         </aside>
       </div>
+
+      {/* Mobile Sticky CTA */}
+      <ListingStickyCTA
+        priceEurCents={listing.priceEurCents}
+        currency={listing.currency as "EUR" | "RSD" | undefined}
+        contactTargetId="contact-seller"
+        isOwner={isOwner}
+        isSold={isSold}
+        listingId={listing.id}
+        listingTitle={listing.title}
+        sellerBadge={sellerBadge}
+      />
     </main>
   );
 }
