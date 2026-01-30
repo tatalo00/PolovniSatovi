@@ -6,7 +6,16 @@ import { ShieldCheck, UserCheck, Package, Clock, TrendingUp } from "lucide-react
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import type { SellerTier } from "@/lib/seller-tier";
+import { SellerTierBadge } from "@/components/sellers/seller-tier-badge";
+import { TransactionBadge } from "@/components/sellers/transaction-badge";
 
 export interface SellerSummary {
   id: string;
@@ -42,6 +51,7 @@ interface SellerInfoCardProps {
   badge?: SellerBadge;
   stats?: SellerStats;
   showStats?: boolean;
+  sellerTier?: SellerTier;
 }
 
 export function SellerInfoCard({
@@ -52,6 +62,7 @@ export function SellerInfoCard({
   badge,
   stats,
   showStats = true,
+  sellerTier,
 }: SellerInfoCardProps) {
   const displayName =
     seller.storeName?.trim() || seller.name?.trim() || seller.email || "Prodavac";
@@ -92,18 +103,47 @@ export function SellerInfoCard({
               )}
             </p>
             {badge && (
-              <Badge
-                variant="secondary"
-                title={badge.label}
-                className="mt-1 flex w-fit items-center gap-1.5 border border-white/0 bg-neutral-900/5 text-xs font-semibold text-neutral-700 backdrop-blur"
-              >
-                {badge.type === "verified" ? (
-                  <ShieldCheck className="h-3.5 w-3.5 text-[#D4AF37]" aria-hidden />
-                ) : (
-                  <UserCheck className="h-3.5 w-3.5 text-neutral-900" aria-hidden />
-                )}
-                <span>{badge.label}</span>
-              </Badge>
+              <TooltipProvider delayDuration={300}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge
+                      variant="secondary"
+                      className="mt-1 flex w-fit items-center gap-1.5 border border-white/0 bg-neutral-900/5 text-xs font-semibold text-neutral-700 backdrop-blur cursor-help"
+                    >
+                      {badge.type === "verified" ? (
+                        <ShieldCheck className="h-3.5 w-3.5 text-[#D4AF37]" aria-hidden />
+                      ) : (
+                        <UserCheck className="h-3.5 w-3.5 text-neutral-900" aria-hidden />
+                      )}
+                      <span>{badge.label}</span>
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-[240px]">
+                    {badge.type === "verified" ? (
+                      <>
+                        <p className="font-medium text-sm">Verifikovani prodavac</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Identitet prodavca je potvrđen KYC verifikacijom. Ovo povećava sigurnost transakcije.
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="font-medium text-sm">Autentifikovani korisnik</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Korisnik je prošao autentifikaciju identiteta kroz naš sistem provere.
+                        </p>
+                      </>
+                    )}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            {/* Tier + Transaction badges */}
+            {(sellerTier || (stats?.totalSold && stats.totalSold >= 10)) && (
+              <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                {sellerTier && <SellerTierBadge tier={sellerTier} />}
+                {stats?.totalSold && <TransactionBadge soldCount={stats.totalSold} />}
+              </div>
             )}
             {locationLabel && (
               <p className="text-sm text-muted-foreground mt-1">{locationLabel}</p>

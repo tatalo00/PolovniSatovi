@@ -130,8 +130,8 @@ export default async function ListingPreviewPage({ params }: PageProps) {
   }).format(listing.seller.createdAt);
 
   return (
-    <main className="container mx-auto px-4 py-8 lg:py-12">
-      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div className="space-y-8">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
             Pregled oglasa
@@ -236,6 +236,6 @@ export default async function ListingPreviewPage({ params }: PageProps) {
           </Card>
         </aside>
       </div>
-    </main>
+    </div>
   );
 }

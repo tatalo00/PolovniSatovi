@@ -15,6 +15,12 @@ interface MobileBottomNavProps {
 
 export function MobileBottomNav({ user }: MobileBottomNavProps) {
   const pathname = usePathname() ?? "/";
+
+  // Dashboard has its own mobile nav
+  if (pathname.startsWith("/dashboard")) {
+    return null;
+  }
+
   const isLoggedIn = !!user;
 
   const navItems = [

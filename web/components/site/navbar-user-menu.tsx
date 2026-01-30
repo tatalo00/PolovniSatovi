@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MessagesNavLink } from "@/components/messages/messages-nav-link";
+import { NotificationBell } from "@/components/dashboard/notification-bell";
 
 interface NavUserMenuProps {
   user: {
@@ -65,6 +66,7 @@ export function NavUserMenu({ user }: NavUserMenuProps) {
           <Heart className="h-5 w-5" aria-hidden />
         </Link>
       </Button>
+      <NotificationBell />
       <MessagesNavLink />
       <Button variant="ghost" asChild>
         <Link href="/dashboard">Dashboard</Link>

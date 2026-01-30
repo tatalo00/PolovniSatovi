@@ -52,7 +52,7 @@ export interface IncomingSearchParams {
   [key: string]: string | string[] | undefined;
 }
 
-type NormalizedParams = {
+export type NormalizedParams = {
   brand?: string[];
   model?: string;
   reference?: string;
@@ -88,7 +88,7 @@ const getFirstValue = (value?: string | string[]): string | undefined => {
   return trimmed.length > 0 ? trimmed : undefined;
 };
 
-const normalizeSearchParams = (params: IncomingSearchParams): NormalizedParams => {
+export const normalizeSearchParams = (params: IncomingSearchParams): NormalizedParams => {
   const normalized: NormalizedParams = {};
 
   const brands = parseMultiParam(params.brand);
@@ -179,7 +179,7 @@ const normalizeSearchParams = (params: IncomingSearchParams): NormalizedParams =
   return normalized;
 };
 
-const buildWhereClause = (filters: NormalizedParams): Prisma.ListingWhereInput => {
+export const buildWhereClause = (filters: NormalizedParams): Prisma.ListingWhereInput => {
   const where: Prisma.ListingWhereInput = {
     status: "APPROVED",
   };
@@ -357,8 +357,13 @@ const resolveOrderBy = (
       return { createdAt: "asc" };
     case "newest":
       return { createdAt: "desc" };
+    case "relevance":
+      return [
+        { seller: { isVerified: "desc" } },
+        { createdAt: "desc" },
+      ];
     default:
-      return { priceEurCents: "asc" };
+      return { createdAt: "desc" };
   }
 };
 
@@ -434,6 +439,8 @@ async function fetchListingsData(params: IncomingSearchParams) {
                 storeName: true,
                 shortDescription: true,
                 logoUrl: true,
+                ratingAvg: true,
+                reviewCount: true,
               },
             },
           },

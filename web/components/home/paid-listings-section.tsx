@@ -6,6 +6,12 @@ import { PaidListings, type PaidListing } from "./featured-collections";
 
 type ListingWithPhotos = Listing & {
   photos: ListingPhoto[];
+  seller: {
+    isVerified: boolean;
+    sellerProfile: {
+      slug: string | null;
+    } | null;
+  } | null;
 };
 
 const EURO_FORMATTER = new Intl.NumberFormat("sr-RS", {
@@ -29,6 +35,16 @@ const getPaidListings = unstable_cache(
         photos: {
           orderBy: { order: "asc" },
           take: 1,
+        },
+        seller: {
+          select: {
+            isVerified: true,
+            sellerProfile: {
+              select: {
+                slug: true,
+              },
+            },
+          },
         },
       },
       orderBy: [
@@ -65,6 +81,8 @@ export async function PaidListingsSection() {
     imageUrl: listing.photos[0]?.url ?? null,
     locationLabel: null,
     sellerLabel: null,
+    isVerifiedSeller: Boolean(listing.seller?.isVerified),
+    sellerProfileSlug: listing.seller?.sellerProfile?.slug ?? null,
   }));
 
   return <PaidListings listings={paidListingsContent} />;

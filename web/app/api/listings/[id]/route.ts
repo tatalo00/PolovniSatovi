@@ -5,6 +5,7 @@ import { ListingStatus } from "@prisma/client";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { updateSellerSoldCount } from "@/lib/seller-utils";
 import { z } from "zod";
 import { listingUpdateSchema } from "@/lib/validation/listing";
 
@@ -244,6 +245,16 @@ export async function PATCH(
         },
       },
     });
+
+    // Update seller sold count when status changes to/from SOLD
+    if (
+      updateData.status &&
+      (updateData.status === ListingStatus.SOLD || listing.status === ListingStatus.SOLD)
+    ) {
+      updateSellerSoldCount(listing.sellerId).catch((err) =>
+        logger.error("Failed to update sold count", { error: String(err) })
+      );
+    }
 
     logger.info("Listing updated", { listingId: id, userId });
 

@@ -6,13 +6,12 @@ import { memo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { PriceDisplay } from "@/components/currency/price-display";
-import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "@/lib/utils";
 import { BLUR_DATA_URL } from "@/lib/image-utils";
 import { WishlistButton } from "./wishlist-button";
 import { useNavigationFeedback } from "@/components/providers/navigation-feedback-provider";
 import type { ListingSummary } from "@/types/listing";
-import { ShieldCheck, MapPin } from "lucide-react";
+import { ShieldCheck, MapPin, ShoppingBag, Star } from "lucide-react";
 
 interface ListingGridProps {
   listings: ListingSummary[];
@@ -20,6 +19,7 @@ interface ListingGridProps {
   scrollKey?: string;
   favoriteIds?: Set<string>;
   onToggleFavorite?: (listingId: string, nextValue: boolean) => void;
+  searchParams?: Record<string, string | undefined>;
 }
 
 interface ListingGridCardProps {
@@ -48,6 +48,17 @@ const ListingGridCard = memo(function ListingGridCard({
     Fair: "Za servis",
     Poor: "Za servis",
     Refurbished: "Renovirano",
+  };
+
+  const CONDITION_COLORS: Record<string, string> = {
+    New: "bg-emerald-500",
+    "Like New": "bg-emerald-400",
+    Excellent: "bg-blue-500",
+    "Very Good": "bg-blue-400",
+    Good: "bg-amber-500",
+    Fair: "bg-orange-500",
+    Poor: "bg-orange-500",
+    Refurbished: "bg-violet-500",
   };
 
   const conditionLabel = listing.condition
@@ -221,7 +232,8 @@ const ListingGridCard = memo(function ListingGridCard({
           {/* Section 3: Condition + Year chips */}
           <div className="flex items-center gap-1.5 min-h-[1.25rem]">
             {conditionLabel && (
-              <span className="inline-flex items-center rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] sm:text-xs font-medium text-neutral-600 flex-shrink-0">
+              <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] sm:text-xs font-medium text-neutral-600 flex-shrink-0">
+                <span className={cn("h-1.5 w-1.5 rounded-full flex-shrink-0", (listing.condition && CONDITION_COLORS[listing.condition]) || "bg-neutral-400")} />
                 {conditionLabel}
               </span>
             )}
@@ -232,21 +244,29 @@ const ListingGridCard = memo(function ListingGridCard({
             )}
           </div>
 
-          {/* Section 4: Price + Location (pushed to bottom) */}
+          {/* Section 4: Price + Location + Rating (pushed to bottom) */}
           <div className="mt-auto flex items-end justify-between gap-2 pt-1">
             <PriceDisplay
               amountEurCents={listing.priceEurCents}
               currency={listing.currency || "EUR"}
               className="text-base sm:text-lg lg:text-xl font-bold text-neutral-900"
             />
-            {location && (
-              <span className="flex items-center gap-1 text-[10px] sm:text-xs text-muted-foreground flex-shrink-0">
-                <MapPin className="h-3 w-3" />
-                <span className="truncate max-w-[60px] sm:max-w-[80px]">
-                  {location}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {listing.seller?.ratingAvg != null && listing.seller.reviewCount != null && listing.seller.reviewCount > 0 && (
+                <span className="flex items-center gap-0.5 text-[10px] sm:text-xs text-muted-foreground">
+                  <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" aria-hidden />
+                  {Number(listing.seller.ratingAvg).toFixed(1)}
                 </span>
-              </span>
-            )}
+              )}
+              {location && (
+                <span className="flex items-center gap-1 text-[10px] sm:text-xs text-muted-foreground">
+                  <MapPin className="h-3 w-3" />
+                  <span className="truncate max-w-[60px] sm:max-w-[80px]">
+                    {location}
+                  </span>
+                </span>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -254,24 +274,91 @@ const ListingGridCard = memo(function ListingGridCard({
   );
 });
 
+const FILTER_LABELS: Record<string, string> = {
+  brand: "Brend",
+  model: "Model",
+  reference: "Referenca",
+  min: "Cena",
+  max: "Cena",
+  cond: "Stanje",
+  condition: "Stanje",
+  movement: "Mehanizam",
+  gender: "Namenjeno",
+  loc: "Lokacija",
+  location: "Lokacija",
+  yearFrom: "Godina",
+  yearTo: "Godina",
+  year: "Godina",
+  box: "Kutija/Papiri",
+  verified: "Verifikovani prodavci",
+  authenticated: "Autentifikovani korisnici",
+};
+
+function getActiveFilterNames(searchParams?: Record<string, string | undefined>): string[] {
+  if (!searchParams) return [];
+  const seen = new Set<string>();
+  const names: string[] = [];
+  for (const [key, value] of Object.entries(searchParams)) {
+    if (!value || key === "sort" || key === "page" || key === "q" || key === "search") continue;
+    if (key === "verified" && value !== "1") continue;
+    if (key === "authenticated" && value !== "1") continue;
+    const label = FILTER_LABELS[key];
+    if (label && !seen.has(label)) {
+      seen.add(label);
+      names.push(label);
+    }
+  }
+  return names;
+}
+
 function ListingGridBase({
   listings,
   columns,
   scrollKey,
   favoriteIds,
   onToggleFavorite,
+  searchParams,
 }: ListingGridProps) {
   if (listings.length === 0) {
+    const activeFilterNames = getActiveFilterNames(searchParams);
+    const hasFilters = activeFilterNames.length > 0;
+
     return (
-      <EmptyState
-        iconType="listings"
-        title="Nema oglasa"
-        description="Nema oglasa koji odgovaraju vašim filterima. Pokušajte da ih prilagodite ili obrišete."
-        action={{
-          label: "Obriši sve filtere",
-          href: "/listings",
-        }}
-      />
+      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-neutral-200 py-16 px-6 text-center">
+        <div className="mb-4 rounded-full bg-neutral-100 p-5">
+          <ShoppingBag className="h-10 w-10 text-neutral-400" />
+        </div>
+        <h3 className="mb-2 text-lg font-semibold text-neutral-900">Nema rezultata</h3>
+        {hasFilters ? (
+          <>
+            <p className="mb-4 max-w-md text-sm text-neutral-500">
+              Nema oglasa koji odgovaraju vašoj kombinaciji filtera. Pokušajte da uklonite ili promenite neke filtere.
+            </p>
+            <div className="mb-5 flex flex-wrap justify-center gap-2">
+              {activeFilterNames.map((name) => (
+                <span
+                  key={name}
+                  className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700"
+                >
+                  {name}
+                </span>
+              ))}
+            </div>
+          </>
+        ) : (
+          <p className="mb-6 max-w-sm text-sm text-neutral-500">
+            Trenutno nema oglasa. Proverite ponovo uskoro!
+          </p>
+        )}
+        {hasFilters && (
+          <Link
+            href="/listings"
+            className="inline-flex h-10 items-center justify-center rounded-lg bg-neutral-900 px-5 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
+          >
+            Obriši sve filtere
+          </Link>
+        )}
+      </div>
     );
   }
 

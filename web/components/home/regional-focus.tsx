@@ -5,6 +5,7 @@ import { ArrowRight, MapPin, Clock3 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { PriceDisplay } from "@/components/currency/price-display";
 import { Button } from "@/components/ui/button";
+import { formatRelativeTime } from "@/lib/format-time";
 
 interface RegionalListing {
   id: string;
@@ -21,25 +22,6 @@ interface RegionalListing {
 interface RegionalHighlightsProps {
   listings: RegionalListing[];
   regionLabel: string | null;
-}
-
-function formatRelativeTime(isoDate: string) {
-  const date = new Date(isoDate);
-  const diff = Date.now() - date.getTime();
-  const minutes = Math.round(diff / 60000);
-
-  if (minutes < 1) return "pre nekoliko sekundi";
-  if (minutes < 60) return `pre ${minutes} min`;
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) return `pre ${hours} h`;
-  const days = Math.round(hours / 24);
-  if (days < 7) return `pre ${days} dana`;
-  const weeks = Math.round(days / 7);
-  if (weeks < 5) return `pre ${weeks} nedelje`;
-  const months = Math.round(days / 30);
-  if (months < 12) return `pre ${months} meseci`;
-  const years = Math.round(days / 365);
-  return `pre ${years} god.`;
 }
 
 export function RegionalHighlights({ listings, regionLabel }: RegionalHighlightsProps) {

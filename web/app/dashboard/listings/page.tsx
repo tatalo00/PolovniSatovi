@@ -36,15 +36,14 @@ export default async function MyListingsPage() {
   });
 
   return (
-    <main className="container mx-auto px-4 py-8">
+    <div className="space-y-6">
       <Breadcrumbs
         items={[
           { label: "Dashboard", href: "/dashboard" },
           { label: "Moji Oglasi" },
         ]}
-        className="mb-6"
       />
-      <div className="mb-8 flex items-center justify-between">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Moji Oglasi</h1>
           <p className="text-muted-foreground mt-2">
@@ -60,7 +59,7 @@ export default async function MyListingsPage() {
       </div>
 
       <ListingList listings={listings} showActions={true} />
-    </main>
+    </div>
   );
 }
 

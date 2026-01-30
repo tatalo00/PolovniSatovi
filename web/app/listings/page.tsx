@@ -80,6 +80,8 @@ export default async function ListingsPage({
         storeName: string | null;
         shortDescription: string | null;
         logoUrl: string | null;
+        ratingAvg: unknown;
+        reviewCount: number | null;
       } | null;
     }) | null;
 
@@ -103,6 +105,10 @@ export default async function ListingsPage({
           storeName: sellerWithAuth.sellerProfile?.storeName ?? null,
           shortDescription: sellerWithAuth.sellerProfile?.shortDescription ?? null,
           logoUrl: sellerWithAuth.sellerProfile?.logoUrl ?? null,
+          ratingAvg: sellerWithAuth.sellerProfile?.ratingAvg
+            ? Number(sellerWithAuth.sellerProfile.ratingAvg)
+            : null,
+          reviewCount: sellerWithAuth.sellerProfile?.reviewCount ?? null,
         }
         : null,
     } satisfies ListingSummary;

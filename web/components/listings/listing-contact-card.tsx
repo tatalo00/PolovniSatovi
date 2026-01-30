@@ -6,7 +6,7 @@ import { ContactSellerForm } from "@/components/listings/contact-seller-form";
 import { ReportListingForm } from "@/components/listings/report-listing-form";
 import { TrustBadges } from "@/components/listings/trust-badges";
 import { BuyerProtectionInfo } from "@/components/listings/buyer-protection-info";
-import { ShieldCheck, UserCheck } from "lucide-react";
+import { ShieldCheck, UserCheck, Star } from "lucide-react";
 
 interface ListingContactCardProps {
   priceEurCents: number;
@@ -21,6 +21,8 @@ interface ListingContactCardProps {
   isSold?: boolean;
   sellerBadge?: { label: string; type: "verified" | "authenticated" } | null;
   showTrustBadges?: boolean;
+  sellerRating?: number | null;
+  sellerReviewCount?: number;
 }
 
 export function ListingContactCard({
@@ -36,6 +38,8 @@ export function ListingContactCard({
   isSold = false,
   sellerBadge,
   showTrustBadges = true,
+  sellerRating,
+  sellerReviewCount = 0,
 }: ListingContactCardProps) {
   const contactDisabled = isOwner || isSold;
 
@@ -62,6 +66,16 @@ export function ListingContactCard({
             </div>
           )}
         </div>
+        {/* Seller Rating */}
+        {sellerRating !== null && sellerRating !== undefined && sellerReviewCount > 0 && (
+          <div className="flex items-center gap-1.5 mt-1">
+            <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" aria-hidden />
+            <span className="text-sm font-semibold">{sellerRating.toFixed(1)}</span>
+            <span className="text-xs text-muted-foreground">
+              ({sellerReviewCount} {sellerReviewCount === 1 ? "ocena" : sellerReviewCount < 5 ? "ocene" : "ocena"})
+            </span>
+          </div>
+        )}
         {/* Trust Badges */}
         {showTrustBadges && !contactDisabled && (
           <TrustBadges

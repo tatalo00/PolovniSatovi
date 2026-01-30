@@ -73,63 +73,59 @@ export default async function ProfilePage() {
   }
 
   return (
-    <main className="container mx-auto px-4 py-8">
-      <div className="mx-auto max-w-2xl">
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold tracking-tight">Moj Profil</h1>
-          <p className="text-muted-foreground mt-2">
-            Upravljajte svojim ličnim informacijama
-          </p>
-        </div>
-
-        <div className="space-y-6">
-          <ProfileForm
-            initialData={{
-              name: userProfile.name,
-              email: userProfile.email,
-              locationCountry: userProfile.locationCountry,
-              locationCity: userProfile.locationCity,
-            }}
-          />
-
-          <AuthenticationStatusCard
-            authentication={
-              userProfile.authentication
-                ? {
-                    id: userProfile.authentication.id,
-                    status: userProfile.authentication.status,
-                    diditSessionUrl: userProfile.authentication.diditSessionUrl,
-                    diditVerificationId: userProfile.authentication.diditVerificationId,
-                    rejectionReason: userProfile.authentication.rejectionReason,
-                    statusDetail: userProfile.authentication.statusDetail,
-                    updatedAt: userProfile.authentication.updatedAt?.toISOString() ?? null,
-                    createdAt: userProfile.authentication.createdAt?.toISOString() ?? null,
-                  }
-                : null
-            }
-            isVerifiedSeller={userProfile.isVerified}
-          />
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Statistike</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Broj oglasa:</span>
-                <span className="font-medium">{userProfile._count.listings}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Član od:</span>
-                <span className="font-medium">
-                  {new Date(userProfile.createdAt).toLocaleDateString("sr-RS")}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+    <div className="mx-auto max-w-2xl space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">Moj Profil</h1>
+        <p className="text-muted-foreground mt-2">
+          Upravljajte svojim ličnim informacijama
+        </p>
       </div>
-    </main>
+
+      <ProfileForm
+        initialData={{
+          name: userProfile.name,
+          email: userProfile.email,
+          locationCountry: userProfile.locationCountry,
+          locationCity: userProfile.locationCity,
+        }}
+      />
+
+      <AuthenticationStatusCard
+        authentication={
+          userProfile.authentication
+            ? {
+                id: userProfile.authentication.id,
+                status: userProfile.authentication.status,
+                diditSessionUrl: userProfile.authentication.diditSessionUrl,
+                diditVerificationId: userProfile.authentication.diditVerificationId,
+                rejectionReason: userProfile.authentication.rejectionReason,
+                statusDetail: userProfile.authentication.statusDetail,
+                updatedAt: userProfile.authentication.updatedAt?.toISOString() ?? null,
+                createdAt: userProfile.authentication.createdAt?.toISOString() ?? null,
+              }
+            : null
+        }
+        isVerifiedSeller={userProfile.isVerified}
+      />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Statistike</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Broj oglasa:</span>
+            <span className="font-medium">{userProfile._count.listings}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Član od:</span>
+            <span className="font-medium">
+              {new Date(userProfile.createdAt).toLocaleDateString("sr-RS")}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 

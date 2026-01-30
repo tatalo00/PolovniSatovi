@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { updateSellerResponseTime } from "@/lib/seller-response-time";
 import { z } from "zod";
 
 interface RouteParams {
@@ -131,6 +132,13 @@ export async function POST(request: Request, { params }: RouteParams) {
       where: { id: threadId },
       data: { updatedAt: new Date() },
     });
+
+    // Async update seller response time when seller sends a message
+    if (thread.sellerId === userId) {
+      updateSellerResponseTime(thread.sellerId).catch((err) =>
+        logger.error("Failed to update response time", { error: String(err) })
+      );
+    }
 
     return NextResponse.json(message, { status: 201 });
   } catch (error: any) {

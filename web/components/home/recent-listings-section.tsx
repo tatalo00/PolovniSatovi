@@ -9,6 +9,10 @@ type ListingWithRelations = Listing & {
   seller: {
     locationCity: string | null;
     locationCountry: string | null;
+    isVerified: boolean;
+    sellerProfile: {
+      slug: string | null;
+    } | null;
   } | null;
 };
 
@@ -25,6 +29,12 @@ const getRecentListings = unstable_cache(
           select: {
             locationCity: true,
             locationCountry: true,
+            isVerified: true,
+            sellerProfile: {
+              select: {
+                slug: true,
+              },
+            },
           },
         },
       },
@@ -76,6 +86,8 @@ export async function RecentListingsSection() {
       locationLabel,
       createdAt,
       photos: listing.photos.map((photo) => ({ url: photo.url })),
+      isVerifiedSeller: Boolean(listing.seller?.isVerified),
+      sellerProfileSlug: listing.seller?.sellerProfile?.slug ?? null,
     };
   });
 

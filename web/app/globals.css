@@ -342,7 +342,26 @@
   }
 }
 
+@keyframes filter-badge-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.4);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 6px rgba(212, 175, 55, 0);
+  }
+}
+
+.animate-filter-badge-pulse {
+  animation: filter-badge-pulse 2s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .animate-filter-badge-pulse {
+    animation: none;
+  }
+
   .page-transition-wrapper {
     transition: none;
     transform: none;
