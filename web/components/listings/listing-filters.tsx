@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type FormEvent,
 } from "react";
@@ -22,13 +23,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown, Check } from "lucide-react";
 import { useNavigationFeedback } from "@/components/providers/navigation-feedback-provider";
+import { PriceRangeSlider } from "./price-range-slider";
 import { cn } from "@/lib/utils";
 
 const CONDITION_MULTI_OPTIONS = [
-  { value: "New", label: "Novo" },
-  { value: "Excellent", label: "Odlično" },
-  { value: "Good", label: "Dobro" },
-  { value: "Fair", label: "Za servis" },
+  { value: "New", label: "Novo", color: "bg-emerald-500" },
+  { value: "Excellent", label: "Odlično", color: "bg-blue-500" },
+  { value: "Good", label: "Dobro", color: "bg-amber-500" },
+  { value: "Fair", label: "Za servis", color: "bg-orange-500" },
 ];
 
 const MOVEMENT_MULTI_OPTIONS = [
@@ -49,6 +51,13 @@ const EXTRA_OPTIONS = [
   { value: "BOTH", label: "Kutija i papiri" },
   { value: "NONE", label: "Ništa" },
 ];
+
+const PRICE_PRESETS = [
+  { label: "Do €100", min: "", max: "100" },
+  { label: "€100–€200", min: "100", max: "200" },
+  { label: "€200–€500", min: "200", max: "500" },
+  { label: "Preko €500", min: "500", max: "" },
+] as const;
 
 const FILTER_KEYS = [
   "brand",
@@ -184,6 +193,53 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
   const [brandOptions, setBrandOptions] = useState<string[]>(uniqueList(popularBrands));
   const [brandLoading, setBrandLoading] = useState(false);
   const [brandSearchTerm, setBrandSearchTerm] = useState("");
+
+  // Facet counts for filter options
+  const [facets, setFacets] = useState<{
+    condition?: Record<string, number>;
+    movement?: Record<string, number>;
+    gender?: Record<string, number>;
+  } | null>(null);
+
+  useEffect(() => {
+    let isActive = true;
+    const controller = new AbortController();
+
+    const fetchFacets = async () => {
+      try {
+        const facetParams = new URLSearchParams();
+        if (filters.brand) facetParams.set("brand", filters.brand);
+        if (filters.min) facetParams.set("min", filters.min);
+        if (filters.max) facetParams.set("max", filters.max);
+        if (filters.cond) facetParams.set("cond", filters.cond);
+        if (filters.movement) facetParams.set("movement", filters.movement);
+        if (filters.gender) facetParams.set("gender", filters.gender);
+        if (filters.loc) facetParams.set("loc", filters.loc);
+        if (filters.yearFrom) facetParams.set("yearFrom", filters.yearFrom);
+        if (filters.yearTo) facetParams.set("yearTo", filters.yearTo);
+        if (filters.verified) facetParams.set("verified", filters.verified);
+
+        const res = await fetch(`/api/listings/facets?${facetParams.toString()}`, {
+          signal: controller.signal,
+        });
+        if (!res.ok || !isActive) return;
+        const data = await res.json();
+        if (isActive) setFacets(data);
+      } catch (e) {
+        if ((e as Error)?.name === "AbortError") return;
+      }
+    };
+
+    const timer = setTimeout(fetchFacets, 300);
+    return () => {
+      isActive = false;
+      controller.abort();
+      clearTimeout(timer);
+    };
+  }, [
+    filters.brand, filters.min, filters.max, filters.cond, filters.movement,
+    filters.gender, filters.loc, filters.yearFrom, filters.yearTo, filters.verified,
+  ]);
 
   useEffect(() => {
     let isActive = true;
@@ -396,6 +452,34 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
   const hasActiveFilters = FILTER_KEYS.some((key) => urlFilters[key]?.length);
   const showClear = hasActiveFilters || isDirty;
 
+  // Desktop auto-apply with debounce
+  const [isDesktop, setIsDesktop] = useState(false);
+  const autoApplyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const filtersRef = useRef(filters);
+  filtersRef.current = filters;
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1280px)");
+    setIsDesktop(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  useEffect(() => {
+    if (!isDesktop || !isDirty) return;
+
+    if (autoApplyTimerRef.current) clearTimeout(autoApplyTimerRef.current);
+
+    autoApplyTimerRef.current = setTimeout(() => {
+      applyFilters(filtersRef.current);
+    }, 500);
+
+    return () => {
+      if (autoApplyTimerRef.current) clearTimeout(autoApplyTimerRef.current);
+    };
+  }, [isDesktop, isDirty, filters, applyFilters]);
+
   const verifiedActive = filters.verified === "1";
   const authenticatedActive = filters.authenticated === "1";
 
@@ -522,9 +606,39 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
           </div>
 
           <div className="grid gap-4 border-t border-neutral-200/70 pt-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-neutral-600">Cena (EUR)</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {PRICE_PRESETS.map((preset) => {
+                  const isActive = filters.min === preset.min && filters.max === preset.max;
+                  return (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => setFilters((prev) => ({ ...prev, min: preset.min, max: preset.max }))}
+                      className={cn(
+                        "rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors",
+                        isActive
+                          ? "border-[#D4AF37] bg-[#D4AF37]/15 text-[#B8960F]"
+                          : "border-neutral-200 bg-white/90 text-neutral-600 hover:border-[#D4AF37]/50 hover:bg-[#D4AF37]/5"
+                      )}
+                    >
+                      {preset.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <PriceRangeSlider
+              min={filters.min}
+              max={filters.max}
+              onChange={(newMin, newMax) =>
+                setFilters((prev) => ({ ...prev, min: newMin, max: newMax }))
+              }
+            />
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-neutral-600">Cena od (EUR)</Label>
+                <Label className="text-xs font-medium text-neutral-600">Od (EUR)</Label>
                 <Input
                   type="number"
                   inputMode="numeric"
@@ -538,7 +652,7 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-neutral-600">Cena do (EUR)</Label>
+                <Label className="text-xs font-medium text-neutral-600">Do (EUR)</Label>
                 <Input
                   type="number"
                   inputMode="numeric"
@@ -628,7 +742,15 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
                           onSelect={(event) => event.preventDefault()}
                           className="flex cursor-pointer items-center justify-between px-4 py-3 sm:py-2 min-h-[44px] sm:min-h-0 text-neutral-700 hover:bg-neutral-100 [&>span:first-child]:hidden"
                         >
-                          <span>{option.label}</span>
+                          <span className="flex items-center gap-2">
+                            <span className={cn("h-2 w-2 rounded-full flex-shrink-0", option.color)} />
+                            {option.label}
+                            {facets?.condition != null && (
+                              <span className="ml-auto text-[10px] text-neutral-400">
+                                {facets.condition[option.value] ?? 0}
+                              </span>
+                            )}
+                          </span>
                           {checked && (
                             <span className="text-[#D4AF37]">
                               <Check className="h-4 w-4" aria-hidden />
@@ -675,7 +797,14 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
                           onSelect={(event) => event.preventDefault()}
                           className="flex cursor-pointer items-center justify-between px-4 py-3 sm:py-2 min-h-[44px] sm:min-h-0 text-neutral-700 hover:bg-neutral-100 [&>span:first-child]:hidden"
                         >
-                          <span>{option.label}</span>
+                          <span className="flex items-center gap-2">
+                            {option.label}
+                            {facets?.movement != null && (
+                              <span className="ml-auto text-[10px] text-neutral-400">
+                                {facets.movement[option.value] ?? 0}
+                              </span>
+                            )}
+                          </span>
                           {checked && (
                             <span className="text-[#D4AF37]">
                               <Check className="h-4 w-4" aria-hidden />
@@ -720,7 +849,14 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
                           onSelect={(event) => event.preventDefault()}
                           className="flex cursor-pointer items-center justify-between px-4 py-3 sm:py-2 min-h-[44px] sm:min-h-0 text-neutral-700 hover:bg-neutral-100 [&>span:first-child]:hidden"
                         >
-                          <span>{option.label}</span>
+                          <span className="flex items-center gap-2">
+                            {option.label}
+                            {facets?.gender != null && (
+                              <span className="ml-auto text-[10px] text-neutral-400">
+                                {facets.gender[option.value] ?? 0}
+                              </span>
+                            )}
+                          </span>
                           {checked && (
                             <span className="text-[#D4AF37]">
                               <Check className="h-4 w-4" aria-hidden />
@@ -845,13 +981,21 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
           </div>
 
           <div className="grid gap-2.5 border-t border-neutral-200/70 pt-3">
-            <Button
-              type="submit"
-              className="h-10 w-full rounded-xl bg-neutral-900 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={!isDirty}
-            >
-              Primeni filtere
-            </Button>
+            {isDesktop && isDirty && (
+              <div className="flex items-center justify-center gap-2 py-2 text-xs text-neutral-400">
+                <span className="h-3 w-3 animate-spin rounded-full border-2 border-neutral-300 border-t-[#D4AF37]" />
+                Ažuriranje...
+              </div>
+            )}
+            {!isDesktop && (
+              <Button
+                type="submit"
+                className="h-10 w-full rounded-xl bg-neutral-900 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={!isDirty}
+              >
+                Primeni filtere
+              </Button>
+            )}
             <Button
               type="button"
               variant="ghost"

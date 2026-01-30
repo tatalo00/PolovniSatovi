@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { ListingGrid } from "./listing-grid";
 import { ActiveFilters } from "./active-filters";
+import { SaveSearchButton } from "./save-search-button";
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import type { ListingSummary } from "@/types/listing";
 import { useNavigationFeedback } from "@/components/providers/navigation-feedback-provider";
@@ -147,15 +148,19 @@ export function ListingContent({
           Pronađeno <span className="font-semibold text-foreground">{total}</span> oglasa · {perPage} po stranici
         </p>
         <div className="flex items-center gap-2 self-start sm:self-auto">
+          <SaveSearchButton searchParams={searchParams} />
           <label htmlFor="sort" className="text-xs sm:text-sm font-medium">
             Sortiraj:
           </label>
           <select
             id="sort"
-            value={searchParams.sort || "price-asc"}
+            value={searchParams.sort || "newest"}
             className="rounded-md border border-input bg-background px-2 sm:px-3 py-1.5 sm:py-1 text-xs sm:text-sm min-h-[36px] sm:min-h-[32px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
             onChange={(e) => handleSortChange(e.target.value)}
           >
+            <option value="relevance">Preporučeno</option>
+            <option value="newest">Najnovije dodato</option>
+            <option value="oldest">Najstarije dodato</option>
             <option value="price-asc">Cena: najniža</option>
             <option value="price-desc">Cena: najviša</option>
             <option value="year-desc">Godina: najnovija</option>
@@ -170,6 +175,7 @@ export function ListingContent({
         scrollKey={deferredScrollKey}
         favoriteIds={favoriteIdSnapshot}
         onToggleFavorite={handleFavoriteToggle}
+        searchParams={searchParams}
       />
 
       {totalPages > 1 && (

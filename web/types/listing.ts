@@ -23,6 +23,8 @@ export interface ListingSummary {
     storeName?: string | null;
     shortDescription?: string | null;
     logoUrl?: string | null;
+    ratingAvg?: number | null;
+    reviewCount?: number | null;
   } | null;
   status?: string;
   favoritedAt?: Date;

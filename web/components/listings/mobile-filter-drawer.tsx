@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/sheet";
 import { Filter, X } from "lucide-react";
 import { ListingFilters } from "./listing-filters";
-import { Badge } from "@/components/ui/badge";
 
 interface MobileFilterDrawerProps {
   popularBrands: string[];
@@ -70,12 +69,11 @@ export function MobileFilterDrawer({ popularBrands, searchParams }: MobileFilter
         >
           <Filter className="h-5 w-5" />
           {activeFilterCount > 0 && (
-            <Badge
-              variant="default"
-              className="absolute -right-1 -top-1 h-6 w-6 rounded-full p-0 flex items-center justify-center text-xs"
+            <span
+              className="absolute -right-1.5 -top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-[#D4AF37] text-[11px] font-bold text-white shadow-md animate-filter-badge-pulse"
             >
               {activeFilterCount > 9 ? "9+" : activeFilterCount}
-            </Badge>
+            </span>
           )}
         </Button>
       </SheetTrigger>

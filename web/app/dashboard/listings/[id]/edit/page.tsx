@@ -83,20 +83,16 @@ export default async function EditListingPage({
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-background via-[#FAFAFA] to-background">
-      <div className="container mx-auto px-3 sm:px-4 md:px-6 py-6 sm:py-8 md:py-12">
-        <div className="mx-auto max-w-5xl space-y-6 sm:space-y-8">
-          <div className="mb-8">
-            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Izmeni Oglas</h1>
-            <p className="text-muted-foreground mt-2">
-              Ažurirajte informacije o oglasu
-            </p>
-          </div>
-
-          <ListingWizard listing={listingForWizard} />
-        </div>
+    <div className="mx-auto max-w-5xl space-y-6 sm:space-y-8">
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Izmeni Oglas</h1>
+        <p className="text-muted-foreground mt-2">
+          Ažurirajte informacije o oglasu
+        </p>
       </div>
-    </main>
+
+      <ListingWizard listing={listingForWizard} />
+    </div>
   );
 }
 

@@ -42,6 +42,7 @@ export async function POST(
       where: { id: application.userId },
       data: {
         isVerified: true,
+        verifiedAt: new Date(),
       },
     });
 

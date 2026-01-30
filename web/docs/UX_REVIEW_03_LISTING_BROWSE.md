@@ -330,10 +330,10 @@ const SORT_OPTIONS = [
 **Add to listing-filters.tsx before price inputs:**
 ```tsx
 const PRICE_PRESETS = [
-  { label: "Do €500", min: 0, max: 500 },
-  { label: "€500 - €1.000", min: 500, max: 1000 },
-  { label: "€1.000 - €5.000", min: 1000, max: 5000 },
-  { label: "Preko €5.000", min: 5000, max: null },
+  { label: "Do €100", min: 0, max: 100 },
+  { label: "€100 - €300", min: 100, max: 300 },
+  { label: "€300 - €1.000", min: 300, max: 1000 },
+  { label: "Preko €1.000", min: 1000, max: null },
 ];
 
 // In JSX, before price inputs:

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, ShieldCheck, Watch, Zap } from "lucide-react";
+import { ArrowRight, BadgeCheck, CircleCheck, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type FeaturedListing = {
@@ -22,22 +22,22 @@ export interface HeroProps {
 
 const TRUST_INDICATORS = [
   {
-    icon: <Watch className="h-4 w-4" aria-hidden />,
-    label: "Jednostavna kupovina",
-  },
-  {
-    icon: <ShieldCheck className="h-4 w-4" aria-hidden />,
+    icon: <BadgeCheck className="h-4 w-4" aria-hidden />,
     label: "Verifikovani prodavci",
   },
   {
-    icon: <Zap className="h-4 w-4" aria-hidden />,
-    label: "Autentifikacija korisnika",
+    icon: <CircleCheck className="h-4 w-4" aria-hidden />,
+    label: "Provereni oglasi",
+  },
+  {
+    icon: <ShieldCheck className="h-4 w-4" aria-hidden />,
+    label: "Sigurna platforma",
   },
 ] as const;
 
 const FALLBACK_HERO_IMAGE = "/images/hero-pocket-watch.jpg";
 
-export function Hero({ featuredListings }: HeroProps) {
+export function Hero({ featuredListings, totalListings, totalSellers }: HeroProps) {
   const heroImage =
     featuredListings.find((listing) => listing.photoUrl)?.photoUrl ?? FALLBACK_HERO_IMAGE;
 
@@ -95,6 +95,30 @@ export function Hero({ featuredListings }: HeroProps) {
               </div>
             ))}
           </div>
+
+          {(totalListings > 0 || totalSellers > 0) && (
+            <p className="mt-4 sm:mt-5 md:mt-6 text-[10px] sm:text-xs text-white/50 tracking-wide">
+              {totalListings > 0 && (
+                <span>
+                  <span className="font-semibold text-white/80">
+                    {totalListings.toLocaleString("sr-RS")}
+                  </span>{" "}
+                  aktivnih oglasa
+                </span>
+              )}
+              {totalListings > 0 && totalSellers > 0 && (
+                <span className="mx-2 text-white/30">·</span>
+              )}
+              {totalSellers > 0 && (
+                <span>
+                  <span className="font-semibold text-white/80">
+                    {totalSellers.toLocaleString("sr-RS")}
+                  </span>{" "}
+                  prodavaca
+                </span>
+              )}
+            </p>
+          )}
         </div>
       </div>
     </section>

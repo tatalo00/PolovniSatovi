@@ -27,6 +27,11 @@ const sellerProfileSchema = z.object({
     .optional()
     .or(z.literal("")),
   description: z.string().optional(),
+  returnPolicy: z
+    .string()
+    .max(2000, "Politika povraćaja može imati najviše 2000 karaktera")
+    .optional()
+    .or(z.literal("")),
   shortDescription: z
     .string()
     .max(320, "Kratak opis može imati najviše 320 karaktera")
@@ -183,6 +188,7 @@ export async function POST(request: Request) {
         slug,
         description: normalizeOptional(data.description),
         shortDescription: normalizeOptional(data.shortDescription),
+        returnPolicy: normalizeOptional(data.returnPolicy),
         locationCountry: data.locationCountry.trim(),
         locationCity: data.locationCity.trim(),
         logoUrl: normalizeOptional(data.logoUrl),
@@ -253,6 +259,7 @@ export async function PATCH(request: Request) {
         slug,
         description: normalizeOptional(data.description),
         shortDescription: normalizeOptional(data.shortDescription),
+        returnPolicy: normalizeOptional(data.returnPolicy),
         locationCountry: data.locationCountry.trim(),
         locationCity: data.locationCity.trim(),
         logoUrl: normalizeOptional(data.logoUrl),

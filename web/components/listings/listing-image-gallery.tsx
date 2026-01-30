@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { ChevronLeft, ChevronRight, X, ZoomIn, Minus, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, ZoomIn, Minus, Plus, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BLUR_DATA_URL, GALLERY_IMAGE_SIZES } from "@/lib/image-utils";
 import { Lens } from "@/components/ui/lens";
@@ -25,12 +25,13 @@ interface ListingPhoto {
 interface ListingImageGalleryProps {
   photos: ListingPhoto[];
   title: string;
+  isVerifiedSeller?: boolean;
 }
 
 const ZOOM_LEVELS = [2, 2.5, 3] as const;
 type ZoomLevel = typeof ZOOM_LEVELS[number];
 
-export function ListingImageGallery({ photos, title }: ListingImageGalleryProps) {
+export function ListingImageGallery({ photos, title, isVerifiedSeller }: ListingImageGalleryProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -217,6 +218,15 @@ export function ListingImageGallery({ photos, title }: ListingImageGalleryProps)
             {photos.length > 1 && (
               <div className="absolute top-3 right-3 bg-black/60 text-white text-xs px-2 py-1 rounded-md backdrop-blur-sm z-20">
                 {currentIndex + 1} / {photos.length}
+              </div>
+            )}
+
+            {/* Verified Seller Badge */}
+            {isVerifiedSeller && (
+              <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 rounded-full bg-[#D4AF37] px-2.5 py-1 text-[10px] sm:text-xs font-semibold text-neutral-900 shadow-lg">
+                <ShieldCheck className="h-3 w-3 sm:h-3.5 sm:w-3.5" aria-hidden />
+                <span className="hidden sm:inline">Verifikovan prodavac</span>
+                <span className="sm:hidden">Verifikovan</span>
               </div>
             )}
 

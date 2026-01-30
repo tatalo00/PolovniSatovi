@@ -32,6 +32,7 @@ model User {
   isVerified           Boolean   @default(false)
   locationCountry      String?
   locationCity         String?
+  verifiedAt           DateTime?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
@@ -49,6 +50,7 @@ model User {
   listingStatusAudits ListingStatusAudit[]
   authentication      UserAuthentication?
   sellerApplication   SellerApplication?
+  savedSearches       SavedSearch[]
 }
 
 enum UserRole {
@@ -58,18 +60,23 @@ enum UserRole {
 }
 
 model SellerProfile {
-  id               String   @id @default(cuid())
-  userId           String   @unique
-  user             User     @relation(fields: [userId], references: [id])
-  storeName        String
-  slug             String?  @unique
-  description      String?
-  shortDescription String?  @db.VarChar(320)
-  locationCountry  String
-  locationCity     String
-  logoUrl          String?
-  heroImageUrl     String?
-  ratingAvg        Decimal? @db.Decimal(3, 2)
+  id                     String   @id @default(cuid())
+  userId                 String   @unique
+  user                   User     @relation(fields: [userId], references: [id])
+  storeName              String
+  slug                   String?  @unique
+  description            String?
+  shortDescription       String?  @db.VarChar(320)
+  locationCountry        String
+  locationCity           String
+  logoUrl                String?
+  heroImageUrl           String?
+  ratingAvg              Decimal? @db.Decimal(3, 2)
+  reviewCount            Int      @default(0)
+  totalSoldCount         Int      @default(0)
+  avgResponseTimeMinutes Int?
+  returnPolicy           String?  @db.Text
+  createdAt              DateTime @default(now())
 }
 
 enum SellerApplicationStatus {
@@ -134,6 +141,7 @@ model Listing {
   originalOwner    Boolean?
   runningCondition String?
   location         String?
+  viewCount        Int           @default(0)
   status           ListingStatus @default(DRAFT)
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
@@ -335,4 +343,19 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model SavedSearch {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String    @db.VarChar(100)
+  filters      Json
+  notifyEmail  Boolean   @default(false)
+  lastNotified DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([notifyEmail, lastNotified])
 }

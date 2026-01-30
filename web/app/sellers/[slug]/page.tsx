@@ -10,8 +10,21 @@ import { AUTHENTICATION_STATUS } from "@/lib/authentication/status";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
-import { ShieldCheck, MapPin, Clock3, Package } from "lucide-react";
+import {
+  ShieldCheck,
+  MapPin,
+  Clock3,
+  Package,
+  Star,
+  MessageCircle,
+  ThumbsUp,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { computeSellerTier } from "@/lib/seller-tier";
+import { formatResponseTime } from "@/lib/seller-response-time";
+import { SellerTierBadge } from "@/components/sellers/seller-tier-badge";
+import { TransactionBadge } from "@/components/sellers/transaction-badge";
+import { SellerProfileReviewsSection } from "@/components/reviews/seller-profile-reviews-section";
 
 export const revalidate = 300;
 
@@ -32,12 +45,18 @@ async function getSellerProfile(slug: string) {
       locationCity: true,
       locationCountry: true,
       userId: true,
+      ratingAvg: true,
+      reviewCount: true,
+      totalSoldCount: true,
+      avgResponseTimeMinutes: true,
+      returnPolicy: true,
       user: {
         select: {
           id: true,
           name: true,
           email: true,
           isVerified: true,
+          verifiedAt: true,
           createdAt: true,
         },
       },
@@ -74,6 +93,8 @@ async function getSellerListings(userId: string) {
               storeName: true,
               shortDescription: true,
               logoUrl: true,
+              ratingAvg: true,
+              reviewCount: true,
             },
           },
         },
@@ -83,13 +104,43 @@ async function getSellerListings(userId: string) {
   });
 }
 
+async function getReviewDistribution(sellerId: string) {
+  const groups = await prisma.review.groupBy({
+    by: ["rating"],
+    where: { sellerId },
+    _count: { rating: true },
+  });
+
+  const dist = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } as Record<number, number>;
+  groups.forEach((g) => {
+    dist[g.rating] = g._count.rating;
+  });
+  return dist as { 1: number; 2: number; 3: number; 4: number; 5: number };
+}
+
+async function getSellerReviews(sellerId: string) {
+  return prisma.review.findMany({
+    where: { sellerId },
+    include: {
+      reviewer: {
+        select: { id: true, name: true, image: true },
+      },
+      listing: {
+        select: { id: true, title: true },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 10,
+  });
+}
+
 function mapListingToSummary(listing: Awaited<ReturnType<typeof getSellerListings>>[number]) {
   const sellerEntity = listing.seller;
   const isAuthenticated =
     sellerEntity.authentication?.status === AUTHENTICATION_STATUS.APPROVED;
-  
-  const currency: "EUR" | "RSD" = (listing.currency === "EUR" || listing.currency === "RSD") 
-    ? listing.currency 
+
+  const currency: "EUR" | "RSD" = (listing.currency === "EUR" || listing.currency === "RSD")
+    ? listing.currency
     : "EUR";
 
   return {
@@ -107,6 +158,10 @@ function mapListingToSummary(listing: Awaited<ReturnType<typeof getSellerListing
       storeName: sellerEntity.sellerProfile?.storeName ?? null,
       shortDescription: sellerEntity.sellerProfile?.shortDescription ?? null,
       logoUrl: sellerEntity.sellerProfile?.logoUrl ?? null,
+      ratingAvg: sellerEntity.sellerProfile?.ratingAvg
+        ? Number(sellerEntity.sellerProfile.ratingAvg)
+        : null,
+      reviewCount: sellerEntity.sellerProfile?.reviewCount ?? null,
     },
   } satisfies ListingSummary;
 }
@@ -119,8 +174,12 @@ export async function generateMetadata({ params }: SellerPageProps): Promise<Met
     return { title: "Prodavac nije pronađen" };
   }
 
+  const ratingStr = profile.ratingAvg
+    ? ` | ${Number(profile.ratingAvg).toFixed(1)}★`
+    : "";
+
   return {
-    title: `${profile.storeName} | Verified seller`,
+    title: `${profile.storeName}${ratingStr} | Verified seller`,
     description:
       profile.shortDescription ||
       profile.description ||
@@ -136,7 +195,12 @@ export default async function SellerPublicProfilePage({ params }: SellerPageProp
     notFound();
   }
 
-  const listings = await getSellerListings(profile.user.id);
+  const [listings, ratingDistribution, initialReviews] = await Promise.all([
+    getSellerListings(profile.user.id),
+    getReviewDistribution(profile.user.id),
+    getSellerReviews(profile.user.id),
+  ]);
+
   const activeListings = listings
     .filter((listing) => listing.status === "APPROVED")
     .map(mapListingToSummary);
@@ -158,7 +222,33 @@ export default async function SellerPublicProfilePage({ params }: SellerPageProp
 
   const locationLabel = [profile.locationCity, profile.locationCountry].filter(Boolean).join(", ");
 
-  const totalSoldCount = listings.filter((listing) => listing.status === "SOLD").length;
+  const totalSoldCount = profile.totalSoldCount || listings.filter((listing) => listing.status === "SOLD").length;
+  const ratingAvg = profile.ratingAvg ? Number(profile.ratingAvg) : 0;
+  const reviewCount = profile.reviewCount || 0;
+  const responseTimeLabel = formatResponseTime(profile.avgResponseTimeMinutes);
+
+  // Compute seller tier
+  const sellerTier = computeSellerTier({
+    totalSold: totalSoldCount,
+    ratingAvg: ratingAvg || null,
+    avgResponseTimeMinutes: profile.avgResponseTimeMinutes,
+  });
+
+  // Social proof: percentage of reviews with 4+ stars
+  const positiveCount =
+    (ratingDistribution[4] || 0) + (ratingDistribution[5] || 0);
+  const recommendPercent =
+    reviewCount > 0
+      ? Math.round((positiveCount / reviewCount) * 100)
+      : null;
+
+  // Verification date
+  const verifiedAtLabel = profile.user.verifiedAt
+    ? new Intl.DateTimeFormat("sr-RS", {
+        month: "long",
+        year: "numeric",
+      }).format(profile.user.verifiedAt)
+    : null;
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-10 sm:py-12">
@@ -170,6 +260,7 @@ export default async function SellerPublicProfilePage({ params }: SellerPageProp
         className="mb-2"
       />
 
+      {/* Hero Section */}
       <section className="relative overflow-hidden rounded-3xl bg-neutral-950 text-white">
         {profile.heroImageUrl && (
           <Image
@@ -217,9 +308,35 @@ export default async function SellerPublicProfilePage({ params }: SellerPageProp
                   {profile.shortDescription}
                 </p>
               )}
+              {/* Rating in hero */}
+              {ratingAvg > 0 && reviewCount > 0 && (
+                <div className="flex items-center gap-2 mt-1.5">
+                  <div className="flex items-center gap-1">
+                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" aria-hidden />
+                    <span className="text-white font-semibold">
+                      {ratingAvg.toFixed(1)}
+                    </span>
+                  </div>
+                  <span className="text-white/60 text-sm">
+                    ({reviewCount}{" "}
+                    {reviewCount === 1
+                      ? "ocena"
+                      : reviewCount < 5
+                        ? "ocene"
+                        : "ocena"})
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
+          {/* Badges row */}
+          <div className="flex flex-wrap gap-2">
+            <SellerTierBadge tier={sellerTier} variant="hero" />
+            <TransactionBadge soldCount={totalSoldCount} variant="hero" />
+          </div>
+
+          {/* Stats pills */}
           <div className="flex flex-wrap gap-4 text-sm text-white/80">
             {locationLabel && (
               <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1">
@@ -231,6 +348,12 @@ export default async function SellerPublicProfilePage({ params }: SellerPageProp
               <Clock3 className="h-4 w-4" aria-hidden />
               Član od {memberSince}
             </span>
+            {verifiedAtLabel && (
+              <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1">
+                <ShieldCheck className="h-4 w-4 text-[#D4AF37]" aria-hidden />
+                Verifikovan od {verifiedAtLabel}
+              </span>
+            )}
             <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1">
               <Package className="h-4 w-4" aria-hidden />
               Aktivne ponude: {activeListings.length}
@@ -238,6 +361,12 @@ export default async function SellerPublicProfilePage({ params }: SellerPageProp
             {totalSoldCount > 0 && (
               <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1">
                 Prodato: {totalSoldCount}
+              </span>
+            )}
+            {responseTimeLabel && (
+              <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1">
+                <MessageCircle className="h-4 w-4" aria-hidden />
+                Odgovara {responseTimeLabel}
               </span>
             )}
           </div>
@@ -261,8 +390,28 @@ export default async function SellerPublicProfilePage({ params }: SellerPageProp
         </div>
       </section>
 
+      {/* Social Proof Banner */}
+      {recommendPercent !== null && reviewCount >= 5 && (
+        <div className="flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm dark:bg-emerald-950/30 dark:border-emerald-800">
+          <ThumbsUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" aria-hidden />
+          <span>
+            <span className="font-semibold text-emerald-800 dark:text-emerald-200">
+              {recommendPercent}%
+            </span>{" "}
+            <span className="text-emerald-700 dark:text-emerald-300">
+              kupaca preporučuje ovog prodavca
+            </span>
+          </span>
+          <span className="text-emerald-600/70 dark:text-emerald-400/70 ml-1">
+            ({reviewCount} ocena)
+          </span>
+        </div>
+      )}
+
+      {/* Main content + sidebar */}
       <section className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <div className="space-y-8">
+          {/* Active listings */}
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
@@ -291,6 +440,7 @@ export default async function SellerPublicProfilePage({ params }: SellerPageProp
             )}
           </div>
 
+          {/* Recently sold */}
           {soldListings.length > 0 && (
             <div className="space-y-4 pt-4 border-t">
               <div className="flex items-center gap-2">
@@ -314,8 +464,22 @@ export default async function SellerPublicProfilePage({ params }: SellerPageProp
               </div>
             </div>
           )}
+
+          {/* Reviews Section (CP2) */}
+          <SellerProfileReviewsSection
+            sellerId={profile.user.id}
+            sellerName={profile.storeName}
+            initialReviews={initialReviews.map((r) => ({
+              ...r,
+              createdAt: r.createdAt.toISOString(),
+            }))}
+            initialAvgRating={ratingAvg}
+            initialTotalReviews={reviewCount}
+            initialDistribution={ratingDistribution}
+          />
         </div>
 
+        {/* Sidebar */}
         <aside className="space-y-6">
           <Card>
             <CardHeader>
@@ -330,11 +494,41 @@ export default async function SellerPublicProfilePage({ params }: SellerPageProp
             </CardContent>
           </Card>
 
+          {/* Return Policy (MP4) */}
+          {profile.returnPolicy && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Politika povraćaja</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                  {profile.returnPolicy}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Statistika</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
+              {/* Rating row */}
+              {ratingAvg > 0 && reviewCount > 0 && (
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Ocena</span>
+                  <span className="font-semibold text-foreground flex items-center gap-1">
+                    <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" aria-hidden />
+                    {ratingAvg.toFixed(1)} / 5
+                  </span>
+                </div>
+              )}
+              {reviewCount > 0 && (
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Broj ocena</span>
+                  <span className="font-semibold text-foreground">{reviewCount}</span>
+                </div>
+              )}
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Aktivne ponude</span>
                 <span className="font-semibold text-foreground">{activeListings.length}</span>
@@ -345,10 +539,22 @@ export default async function SellerPublicProfilePage({ params }: SellerPageProp
                   <span className="font-semibold text-foreground">{totalSoldCount}</span>
                 </div>
               )}
+              {responseTimeLabel && (
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Vreme odgovora</span>
+                  <span className="font-medium text-foreground">{responseTimeLabel}</span>
+                </div>
+              )}
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Član od</span>
                 <span className="font-semibold text-foreground">{memberSince}</span>
               </div>
+              {verifiedAtLabel && (
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Verifikovan</span>
+                  <span className="font-medium text-foreground">{verifiedAtLabel}</span>
+                </div>
+              )}
               {locationLabel && (
                 <div className="flex items-start justify-between pt-2 border-t">
                   <span className="text-muted-foreground">Lokacija</span>
@@ -382,4 +588,3 @@ export default async function SellerPublicProfilePage({ params }: SellerPageProp
     </main>
   );
 }
-

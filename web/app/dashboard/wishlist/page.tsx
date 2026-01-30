@@ -43,6 +43,8 @@ export default async function WishlistPage() {
                   storeName: true,
                   shortDescription: true,
                   logoUrl: true,
+                  ratingAvg: true,
+                  reviewCount: true,
                 },
               },
             },
@@ -93,6 +95,8 @@ export default async function WishlistPage() {
             storeName: string | null;
             shortDescription: string | null;
             logoUrl: string | null;
+            ratingAvg: unknown;
+            reviewCount: number | null;
           } | null;
         });
 
@@ -118,6 +122,10 @@ export default async function WishlistPage() {
               storeName: sellerWithAuth.sellerProfile?.storeName ?? null,
               shortDescription: sellerWithAuth.sellerProfile?.shortDescription ?? null,
               logoUrl: sellerWithAuth.sellerProfile?.logoUrl ?? null,
+              ratingAvg: sellerWithAuth.sellerProfile?.ratingAvg
+                ? Number(sellerWithAuth.sellerProfile.ratingAvg)
+                : null,
+              reviewCount: sellerWithAuth.sellerProfile?.reviewCount ?? null,
             }
           : null,
       } satisfies ListingSummary;
@@ -126,8 +134,8 @@ export default async function WishlistPage() {
   const favoriteIds = listings.map((listing) => listing.id);
 
   return (
-    <main className="container mx-auto px-4 py-8">
-      <div className="mb-8">
+    <div className="space-y-6">
+      <div>
         <h1 className="text-2xl font-semibold tracking-tight">Lista želja</h1>
         <p className="text-muted-foreground mt-2">
           Sačuvajte satove koji vam se dopadaju i pratite ih na jednom mestu.
@@ -138,7 +146,7 @@ export default async function WishlistPage() {
         initialListings={listings}
         initialFavoriteIds={favoriteIds}
       />
-    </main>
+    </div>
   );
 }
 

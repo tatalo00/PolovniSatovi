@@ -40,6 +40,10 @@ const profileSchema = z.object({
     .max(320, "Kratak opis može imati najviše 320 karaktera")
     .optional(),
   description: z.string().optional(),
+  returnPolicy: z
+    .string()
+    .max(2000, "Politika povraćaja može imati najviše 2000 karaktera")
+    .optional(),
   locationCountry: z.string().min(2, "Unesite državu"),
   locationCity: z.string().min(2, "Unesite grad"),
   logoUrl: optionalUrlSchema,
@@ -52,6 +56,7 @@ type SellerProfileResponse = {
   storeName: string;
   description?: string | null;
   shortDescription?: string | null;
+  returnPolicy?: string | null;
   locationCountry: string;
   locationCity: string;
   slug?: string | null;
@@ -81,6 +86,7 @@ export function SellerProfileForm() {
       slug: "",
       description: "",
       shortDescription: "",
+      returnPolicy: "",
       locationCountry: "",
       locationCity: "",
       logoUrl: "",
@@ -99,6 +105,7 @@ export function SellerProfileForm() {
             setValue("storeName", profile.storeName || "");
             setValue("description", profile.description || "");
             setValue("shortDescription", profile.shortDescription || "");
+            setValue("returnPolicy", profile.returnPolicy || "");
             setValue("locationCountry", profile.locationCountry || "");
             setValue("locationCity", profile.locationCity || "");
             setValue("slug", profile.slug || "");
@@ -126,6 +133,7 @@ export function SellerProfileForm() {
 
   const slugValue = watch("slug") || "";
   const shortDescriptionValue = watch("shortDescription") || "";
+  const returnPolicyValue = watch("returnPolicy") || "";
 
   const previewUrl = useMemo(() => {
     const slugPreview = slugValue || "vas-slug";
@@ -215,6 +223,25 @@ export function SellerProfileForm() {
             />
             {errors.description && (
               <p className="text-sm text-destructive">{errors.description.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="returnPolicy">Politika povraćaja i reklamacija</Label>
+            <Textarea
+              id="returnPolicy"
+              {...register("returnPolicy")}
+              placeholder="Opišite vašu politiku povraćaja, garanciju, i način rešavanja reklamacija..."
+              rows={3}
+              maxLength={2000}
+              disabled={loading}
+            />
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Prikazuje se na vašoj javnoj stranici.</span>
+              <span>{returnPolicyValue.length}/2000</span>
+            </div>
+            {errors.returnPolicy && (
+              <p className="text-sm text-destructive">{errors.returnPolicy.message}</p>
             )}
           </div>
 

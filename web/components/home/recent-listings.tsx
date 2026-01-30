@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, ChevronLeft, ChevronRight, Clock3, MapPin } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Clock3, MapPin, ShieldCheck } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { PriceDisplay } from "@/components/currency/price-display";
 import { Button } from "@/components/ui/button";
 import { WishlistButton } from "@/components/listings/wishlist-button";
 import { cn } from "@/lib/utils";
+import { formatRelativeTime } from "@/lib/format-time";
 
 interface RecentListing {
   id: string;
@@ -22,35 +23,13 @@ interface RecentListing {
   locationLabel: string | null;
   createdAt: string;
   photos: Array<{ url: string }>;
+  isVerifiedSeller?: boolean;
+  sellerProfileSlug?: string | null;
 }
 
 interface RecentListingsProps {
   listings: RecentListing[];
   favoriteIds?: string[];
-}
-
-function formatRelativeTime(isoDate: string) {
-  const date = new Date(isoDate);
-  const diff = Date.now() - date.getTime();
-
-  const minutes = Math.round(diff / 60000);
-  if (minutes < 1) return "pre nekoliko sekundi";
-  if (minutes < 60) return `pre ${minutes} min`;
-
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) return `pre ${hours} h`;
-
-  const days = Math.round(hours / 24);
-  if (days < 7) return `pre ${days} dana`;
-
-  const weeks = Math.round(days / 7);
-  if (weeks < 5) return `pre ${weeks} nedelje`;
-
-  const months = Math.round(days / 30);
-  if (months < 12) return `pre ${months} meseci`;
-
-  const years = Math.round(days / 365);
-  return `pre ${years} god.`;
 }
 
 export function RecentListings({ listings, favoriteIds }: RecentListingsProps) {
@@ -191,6 +170,14 @@ export function RecentListings({ listings, favoriteIds }: RecentListingsProps) {
                         <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
                           Nema fotografije
                         </div>
+                      )}
+                      {listing.isVerifiedSeller && (
+                        <span
+                          title="Verifikovani prodavac"
+                          className="absolute left-3 top-3 inline-flex rounded-full bg-white/95 backdrop-blur-sm p-1.5 shadow-sm border border-white/80"
+                        >
+                          <ShieldCheck className="h-3.5 w-3.5 text-[#D4AF37]" aria-hidden />
+                        </span>
                       )}
                       <div className="absolute right-3 top-3">
                         <WishlistButton

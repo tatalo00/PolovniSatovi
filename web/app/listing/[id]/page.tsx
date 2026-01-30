@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
 import { auth } from "@/auth";
@@ -14,6 +15,9 @@ import { WishlistButton } from "@/components/listings/wishlist-button";
 import { ShareButton } from "@/components/listings/share-button";
 import { Prisma } from "@prisma/client";
 import { AUTHENTICATION_STATUS, type AuthenticationStatus } from "@/lib/authentication/status";
+import { SimilarListingsSection } from "@/components/listings/similar-listings-section";
+import { computeSellerTier } from "@/lib/seller-tier";
+import { formatResponseTime } from "@/lib/seller-response-time";
 import dynamic from "next/dynamic";
 
 // Dynamically import heavy components
@@ -54,6 +58,10 @@ type ListingWithSellerDetail = Prisma.ListingGetPayload<{
             shortDescription: true;
             logoUrl: true;
             heroImageUrl: true;
+            ratingAvg: true;
+            reviewCount: true;
+            totalSoldCount: true;
+            avgResponseTimeMinutes: true;
           };
         };
       };
@@ -128,6 +136,10 @@ export default async function ListingPage({ params }: ListingPageProps) {
               shortDescription: true,
               logoUrl: true,
               heroImageUrl: true,
+              ratingAvg: true,
+              reviewCount: true,
+              totalSoldCount: true,
+              avgResponseTimeMinutes: true,
             },
           },
         },
@@ -142,7 +154,28 @@ export default async function ListingPage({ params }: ListingPageProps) {
     notFound();
   }
 
-  const session = await auth();
+  // Increment view count (fire-and-forget)
+  prisma.listing.update({
+    where: { id },
+    data: { viewCount: { increment: 1 } },
+  }).catch(() => {});
+
+  // Parallel queries: auth, seller stats, review data, favorites count
+  const [session, sellerListingCounts, sellerReviewData, favoritesCount] = await Promise.all([
+    auth(),
+    prisma.listing.groupBy({
+      by: ['status'],
+      where: { sellerId: listing.seller.id },
+      _count: { id: true },
+    }),
+    prisma.review.aggregate({
+      where: { sellerId: listing.seller.id },
+      _avg: { rating: true },
+      _count: { rating: true },
+    }),
+    prisma.favorite.count({ where: { listingId: id } }),
+  ]);
+
   const viewerId = session?.user?.id;
 
   let isFavorited = false;
@@ -158,6 +191,25 @@ export default async function ListingPage({ params }: ListingPageProps) {
     });
     isFavorited = Boolean(favorite);
   }
+
+  // Seller stats
+  const sellerProfile = listing.seller.sellerProfile;
+  const activeListings = sellerListingCounts.find(s => s.status === 'APPROVED')?._count.id ?? 0;
+  const totalSold = sellerListingCounts.find(s => s.status === 'SOLD')?._count.id ?? 0;
+  const sellerRating = sellerReviewData._avg.rating ? Number(sellerReviewData._avg.rating) : null;
+  const sellerReviewCount = sellerReviewData._count.rating ?? 0;
+  const sellerTotalSold = sellerProfile?.totalSoldCount || (totalSold > 0 ? totalSold : 0);
+  const sellerStats = {
+    activeListings,
+    totalSold: sellerTotalSold > 0 ? sellerTotalSold : undefined,
+    avgResponseTime: formatResponseTime(sellerProfile?.avgResponseTimeMinutes) ?? undefined,
+  };
+  const sellerTier = computeSellerTier({
+    totalSold: sellerTotalSold,
+    ratingAvg: sellerRating,
+    avgResponseTimeMinutes: sellerProfile?.avgResponseTimeMinutes,
+  });
+
   const isSold = listing.status === "SOLD";
 
   const sellerLocationParts = [
@@ -184,7 +236,6 @@ export default async function ListingPage({ params }: ListingPageProps) {
     month: "long",
     year: "numeric",
   }).format(listing.seller.createdAt);
-  const sellerProfile = listing.seller.sellerProfile;
   const sellerDetails: SellerSummary = {
     id: listing.seller.id,
     name: listing.seller.name,
@@ -282,7 +333,7 @@ export default async function ListingPage({ params }: ListingPageProps) {
       <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:items-start lg:content-start">
         <div className="space-y-8">
           <section aria-label="Galerija fotografija">
-            <ListingImageGallery photos={listing.photos} title={listing.title} />
+            <ListingImageGallery photos={listing.photos} title={listing.title} isVerifiedSeller={isVerifiedSeller} />
           </section>
 
           {/* Contact card below image - mobile only */}
@@ -298,6 +349,8 @@ export default async function ListingPage({ params }: ListingPageProps) {
               isSold={isSold}
               showReport={!isSold}
               sellerBadge={sellerBadge}
+              sellerRating={sellerRating}
+              sellerReviewCount={sellerReviewCount}
             />
           </div>
 
@@ -314,6 +367,11 @@ export default async function ListingPage({ params }: ListingPageProps) {
                 )}
                 {!isOwner && (
                   <div className="ml-auto flex items-center gap-2">
+                    {favoritesCount > 0 && (
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        {favoritesCount} {favoritesCount === 1 ? "korisnik prati" : "korisnika prati"}
+                      </span>
+                    )}
                     <ShareButton
                       listingId={listing.id}
                       listingTitle={listing.title}
@@ -357,6 +415,8 @@ export default async function ListingPage({ params }: ListingPageProps) {
                 locationLabel={sellerLocation}
                 memberSince={memberSince}
                 badge={sellerBadge}
+                stats={sellerStats}
+                sellerTier={sellerTier}
               />
             </div>
           </section>
@@ -368,6 +428,15 @@ export default async function ListingPage({ params }: ListingPageProps) {
               sellerName={listing.seller.name || listing.seller.email}
             />
           </section>
+
+          {/* Similar Watches */}
+          <Suspense fallback={<div className="h-48 animate-pulse rounded-lg bg-muted" />}>
+            <SimilarListingsSection
+              listingId={listing.id}
+              brand={listing.brand}
+              priceEurCents={listing.priceEurCents}
+            />
+          </Suspense>
         </div>
 
         <aside className="hidden lg:block">
@@ -390,6 +459,8 @@ export default async function ListingPage({ params }: ListingPageProps) {
                 isSold={isSold}
                 showReport={!isSold}
                 sellerBadge={sellerBadge}
+                sellerRating={sellerRating}
+                sellerReviewCount={sellerReviewCount}
               />
             </div>
             <SellerInfoCard
@@ -397,6 +468,8 @@ export default async function ListingPage({ params }: ListingPageProps) {
               locationLabel={sellerLocation}
               memberSince={memberSince}
               badge={sellerBadge}
+              stats={sellerStats}
+              sellerTier={sellerTier}
             />
           </div>
         </aside>

@@ -2,24 +2,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-// Simple time formatter
-function formatTimeAgo(date: Date | string): string {
-  const now = new Date();
-  const past = new Date(date);
-  const diffInSeconds = Math.floor((now.getTime() - past.getTime()) / 1000);
-
-  if (diffInSeconds < 60) return "upravo sada";
-  if (diffInSeconds < 3600) {
-    const minutes = Math.floor(diffInSeconds / 60);
-    return `pre ${minutes} ${minutes === 1 ? "minuta" : "minuta"}`;
-  }
-  if (diffInSeconds < 86400) {
-    const hours = Math.floor(diffInSeconds / 3600);
-    return `pre ${hours} ${hours === 1 ? "sata" : "sati"}`;
-  }
-  const days = Math.floor(diffInSeconds / 86400);
-  return `pre ${days} ${days === 1 ? "dana" : "dana"}`;
-}
+import { formatTimeAgo } from "@/lib/format-time";
 
 interface MessageBubbleProps {
   message: {

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight, Sparkles } from "lucide-react";
+import { ArrowUpRight, ShieldCheck, Sparkles } from "lucide-react";
 import { BLUR_DATA_URL } from "@/lib/image-utils";
 
 export type PaidListing = {
@@ -12,6 +12,8 @@ export type PaidListing = {
   imageUrl?: string | null;
   locationLabel?: string | null;
   sellerLabel?: string | null;
+  isVerifiedSeller?: boolean;
+  sellerProfileSlug?: string | null;
 };
 
 interface PaidListingsProps {
@@ -73,6 +75,14 @@ export function PaidListings({ listings }: PaidListingsProps) {
                   <span className="absolute left-3 top-3 sm:left-4 sm:top-4 rounded-full bg-primary px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-primary-foreground shadow-lg">
                     Sponsored
                   </span>
+                  {listing.isVerifiedSeller && (
+                    <span
+                      title="Verifikovani prodavac"
+                      className="absolute right-3 top-3 sm:right-4 sm:top-4 inline-flex rounded-full bg-white/95 backdrop-blur-sm p-1.5 shadow-sm border border-white/80"
+                    >
+                      <ShieldCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#D4AF37]" aria-hidden />
+                    </span>
+                  )}
                 </div>
 
                 <div className="space-y-3 sm:space-y-4 md:space-y-5 px-4 sm:px-5 md:px-6 pb-5 sm:pb-6 md:pb-8 pt-4 sm:pt-5 md:pt-6">
