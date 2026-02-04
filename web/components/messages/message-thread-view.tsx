@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,12 +37,43 @@ interface Thread {
     id: string;
     body: string;
     createdAt: Date | string;
+    readAt?: Date | string | null;
     sender: {
       id: string;
       name: string | null;
       image: string | null;
     };
   }>;
+}
+
+function getDateLabel(date: Date): string {
+  const today = new Date();
+  const yesterday = new Date(today.getTime() - 86400000);
+
+  const isToday = date.toDateString() === today.toDateString();
+  const isYesterday = date.toDateString() === yesterday.toDateString();
+
+  if (isToday) return "Danas";
+  if (isYesterday) return "Juče";
+
+  return date.toLocaleDateString("sr-Latn-RS", {
+    weekday: "long",
+    day: "numeric",
+    month: "short",
+    ...(date.getFullYear() !== today.getFullYear() && { year: "numeric" }),
+  });
+}
+
+function DateSeparator({ date }: { date: Date }) {
+  const label = getDateLabel(date);
+
+  return (
+    <div className="flex items-center gap-3 my-4">
+      <div className="flex-1 h-px bg-border" />
+      <span className="text-xs text-muted-foreground font-medium capitalize">{label}</span>
+      <div className="flex-1 h-px bg-border" />
+    </div>
+  );
 }
 
 export function MessageThreadView({ threadId }: MessageThreadViewProps) {
@@ -91,7 +122,7 @@ export function MessageThreadView({ threadId }: MessageThreadViewProps) {
 
   useEffect(() => {
     fetchThread();
-    const interval = setInterval(fetchThread, 10000);
+    const interval = setInterval(fetchThread, 5000);
     return () => clearInterval(interval);
   }, [fetchThread]);
 
@@ -208,19 +239,32 @@ export function MessageThreadView({ threadId }: MessageThreadViewProps) {
               <p className="text-sm mt-2">Pošaljite prvu poruku!</p>
             </div>
           ) : (
-            thread.messages.map((message) => (
-              <MessageBubble
-                key={message.id}
-                message={message}
-                isOwn={message.sender.id === currentUserId}
-              />
-            ))
+            thread.messages.map((message, index) => {
+              const prevMessage = thread.messages[index - 1];
+              const currentDate = new Date(message.createdAt);
+              const prevDate = prevMessage ? new Date(prevMessage.createdAt) : null;
+              const showDateSeparator = !prevDate || currentDate.toDateString() !== prevDate.toDateString();
+
+              return (
+                <React.Fragment key={message.id}>
+                  {showDateSeparator && <DateSeparator date={currentDate} />}
+                  <MessageBubble
+                    message={message}
+                    isOwn={message.sender.id === currentUserId}
+                  />
+                </React.Fragment>
+              );
+            })
           )}
           <div ref={messagesEndRef} />
         </div>
 
         {/* Composer */}
-        <MessageComposer threadId={threadId} onMessageSent={handleMessageSent} />
+        <MessageComposer
+          threadId={threadId}
+          onMessageSent={handleMessageSent}
+          isFirstMessage={thread.messages.length === 0}
+        />
       </Card>
     </div>
   );

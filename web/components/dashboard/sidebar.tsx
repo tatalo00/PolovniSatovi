@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   FileText,
@@ -12,6 +11,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useActiveRoute } from "@/lib/hooks/use-active-route";
 
 interface DashboardSidebarProps {
   userName?: string | null;
@@ -28,7 +28,7 @@ const NAV_ITEMS = [
 ];
 
 export function DashboardSidebar({ userName, isVerified, unreadCount = 0 }: DashboardSidebarProps) {
-  const pathname = usePathname();
+  const { isActive } = useActiveRoute();
 
   const items = [...NAV_ITEMS];
   if (isVerified) {
@@ -39,11 +39,6 @@ export function DashboardSidebar({ userName, isVerified, unreadCount = 0 }: Dash
       exact: false,
     });
   }
-
-  const isActive = (href: string, exact: boolean) => {
-    if (exact) return pathname === href;
-    return pathname === href || pathname.startsWith(href + "/");
-  };
 
   return (
     <nav className="sticky top-24 space-y-1">

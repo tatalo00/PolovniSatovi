@@ -8,6 +8,7 @@ import Link from "next/link";
 import { SavedSearchesPreview } from "@/app/dashboard/_components/saved-searches-preview";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { ActivityFeedSkeleton } from "@/components/dashboard/activity-feed-skeleton";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import {
   Shield,
   ShieldCheck,
@@ -154,6 +155,8 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8 sm:space-y-10">
+      <Breadcrumbs items={[{ label: "Dashboard" }]} />
+
       {/* Header */}
       <div className="space-y-2">
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">

@@ -1,6 +1,6 @@
-import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { AdminDashboard } from "@/components/admin/admin-dashboard";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 
 export const metadata = {
   title: "Admin Panel",
@@ -8,8 +8,6 @@ export const metadata = {
 };
 
 export default async function AdminPage() {
-  await requireAdmin();
-
   // Get pending listings count
   const pendingCount = await prisma.listing.count({
     where: { status: "PENDING" },
@@ -75,7 +73,8 @@ export default async function AdminPage() {
   });
 
   return (
-    <main className="container mx-auto px-4 py-8">
+    <>
+      <Breadcrumbs items={[{ label: "Admin Panel" }]} className="mb-4" />
       <div className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight">Admin Panel</h1>
         <p className="text-muted-foreground mt-2">
@@ -90,7 +89,7 @@ export default async function AdminPage() {
         pendingListings={pendingListings}
         recentReports={recentReports}
       />
-    </main>
+    </>
   );
 }
 

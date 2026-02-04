@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { auth } from "@/auth";
 import { CheckCircle, Upload, Shield, MessageCircle } from "lucide-react";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 
 export default async function SellPage() {
   const session = await auth();
@@ -10,6 +11,7 @@ export default async function SellPage() {
 
   return (
     <main className="container mx-auto px-4 py-8">
+      <Breadcrumbs items={[{ label: "Prodaj sat" }]} className="mb-4" />
       <div className="mx-auto max-w-4xl">
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold tracking-tight md:text-4xl">

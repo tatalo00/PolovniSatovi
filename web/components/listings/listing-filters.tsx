@@ -6,6 +6,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useTransition,
   type FormEvent,
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -179,6 +180,7 @@ const sanitizeFilters = (state: FilterState): FilterState => {
 export function ListingFilters({ popularBrands, searchParams }: ListingFiltersProps) {
   const router = useRouter();
   const { start: startNavigation } = useNavigationFeedback();
+  const [isNavigating, startNavigationTransition] = useTransition();
   const currentParams = useSearchParams();
   const currentParamsString = currentParams?.toString() ?? "";
 
@@ -328,11 +330,13 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
       setFilters(filtersToApply);
       setUrlFilters(filtersToApply);
       startNavigation({ immediate: true });
-      router.replace(queryString ? `/listings?${queryString}` : "/listings", {
-        scroll: false,
+      startNavigationTransition(() => {
+        router.replace(queryString ? `/listings?${queryString}` : "/listings", {
+          scroll: false,
+        });
       });
     },
-    [currentParamsString, filters, router, startNavigation]
+    [currentParamsString, filters, router, startNavigation, startNavigationTransition]
   );
 
   const clearFilters = useCallback(() => {
@@ -341,8 +345,10 @@ export function ListingFilters({ popularBrands, searchParams }: ListingFiltersPr
     setBrandOptions(uniqueList(popularBrands));
     setBrandSearchTerm("");
     startNavigation({ immediate: true });
-    router.replace("/listings", { scroll: false });
-  }, [router, startNavigation, popularBrands]);
+    startNavigationTransition(() => {
+      router.replace("/listings", { scroll: false });
+    });
+  }, [router, startNavigation, startNavigationTransition, popularBrands]);
 
   const selectedBrands = useMemo(() => splitMulti(filters.brand), [filters.brand]);
   const selectedConditions = useMemo(() => {

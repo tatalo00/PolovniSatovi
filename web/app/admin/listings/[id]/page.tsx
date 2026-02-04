@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ListingStatus } from "@prisma/client";
-import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ListingImageGallery } from "@/components/listings/listing-image-gallery";
 import { ListingSpecsTable } from "@/components/listings/listing-specs-table";
@@ -9,6 +8,7 @@ import { PriceDisplay } from "@/components/currency/price-display";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 
 export const dynamic = "force-dynamic";
 
@@ -26,8 +26,6 @@ type PageProps = {
 };
 
 export default async function AdminListingDetailPage({ params }: PageProps) {
-  await requireAdmin();
-
   const { id } = await params;
 
   const listing = await prisma.listing.findUnique({
@@ -96,7 +94,15 @@ export default async function AdminListingDetailPage({ params }: PageProps) {
   ];
 
   return (
-    <main className="container mx-auto px-4 py-8 lg:py-12">
+    <div className="space-y-8">
+      <Breadcrumbs
+        items={[
+          { label: "Admin Panel", href: "/admin" },
+          { label: "Oglasi", href: "/admin/listings" },
+          { label: listing.title || "Pregled oglasa" },
+        ]}
+        className="mb-2"
+      />
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Pregled oglasa (admin)</h1>
@@ -196,6 +202,6 @@ export default async function AdminListingDetailPage({ params }: PageProps) {
           </Card>
         </aside>
       </div>
-    </main>
+    </div>
   );
 }

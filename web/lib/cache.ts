@@ -1,6 +1,43 @@
 import "server-only";
-import { unstable_cache } from "next/cache";
+import { unstable_cache, revalidateTag } from "next/cache";
 import { cache } from "react";
+
+/**
+ * Cache life presets for the "use cache" directive (Next.js 16+)
+ * Import cacheLife and cacheTag from 'next/cache' inside your function
+ *
+ * @example
+ * import { cacheLife, cacheTag } from "next/cache";
+ *
+ * async function getData() {
+ *   "use cache";
+ *   cacheLife("minutes"); // Use Next.js preset
+ *   cacheTag("listings");
+ *   return await db.query();
+ * }
+ *
+ * Available presets: "seconds", "minutes", "hours", "days", "weeks", "max"
+ */
+export const CACHE_PRESETS = {
+  /** Real-time data - use "seconds" preset */
+  instant: "seconds",
+  /** User-specific data - use "minutes" preset */
+  short: "minutes",
+  /** Listings data - use "hours" preset */
+  medium: "hours",
+  /** Reference data - use "days" preset */
+  long: "days",
+  /** Static content - use "weeks" preset */
+  static: "weeks",
+} as const;
+
+/**
+ * Revalidate a cache tag - use to invalidate cached data
+ * @example
+ * import { invalidateTag } from "@/lib/cache";
+ * invalidateTag("listings");
+ */
+export const invalidateTag = revalidateTag;
 
 /**
  * Cache configuration for different data types

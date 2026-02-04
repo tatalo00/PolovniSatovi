@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { MessageThreadList } from "@/components/messages/message-thread-list";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 
 export default async function MessagesPage() {
   const session = await auth();
@@ -11,6 +12,12 @@ export default async function MessagesPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumbs
+        items={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "Poruke" },
+        ]}
+      />
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Poruke</h1>
         <p className="text-muted-foreground mt-2">

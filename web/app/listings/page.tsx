@@ -6,6 +6,7 @@ import { auth } from "@/auth";
 import type { ListingSummary } from "@/types/listing";
 import { AUTHENTICATION_STATUS, type AuthenticationStatus } from "@/lib/authentication/status";
 import { getListings, type IncomingSearchParams } from "@/lib/listings";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 
 // Revalidate listings page every 5 minutes
 export const revalidate = 300;
@@ -118,7 +119,8 @@ export default async function ListingsPage({
   const limit = 24;
 
   return (
-    <main className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8 lg:pb-8">
+    <main className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8 mobile-bottom-nav-padding lg:pb-8">
+      <Breadcrumbs items={[{ label: "Oglasi" }]} className="mb-4" />
       <div className="mb-4 sm:mb-6 md:mb-8">
         <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight">Oglasi za Satove</h1>
         <p className="text-muted-foreground mt-1 sm:mt-2 text-sm sm:text-base">

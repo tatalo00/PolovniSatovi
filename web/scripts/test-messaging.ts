@@ -386,8 +386,8 @@ async function testThreadCreatedWithCorrectParticipants() {
       return;
     }
 
-    if (thread.listing.id !== newListing.id) {
-      logResult("Thread created with correct participants", false, 
+    if (thread.listing?.id !== newListing.id) {
+      logResult("Thread created with correct participants", false,
         "Listing not correctly associated");
       return;
     }

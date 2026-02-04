@@ -1,7 +1,7 @@
 import { ListingStatus } from "@prisma/client";
-import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { AdminListingQueue } from "@/components/admin/admin-listing-queue";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 
 export const metadata = {
   title: "Oglasi za odobrenje",
@@ -19,8 +19,6 @@ export default async function AdminListingsPage({
 }: {
   searchParams?: Promise<{ status?: string | string[] }>;
 }) {
-  await requireAdmin();
-
   const resolvedParams = searchParams ? await searchParams : undefined;
   const rawStatus = Array.isArray(resolvedParams?.status)
     ? resolvedParams.status[0]
@@ -51,7 +49,14 @@ export default async function AdminListingsPage({
   });
 
   return (
-    <main className="container mx-auto px-4 py-8">
+    <>
+      <Breadcrumbs
+        items={[
+          { label: "Admin Panel", href: "/admin" },
+          { label: "Oglasi za odobrenje" },
+        ]}
+        className="mb-4"
+      />
       <div className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight">Oglasi za odobrenje</h1>
         <p className="text-muted-foreground mt-2">
@@ -60,6 +65,6 @@ export default async function AdminListingsPage({
       </div>
 
       <AdminListingQueue listings={listings} currentStatus={status} />
-    </main>
+    </>
   );
 }

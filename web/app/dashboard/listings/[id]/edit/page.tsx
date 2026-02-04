@@ -9,6 +9,7 @@ import {
   SUPPORTED_CURRENCIES,
   GENDER_VALUES,
 } from "@/lib/validation/listing";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 
 export const metadata = {
   title: "Izmeni Oglas",
@@ -84,6 +85,15 @@ export default async function EditListingPage({
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 sm:space-y-8">
+      <Breadcrumbs
+        items={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "Moji oglasi", href: "/dashboard/listings" },
+          { label: listing.title || "Oglas", href: `/dashboard/listings/${listing.id}` },
+          { label: "Izmena" },
+        ]}
+        className="mb-2"
+      />
       <div>
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Izmeni Oglas</h1>
         <p className="text-muted-foreground mt-2">

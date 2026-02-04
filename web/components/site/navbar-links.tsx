@@ -1,8 +1,8 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { useActiveRoute } from "@/lib/hooks/use-active-route";
 
 const NAV_ITEMS = [
   { href: "/listings", label: "Pogledaj oglase" },
@@ -13,12 +13,12 @@ const NAV_ITEMS = [
 ] as const;
 
 export function NavLinks() {
-  const pathname = usePathname() ?? "/";
+  const { isActive } = useActiveRoute();
 
   return (
     <>
       {NAV_ITEMS.map((item) => {
-        const isActive = pathname === item.href || pathname.startsWith(item.href);
+        const active = isActive(item.href);
         
         return (
           <Link
@@ -26,11 +26,11 @@ export function NavLinks() {
             href={item.href}
             className={cn(
               "relative inline-flex items-center text-base font-medium tracking-tight transition-colors",
-              isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+              active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
             )}
           >
             {item.label}
-            {isActive && (
+            {active && (
               <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary" />
             )}
           </Link>

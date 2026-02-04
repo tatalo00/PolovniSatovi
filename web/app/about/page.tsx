@@ -1,5 +1,6 @@
 import { Sparkles, ShieldCheck, CheckCircle2, Users, Search, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 
 const OFFERINGS = [
   {
@@ -92,6 +93,7 @@ export default function AboutPage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-background via-[#FAFAFA] to-background">
       <div className="container mx-auto px-3 sm:px-4 md:px-6 py-8 sm:py-12 md:py-16 lg:py-20">
+        <Breadcrumbs items={[{ label: "O nama" }]} className="mb-6" />
         <div className="mx-auto max-w-5xl space-y-12 sm:space-y-16">
           {/* Header Section */}
           <header className="space-y-4 sm:space-y-5 text-center">

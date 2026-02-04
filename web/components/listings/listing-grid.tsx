@@ -27,6 +27,7 @@ interface ListingGridCardProps {
   isFavorite: boolean;
   onToggle?: (nextValue: boolean) => void;
   imageSizes?: string;
+  isPriority?: boolean;
 }
 
 const ListingGridCard = memo(function ListingGridCard({
@@ -34,6 +35,7 @@ const ListingGridCard = memo(function ListingGridCard({
   isFavorite,
   onToggle,
   imageSizes = "(max-width: 475px) 140px, (max-width: 640px) 160px, (max-width: 768px) 180px, (max-width: 1024px) 200px, (min-width: 1024px) 25vw",
+  isPriority = false,
 }: ListingGridCardProps) {
   const [isPressed, setIsPressed] = useState(false);
   const router = useRouter();
@@ -183,7 +185,8 @@ const ListingGridCard = memo(function ListingGridCard({
               alt={listing.title}
               fill
               className="object-cover transition-transform duration-500 group-hover:scale-105"
-              loading="lazy"
+              priority={isPriority}
+              loading={isPriority ? undefined : "lazy"}
               sizes={imageSizes}
               placeholder="blur"
               blurDataURL={BLUR_DATA_URL}
@@ -378,13 +381,14 @@ function ListingGridBase({
       )}
       data-scroll-key={scrollKey}
     >
-      {listings.map((listing) => (
+      {listings.map((listing, index) => (
         <ListingGridCard
           key={listing.id}
           listing={listing}
           isFavorite={favoriteIds?.has(listing.id) ?? false}
           onToggle={(next) => onToggleFavorite?.(listing.id, next)}
           imageSizes={`(max-width: 475px) 140px, (max-width: 640px) 160px, (max-width: 768px) 180px, (max-width: 1024px) 200px, (min-width: 1024px) ${columns === 5 ? "20vw" : columns === 4 ? "25vw" : "33vw"}`}
+          isPriority={index < columns}
         />
       ))}
     </div>

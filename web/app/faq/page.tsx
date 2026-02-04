@@ -1,3 +1,5 @@
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+
 export const metadata = {
   title: "FAQ",
   description: "Najčešća pitanja u vezi sa platformom PolovniSatovi.",
@@ -6,6 +8,7 @@ export const metadata = {
 export default function FaqPage() {
   return (
     <main className="container mx-auto px-4 py-16">
+      <Breadcrumbs items={[{ label: "FAQ" }]} className="mb-6" />
       <div className="mx-auto max-w-3xl space-y-6">
         <header>
           <h1 className="text-3xl font-semibold tracking-tight">Najčešća pitanja</h1>

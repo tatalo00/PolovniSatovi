@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { WishlistClient } from "@/components/listings/wishlist-client";
 import type { ListingSummary } from "@/types/listing";
 import { AUTHENTICATION_STATUS, type AuthenticationStatus } from "@/lib/authentication/status";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 
 export const dynamic = "force-dynamic";
 
@@ -135,6 +136,12 @@ export default async function WishlistPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumbs
+        items={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "Lista želja" },
+        ]}
+      />
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Lista želja</h1>
         <p className="text-muted-foreground mt-2">

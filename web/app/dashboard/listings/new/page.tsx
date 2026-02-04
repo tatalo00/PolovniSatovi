@@ -4,6 +4,7 @@ import { ListingWizard } from "@/components/listings/listing-wizard";
 import { Plus, Watch } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 
 export const metadata = {
   title: "Novi Oglas",
@@ -19,6 +20,14 @@ export default async function NewListingPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 sm:space-y-8">
+      <Breadcrumbs
+        items={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "Moji oglasi", href: "/dashboard/listings" },
+          { label: "Novi oglas" },
+        ]}
+        className="mb-2"
+      />
       {/* Header Section */}
       <div className="space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-4">

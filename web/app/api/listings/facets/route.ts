@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
   buildWhereClause,
   normalizeSearchParams,
   type IncomingSearchParams,
 } from "@/lib/listings";
+import { jsonWithCache, errorResponse, CACHE_CONTROL } from "@/lib/api-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -51,35 +52,29 @@ export async function GET(request: NextRequest) {
       }),
     ]);
 
-    const response = NextResponse.json({
-      condition: Object.fromEntries(
-        conditionFacets
-          .filter((f) => f.condition)
-          .map((f) => [f.condition, f._count._all])
-      ),
-      movement: Object.fromEntries(
-        movementFacets
-          .filter((f) => f.movement)
-          .map((f) => [f.movement!, f._count._all])
-      ),
-      gender: Object.fromEntries(
-        genderFacets
-          .filter((f) => f.gender)
-          .map((f) => [f.gender, f._count._all])
-      ),
-    });
-
-    response.headers.set(
-      "Cache-Control",
-      "public, s-maxage=60, stale-while-revalidate=120"
+    // Facets change with data - use SHORT cache (5 min)
+    return jsonWithCache(
+      {
+        condition: Object.fromEntries(
+          conditionFacets
+            .filter((f) => f.condition)
+            .map((f) => [f.condition, f._count._all])
+        ),
+        movement: Object.fromEntries(
+          movementFacets
+            .filter((f) => f.movement)
+            .map((f) => [f.movement!, f._count._all])
+        ),
+        gender: Object.fromEntries(
+          genderFacets
+            .filter((f) => f.gender)
+            .map((f) => [f.gender, f._count._all])
+        ),
+      },
+      { cache: CACHE_CONTROL.SHORT }
     );
-
-    return response;
   } catch (error) {
     console.error("Facet query error:", error);
-    return NextResponse.json(
-      { error: "Failed to load facets" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to load facets", 500);
   }
 }
