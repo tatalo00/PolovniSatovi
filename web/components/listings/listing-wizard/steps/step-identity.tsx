@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { useWizard } from "../wizard-context";
 import { WizardNavigation } from "../wizard-navigation";
 import { BrandCombobox } from "../components/brand-combobox";
+import { ModelCombobox } from "../components/model-combobox";
 import { ConditionCards } from "../components/condition-cards";
 import { stepIdentitySchema, type StepIdentityData } from "@/lib/validation/listing-wizard";
 import { cn } from "@/lib/utils";
@@ -44,6 +45,7 @@ export function StepIdentity() {
   });
 
   const brand = watch("brand");
+  const model = watch("model");
   const condition = watch("condition");
   const gender = watch("gender");
 
@@ -91,15 +93,13 @@ export function StepIdentity() {
             <Label htmlFor="model">
               Model <span className="text-destructive">*</span>
             </Label>
-            <Input
-              id="model"
+            <ModelCombobox
+              value={model}
+              onChange={(value) => setValue("model", value, { shouldValidate: true })}
+              brand={brand}
               placeholder="npr. Submariner, Speedmaster..."
-              {...register("model")}
-              aria-invalid={!!errors.model}
+              error={errors.model?.message}
             />
-            {errors.model && (
-              <p className="text-sm text-destructive">{errors.model.message}</p>
-            )}
           </div>
         </div>
 

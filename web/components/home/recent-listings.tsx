@@ -143,9 +143,10 @@ export function RecentListings({ listings, favoriteIds }: RecentListingsProps) {
             className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
-            {listings.map((listing) => {
+            {listings.map((listing, index) => {
               const primaryPhoto = listing.photos?.[0]?.url ?? null;
               const isFavorite = resolvedFavoriteIds.includes(listing.id);
+              const isPriority = index < 4;
               return (
                 <Link
                   key={listing.id}
@@ -165,6 +166,8 @@ export function RecentListings({ listings, favoriteIds }: RecentListingsProps) {
                           fill
                           className="object-cover transition-transform duration-300 group-hover:scale-105"
                           sizes="300px"
+                          priority={isPriority}
+                          loading={isPriority ? undefined : "lazy"}
                         />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">

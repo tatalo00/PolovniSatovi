@@ -3,12 +3,14 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { formatTimeAgo } from "@/lib/format-time";
+import { Check, CheckCheck } from "lucide-react";
 
 interface MessageBubbleProps {
   message: {
     id: string;
     body: string;
     createdAt: Date | string;
+    readAt?: Date | string | null;
     sender: {
       id: string;
       name: string | null;
@@ -59,8 +61,23 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
         >
           <p className="text-sm whitespace-pre-wrap">{message.body}</p>
         </div>
-        <div className="text-xs text-muted-foreground mt-1 px-1">
-          {timeAgo}
+        <div className="flex items-center gap-1.5 mt-1 px-1">
+          <span className="text-xs text-muted-foreground">{timeAgo}</span>
+          {isOwn && (
+            <span className="flex items-center gap-0.5 text-[10px]">
+              {message.readAt ? (
+                <>
+                  <CheckCheck className="h-3 w-3 text-blue-500" />
+                  <span className="text-blue-500">Viđeno</span>
+                </>
+              ) : (
+                <>
+                  <Check className="h-3 w-3 text-muted-foreground" />
+                  <span className="text-muted-foreground">Poslato</span>
+                </>
+              )}
+            </span>
+          )}
         </div>
       </div>
     </div>

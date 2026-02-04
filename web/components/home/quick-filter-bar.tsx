@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   DropdownMenu,
@@ -11,6 +11,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  ResponsiveSelect,
+  type ResponsiveSelectOption,
+} from "@/components/ui/responsive-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -31,13 +35,17 @@ import {
 
 const FEATURED_BRANDS = ["Rolex", "Omega", "Patek Philippe", "Cartier", "Tag Heuer"] as const;
 
-const MOVEMENT_OPTIONS = [
+const MOVEMENT_OPTIONS: ResponsiveSelectOption[] = [
   { value: "automatic", label: "Automatik", icon: <GaugeCircle className="h-4 w-4" /> },
   { value: "mechanical", label: "Mehanički", icon: <Sparkles className="h-4 w-4" /> },
   { value: "quartz", label: "Kvarc", icon: <BatteryCharging className="h-4 w-4" /> },
-] as const;
+];
 
 const CONDITION_OPTIONS = ["Novo", "Odlično", "Dobro", "Za servis"] as const;
+
+const CONDITION_SELECT_OPTIONS: ResponsiveSelectOption[] = CONDITION_OPTIONS.map(
+  (option) => ({ value: option, label: option })
+);
 
 const CASE_MATERIAL_OPTIONS = ["Čelik", "Zlato", "Titanijum", "Keramika", "Ostalo"] as const;
 const STRAP_OPTIONS = ["Koža", "Metal", "Guma", "Tekstil", "Ostalo"] as const;
@@ -49,6 +57,7 @@ export interface QuickFilterBarProps {
 
 export function QuickFilterBar({ brands }: QuickFilterBarProps) {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [brandSearch, setBrandSearch] = useState("");
@@ -108,23 +117,6 @@ export function QuickFilterBar({ brands }: QuickFilterBarProps) {
     }
     return `${selectedBrands.length} marke`;
   }, [selectedBrands]);
-
-  const activeMovementOption = useMemo(() => {
-    if (selectedMovements.length === 1) {
-      return MOVEMENT_OPTIONS.find((option) => option.value === selectedMovements[0]) ?? null;
-    }
-    return null;
-  }, [selectedMovements]);
-
-  const movementLabel = useMemo(() => {
-    if (!selectedMovements.length) {
-      return "Svi tipovi";
-    }
-    if (selectedMovements.length === 1) {
-      return activeMovementOption?.label ?? "Odabrani tip";
-    }
-    return `${selectedMovements.length} tipa`;
-  }, [activeMovementOption, selectedMovements]);
 
   const toggleMultiSelect = (
     value: string,
@@ -189,7 +181,9 @@ export function QuickFilterBar({ brands }: QuickFilterBarProps) {
       params.set("yearTo", yearTo);
     }
 
-    router.push(`/listings${params.toString() ? `?${params.toString()}` : ""}`);
+    startTransition(() => {
+      router.push(`/listings${params.toString() ? `?${params.toString()}` : ""}`);
+    });
   };
 
   const hasActiveFilters =
@@ -323,121 +317,48 @@ export function QuickFilterBar({ brands }: QuickFilterBarProps) {
               <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.25em] sm:tracking-[0.3em] text-muted-foreground">
                 <span>Mehanizam</span>
               </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="h-11 sm:h-12 w-full justify-between rounded-xl border-2 border-muted/70 bg-white/75 px-4 py-3 text-left text-sm sm:text-base font-medium text-foreground hover:border-[#D4AF37] hover:bg-white/90 min-h-[44px]"
-                  >
-                    <span className="flex items-center gap-2 truncate">
-                      {activeMovementOption?.icon}
-                      <span className="truncate">{movementLabel}</span>
-                    </span>
-                    <ChevronDown className="h-4 w-4 opacity-60 flex-shrink-0" aria-hidden />
-                  </Button>
-                </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-60 rounded-2xl border border-border/70 bg-background/95 p-1 shadow-xl">
-                  <DropdownMenuItem
-                    onSelect={(event) => {
-                      event.preventDefault();
-                      setSelectedMovements([]);
-                    }}
-                    className="flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm"
-                  >
-                    <span>Svi tipovi</span>
-                    {!selectedMovements.length && <Check className="h-4 w-4 text-[#D4AF37]" aria-hidden />}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  {MOVEMENT_OPTIONS.map((option) => (
-                    <DropdownMenuCheckboxItem
-                      key={option.value}
-                      onSelect={(event) => event.preventDefault()}
-                      checked={selectedMovements.includes(option.value)}
-                      onCheckedChange={(checked) => {
-                        setSelectedMovements((prev) =>
-                          checked ? [...prev, option.value] : prev.filter((value) => value !== option.value)
-                        );
-                      }}
-                      className="flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm [&>span:first-child]:hidden"
-                    >
-                      <span className="flex items-center gap-3">
-                        <span className="text-muted-foreground">{option.icon}</span>
-                        {option.label}
-                      </span>
-                      {selectedMovements.includes(option.value) && (
-                        <span className="text-[#D4AF37]">
-                          <Check className="h-4 w-4" aria-hidden />
-                        </span>
-                      )}
-                    </DropdownMenuCheckboxItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <ResponsiveSelect
+                title="Mehanizam"
+                value={selectedMovements}
+                options={MOVEMENT_OPTIONS}
+                onValueChange={setSelectedMovements}
+                placeholder="Svi tipovi"
+                allLabel="Svi tipovi"
+              />
             </div>
 
             <div className="flex flex-col gap-1.5 sm:gap-2 md:gap-3">
               <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.25em] sm:tracking-[0.3em] text-muted-foreground">
                 <span>Stanje</span>
               </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="h-11 sm:h-12 w-full justify-between rounded-xl border-2 border-muted/70 bg-white/75 px-4 py-3 text-left text-sm sm:text-base font-medium text-foreground hover:border-[#D4AF37] hover:bg-white/90 min-h-[44px]"
-                    >
-                      <span className="truncate">
-                        {selectedConditions.length
-                          ? `${selectedConditions.length} ${selectedConditions.length === 1 ? "stanje" : "stanja"}`
-                          : "Sva stanja"}
-                      </span>
-                      <ChevronDown className="h-4 w-4 opacity-60 flex-shrink-0" aria-hidden />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-60 rounded-2xl border border-border/70 bg-background/95 p-1 shadow-xl">
-                    <DropdownMenuItem
-                      onSelect={(event) => {
-                        event.preventDefault();
-                        setSelectedConditions([]);
-                      }}
-                      className="flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm"
-                    >
-                      <span>Sva stanja</span>
-                      {!selectedConditions.length && (
-                        <Check className="h-4 w-4 text-[#D4AF37]" aria-hidden />
-                      )}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    {CONDITION_OPTIONS.map((option) => (
-                      <DropdownMenuCheckboxItem
-                        key={option}
-                        onSelect={(event) => event.preventDefault()}
-                        checked={selectedConditions.includes(option)}
-                        onCheckedChange={(checked) => {
-                        setSelectedConditions((prev) =>
-                          checked ? [...prev, option] : prev.filter((value) => value !== option),
-                        );
-                        }}
-                        className="flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm [&>span:first-child]:hidden"
-                      >
-                        <span>{option}</span>
-                        {selectedConditions.includes(option) && (
-                          <span className="text-[#D4AF37]">
-                            <Check className="h-4 w-4" aria-hidden />
-                          </span>
-                        )}
-                      </DropdownMenuCheckboxItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+              <ResponsiveSelect
+                title="Stanje"
+                value={selectedConditions}
+                options={CONDITION_SELECT_OPTIONS}
+                onValueChange={setSelectedConditions}
+                placeholder="Sva stanja"
+                allLabel="Sva stanja"
+              />
             </div>
 
             <div className="flex flex-col gap-1.5 sm:gap-2 md:gap-3">
               <div className="h-[1.5rem] hidden sm:block"></div>
               <Button
-                className="h-11 sm:h-12 w-full rounded-full bg-[#D4AF37] px-5 sm:px-6 md:px-8 text-sm sm:text-base font-semibold text-neutral-900 shadow-lg transition hover:bg-[#b6932c] hover:text-neutral-900 min-h-[44px]"
+                className={cn(
+                  "h-11 sm:h-12 w-full rounded-full bg-[#D4AF37] px-5 sm:px-6 md:px-8 text-sm sm:text-base font-semibold text-neutral-900 shadow-lg transition hover:bg-[#b6932c] hover:text-neutral-900 min-h-[44px]",
+                  isPending && "opacity-70 cursor-wait"
+                )}
                 onClick={handleSearch}
+                disabled={isPending}
               >
-                Pretraži
+                {isPending ? (
+                  <span className="flex items-center gap-2">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-neutral-900/30 border-t-neutral-900" />
+                    Pretraga...
+                  </span>
+                ) : (
+                  "Pretraži"
+                )}
               </Button>
             </div>
 
@@ -532,7 +453,7 @@ export function QuickFilterBar({ brands }: QuickFilterBarProps) {
                           type="button"
                           onClick={() => toggleMultiSelect(option, caseMaterials, setCaseMaterials)}
                           className={cn(
-                            "rounded-full border px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.1em] sm:tracking-[0.15em] transition-colors min-h-[36px] sm:min-h-[40px]",
+                            "rounded-full border px-4 py-2.5 text-[11px] sm:text-xs font-semibold uppercase tracking-[0.1em] sm:tracking-[0.15em] transition-colors min-h-[44px] touch-manipulation",
                             isActive
                               ? "border-[#D4AF37] bg-[#D4AF37]/15 text-foreground"
                               : "border-muted/60 bg-white/70 text-muted-foreground hover:border-[#D4AF37] hover:text-foreground",
@@ -568,7 +489,7 @@ export function QuickFilterBar({ brands }: QuickFilterBarProps) {
                           type="button"
                           onClick={() => toggleMultiSelect(option, strapMaterials, setStrapMaterials)}
                           className={cn(
-                            "rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] transition-colors",
+                            "rounded-full border px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.15em] transition-colors min-h-[44px] touch-manipulation",
                             isActive
                               ? "border-[#D4AF37] bg-[#D4AF37]/15 text-foreground"
                               : "border-muted/60 bg-white/70 text-muted-foreground hover:border-[#D4AF37] hover:text-foreground",
@@ -604,7 +525,7 @@ export function QuickFilterBar({ brands }: QuickFilterBarProps) {
                           type="button"
                           onClick={() => toggleMultiSelect(option, dialColors, setDialColors)}
                           className={cn(
-                            "rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] transition-colors",
+                            "rounded-full border px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.15em] transition-colors min-h-[44px] touch-manipulation",
                             isActive
                               ? "border-[#D4AF37] bg-[#D4AF37]/15 text-foreground"
                               : "border-muted/60 bg-white/70 text-muted-foreground hover:border-[#D4AF37] hover:text-foreground",

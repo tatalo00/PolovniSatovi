@@ -1,7 +1,7 @@
-import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { SellerApplicationStatus } from "@prisma/client";
 import { AdminVerificationsList } from "@/components/admin/admin-verifications-list";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 
 export const metadata = {
   title: "Verified Prodavci - Prijave",
@@ -13,8 +13,6 @@ export default async function AdminVerificationsPage({
 }: {
   searchParams: Promise<{ status?: string }>;
 }) {
-  await requireAdmin();
-
   const params = await searchParams;
   const statusParam = params.status?.toUpperCase();
   const status: SellerApplicationStatus =
@@ -55,7 +53,14 @@ export default async function AdminVerificationsPage({
   const [pendingCount, approvedCount, rejectedCount] = counts;
 
   return (
-    <main className="container mx-auto px-4 py-8">
+    <>
+      <Breadcrumbs
+        items={[
+          { label: "Admin Panel", href: "/admin" },
+          { label: "Verifikacije" },
+        ]}
+        className="mb-4"
+      />
       <div className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight">Verified Prodavci - Prijave</h1>
         <p className="text-muted-foreground mt-2">
@@ -73,7 +78,7 @@ export default async function AdminVerificationsPage({
         approvedCount={approvedCount}
         rejectedCount={rejectedCount}
       />
-    </main>
+    </>
   );
 }
 

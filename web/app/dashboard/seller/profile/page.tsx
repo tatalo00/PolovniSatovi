@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { SellerProfileForm } from "@/components/seller/profile-form";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 
 export const metadata = {
   title: "Prodavac Profil",
@@ -16,6 +17,13 @@ export default async function SellerProfilePage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
+      <Breadcrumbs
+        items={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "Prodavnica" },
+        ]}
+        className="mb-2"
+      />
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Prodavac Profil</h1>
         <p className="text-muted-foreground mt-2">

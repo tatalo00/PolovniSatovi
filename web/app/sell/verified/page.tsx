@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { SellerVerifiedWizard } from "@/components/seller/verified-wizard";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 
 export const metadata = {
   title: "Verified prodavci",
@@ -34,6 +35,13 @@ export default async function VerifiedSellerPage() {
 
   return (
     <main className="container mx-auto px-4 py-12 sm:py-16">
+      <Breadcrumbs
+        items={[
+          { label: "Prodaj sat", href: "/sell" },
+          { label: "Verifikacija" },
+        ]}
+        className="mb-6"
+      />
       <section className="rounded-3xl bg-neutral-950 px-6 py-8 text-white sm:px-10 sm:py-10">
         <p className="text-xs font-semibold uppercase tracking-[0.4em] text-white/70">
           Verified prodavci

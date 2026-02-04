@@ -5,7 +5,11 @@ import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { updateSellerResponseTime } from "@/lib/seller-response-time";
+import { sendNewMessageEmail } from "@/lib/email";
 import { z } from "zod";
+
+const INACTIVITY_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
+const EMAIL_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 interface RouteParams {
   params: Promise<{ threadId: string }>;
@@ -89,10 +93,18 @@ export async function POST(request: Request, { params }: RouteParams) {
     const body = await request.json();
     const { body: messageBody } = createMessageSchema.parse(body);
 
-    // Verify user has access to this thread
+    // Verify user has access to this thread and get listing info
     const thread = await prisma.messageThread.findUnique({
       where: { id: threadId },
-      select: { buyerId: true, sellerId: true },
+      select: {
+        buyerId: true,
+        sellerId: true,
+        listing: {
+          select: {
+            title: true,
+          },
+        },
+      },
     });
 
     if (!thread) {
@@ -140,6 +152,18 @@ export async function POST(request: Request, { params }: RouteParams) {
       );
     }
 
+    // Send email notification to recipient (async, fire-and-forget)
+    const recipientId = thread.buyerId === userId ? thread.sellerId : thread.buyerId;
+    notifyRecipient({
+      recipientId,
+      senderName: message.sender.name || "Korisnik",
+      listingTitle: thread.listing?.title || "Oglas",
+      messagePreview: messageBody,
+      threadId,
+    }).catch((err) =>
+      logger.error("Failed to send message notification", { error: String(err) })
+    );
+
     return NextResponse.json(message, { status: 201 });
   } catch (error: any) {
     if (error.message === "Unauthorized") {
@@ -168,5 +192,62 @@ export async function POST(request: Request, { params }: RouteParams) {
       { status: 500 }
     );
   }
+}
+
+// Helper function to notify recipient via email (max 1 email per day)
+async function notifyRecipient({
+  recipientId,
+  senderName,
+  listingTitle,
+  messagePreview,
+  threadId,
+}: {
+  recipientId: string;
+  senderName: string;
+  listingTitle: string;
+  messagePreview: string;
+  threadId: string;
+}) {
+  const recipient = await prisma.user.findUnique({
+    where: { id: recipientId },
+    select: {
+      email: true,
+      name: true,
+      lastSeenAt: true,
+      lastMessageEmailAt: true,
+    },
+  });
+
+  if (!recipient?.email) return;
+
+  const now = Date.now();
+  const lastSeen = recipient.lastSeenAt?.getTime() || 0;
+  const lastEmailSent = recipient.lastMessageEmailAt?.getTime() || 0;
+
+  // Check if user is inactive (not seen in last 5 minutes)
+  const isInactive = now - lastSeen > INACTIVITY_THRESHOLD_MS;
+  // Check if cooldown passed (last email was more than 24 hours ago)
+  const cooldownPassed = now - lastEmailSent > EMAIL_COOLDOWN_MS;
+
+  if (!isInactive || !cooldownPassed) {
+    return; // Don't send email
+  }
+
+  // Send email
+  const threadUrl = `${process.env.NEXTAUTH_URL}/dashboard/messages/${threadId}`;
+  await sendNewMessageEmail({
+    to: recipient.email,
+    recipientName: recipient.name,
+    senderName,
+    listingTitle,
+    messagePreview,
+    threadUrl,
+  });
+
+  // Update lastMessageEmailAt
+  await prisma.user.update({
+    where: { id: recipientId },
+    data: { lastMessageEmailAt: new Date() },
+  });
 }
 

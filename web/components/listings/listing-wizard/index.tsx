@@ -20,6 +20,8 @@ import { StepPhotos } from "./steps/step-photos";
 import { StepIdentity } from "./steps/step-identity";
 import { StepPricing } from "./steps/step-pricing";
 import { StepDetails } from "./steps/step-details";
+import { ListingSuccess } from "./components/listing-success";
+import { ListingPreview } from "./components/listing-preview";
 import type { ListingFormSchema } from "@/lib/validation/listing";
 
 const EUR_TO_RSD = 117;
@@ -102,8 +104,26 @@ function convertListingToFormData(listing: ListingWizardProps["listing"]): Parti
 }
 
 function WizardContent() {
-  const { currentStep, clearDraft, hasSavedDraft, loadSavedDraft } = useWizard();
+  const {
+    currentStep,
+    clearDraft,
+    hasSavedDraft,
+    loadSavedDraft,
+    submissionState,
+    submittedListingTitle,
+    showPreview,
+    closePreview,
+    confirmSubmit,
+    isSubmitting,
+    formData,
+    photos,
+  } = useWizard();
   const [showDraftDialog, setShowDraftDialog] = useState(hasSavedDraft);
+
+  // Show success screen after successful submission
+  if (submissionState === "success") {
+    return <ListingSuccess listingTitle={submittedListingTitle} />;
+  }
 
   const handleResumeDraft = () => {
     loadSavedDraft();
@@ -155,6 +175,16 @@ function WizardContent() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Listing Preview Dialog */}
+      <ListingPreview
+        open={showPreview}
+        onClose={closePreview}
+        onConfirm={confirmSubmit}
+        isSubmitting={isSubmitting}
+        formData={formData}
+        photos={photos}
+      />
 
       {/* Main Wizard Card */}
       <Card className="border-border/70">

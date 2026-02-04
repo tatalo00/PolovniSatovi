@@ -224,3 +224,54 @@ export async function sendPasswordResetEmail({
     return { success: false as const, error };
   }
 }
+
+export async function sendNewMessageEmail({
+  to,
+  recipientName,
+  senderName,
+  listingTitle,
+  messagePreview,
+  threadUrl,
+}: {
+  to: string;
+  recipientName?: string | null;
+  senderName: string;
+  listingTitle: string;
+  messagePreview: string;
+  threadUrl: string;
+}) {
+  try {
+    const truncatedPreview = messagePreview.length > 150
+      ? `${messagePreview.substring(0, 150)}...`
+      : messagePreview;
+
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #1a1a1a;">Nova poruka na PolovniSatovi</h2>
+        <p style="color: #666;">Zdravo${recipientName ? ` ${recipientName}` : ""},</p>
+        <p style="color: #666;"><strong>${senderName}</strong> vam je poslao poruku u vezi oglasa:</p>
+        <div style="background: #f5f5f5; padding: 16px; border-radius: 8px; margin: 16px 0;">
+          <p style="font-weight: 600; margin: 0 0 8px; color: #1a1a1a;">${listingTitle}</p>
+          <p style="color: #666; margin: 0; font-style: italic;">"${truncatedPreview}"</p>
+        </div>
+        <a href="${threadUrl}" style="display: inline-block; background: #D4AF37; color: #1a1a1a; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+          Odgovori na poruku
+        </a>
+        <p style="color: #999; font-size: 12px; margin-top: 24px;">
+          Ovu poruku ste primili jer imate aktivan nalog na PolovniSatovi.
+          Dobijate najviše jednu ovakvu notifikaciju dnevno.
+        </p>
+      </div>
+    `;
+
+    return await sendBrevoEmail({
+      to: [{ email: to, name: recipientName ?? undefined }],
+      subject: `Nova poruka od ${senderName} - ${listingTitle}`,
+      htmlContent,
+      tags: ["new-message"],
+    });
+  } catch (error) {
+    console.error("Error sending new message email:", error);
+    return { success: false as const, error };
+  }
+}

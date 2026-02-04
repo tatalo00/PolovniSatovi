@@ -416,6 +416,7 @@ async function fetchListingsData(params: IncomingSearchParams) {
   const runQueries = async (whereInput: Prisma.ListingWhereInput) => {
     const listingQueryArgs = {
       where: whereInput,
+      relationLoadStrategy: "join" as const,
       include: {
         photos: {
           orderBy: { order: "asc" },

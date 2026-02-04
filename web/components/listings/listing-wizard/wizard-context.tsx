@@ -20,6 +20,8 @@ export interface WizardDraft {
   photos: string[];
 }
 
+export type SubmissionState = "idle" | "submitting" | "success" | "error";
+
 interface WizardContextValue {
   // Step management
   currentStep: number;
@@ -42,17 +44,28 @@ interface WizardContextValue {
   isDirty: boolean;
   draftId: string | null;
   saveDraft: () => void;
+  saveDraftManually: () => void;
   clearDraft: () => void;
   hasSavedDraft: boolean;
   loadSavedDraft: () => void;
+  lastSavedAt: Date | null;
+  isSaving: boolean;
 
   // Edit mode
   isEditMode: boolean;
   listingId: string | null;
 
+  // Preview
+  showPreview: boolean;
+  openPreview: () => void;
+  closePreview: () => void;
+
   // Submit
   isSubmitting: boolean;
+  submissionState: SubmissionState;
+  submittedListingTitle: string;
   submitListing: () => Promise<void>;
+  confirmSubmit: () => Promise<void>;
 }
 
 const WizardContext = createContext<WizardContextValue | null>(null);
@@ -89,6 +102,11 @@ export function WizardProvider({
   const [isDirty, setIsDirty] = useState(false);
   const [draftId, setDraftId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [submissionState, setSubmissionState] = useState<SubmissionState>("idle");
+  const [submittedListingTitle, setSubmittedListingTitle] = useState("");
 
   // Check for saved draft during initialization (not in useEffect to avoid setState in effect)
   const [hasSavedDraft, setHasSavedDraft] = useState(() => {
@@ -113,9 +131,10 @@ export function WizardProvider({
   const totalSteps = 4;
   const isEditMode = !!listingId;
 
-  const saveDraftToStorage = useCallback(() => {
+  const saveDraftToStorage = useCallback((showToast = false) => {
     if (isEditMode) return;
 
+    setIsSaving(true);
     const currentDraftId = draftId || generateDraftId();
     if (!draftId) {
       setDraftId(currentDraftId);
@@ -132,7 +151,25 @@ export function WizardProvider({
 
     localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
     setIsDirty(false);
+    setLastSavedAt(new Date());
+    setIsSaving(false);
+
+    if (showToast) {
+      toast.success("Nacrt je sačuvan");
+    }
   }, [draftId, currentStep, formData, photos, isEditMode]);
+
+  const saveDraftManually = useCallback(() => {
+    saveDraftToStorage(true);
+  }, [saveDraftToStorage]);
+
+  const openPreview = useCallback(() => {
+    setShowPreview(true);
+  }, []);
+
+  const closePreview = useCallback(() => {
+    setShowPreview(false);
+  }, []);
 
   // Auto-save draft periodically
   useEffect(() => {
@@ -197,8 +234,10 @@ export function WizardProvider({
     setIsDirty(true);
   }, []);
 
-  const submitListing = useCallback(async () => {
+  // Actual submission logic (called from preview confirmation or directly in edit mode)
+  const confirmSubmitInternal = useCallback(async () => {
     setIsSubmitting(true);
+    setSubmissionState("submitting");
 
     try {
       // Convert form data to API format
@@ -259,17 +298,43 @@ export function WizardProvider({
       // Clear draft on successful save
       localStorage.removeItem(DRAFT_STORAGE_KEY);
       setDraftId(null);
+      setShowPreview(false);
 
-      toast.success(isEditMode ? "Oglas je uspešno ažuriran" : "Oglas je poslat na pregled");
-      router.push("/dashboard/listings");
-      router.refresh();
+      if (isEditMode) {
+        // In edit mode, redirect as before
+        toast.success("Oglas je uspešno ažuriran");
+        router.push("/dashboard/listings");
+        router.refresh();
+      } else {
+        // For new listings, show success screen
+        setSubmittedListingTitle(`${formData.brand} ${formData.model}`);
+        setSubmissionState("success");
+        toast.success("Oglas je poslat na pregled");
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Greška pri čuvanju oglasa";
       toast.error(message);
+      setSubmissionState("error");
     } finally {
       setIsSubmitting(false);
     }
   }, [formData, photos, isEditMode, listingId, router]);
+
+  // Public method for confirming submission from preview
+  const confirmSubmit = useCallback(async () => {
+    await confirmSubmitInternal();
+  }, [confirmSubmitInternal]);
+
+  // Open preview before actual submission (for new listings)
+  const submitListing = useCallback(async () => {
+    // In edit mode, submit directly without preview
+    if (isEditMode) {
+      await confirmSubmitInternal();
+    } else {
+      // Show preview dialog for new listings
+      openPreview();
+    }
+  }, [isEditMode, confirmSubmitInternal, openPreview]);
 
   const value: WizardContextValue = {
     currentStep,
@@ -286,13 +351,22 @@ export function WizardProvider({
     isDirty,
     draftId,
     saveDraft: saveDraftToStorage,
+    saveDraftManually,
     clearDraft,
     hasSavedDraft,
     loadSavedDraft,
+    lastSavedAt,
+    isSaving,
     isEditMode,
     listingId,
+    showPreview,
+    openPreview,
+    closePreview,
     isSubmitting,
+    submissionState,
+    submittedListingTitle,
     submitListing,
+    confirmSubmit,
   };
 
   return (

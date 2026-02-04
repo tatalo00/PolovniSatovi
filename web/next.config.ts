@@ -35,51 +35,36 @@ const baseConfig: NextConfig = {
   compress: true,
   // Enable React strict mode for better performance
   reactStrictMode: true,
-  // Use webpack instead of Turbopack for Prisma client compatibility
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      // Exclude Prisma client and Node.js modules from client-side bundle
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        net: false,
-        tls: false,
-        crypto: false,
-        stream: false,
-        url: false,
-        zlib: false,
-        http: false,
-        https: false,
-        assert: false,
-        os: false,
-        path: false,
-      };
-
-      // Ignore Prisma client in client bundle
-      config.externals = config.externals || [];
-      config.externals.push({
-        "@prisma/client": "commonjs @prisma/client",
-      });
-    }
-
-    // Ensure path aliases work correctly
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      "@": path.resolve(__dirname),
-      ...(isServer
-        ? {}
-        : {
-            "node:process": false,
-            "node:path": false,
-            "node:url": false,
-            "node:fs": false,
-          }),
-    };
-
-    return config;
+  // Enable React Compiler for automatic memoization (stable in Next.js 16)
+  reactCompiler: true,
+  // Performance optimizations
+  experimental: {
+    // Optimize package imports for better tree-shaking
+    optimizePackageImports: [
+      "lucide-react",
+      "date-fns",
+      "@radix-ui/react-avatar",
+      "@radix-ui/react-checkbox",
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-dropdown-menu",
+      "@radix-ui/react-label",
+      "@radix-ui/react-navigation-menu",
+      "@radix-ui/react-select",
+      "@radix-ui/react-slider",
+      "@radix-ui/react-slot",
+      "@radix-ui/react-tabs",
+      "@radix-ui/react-tooltip",
+      "class-variance-authority",
+      "clsx",
+      "tailwind-merge",
+    ],
   },
-  // Add empty turbopack config to silence Next.js 16 warning
-  turbopack: {},
+  // Turbopack configuration (now default bundler in Next.js 16)
+  turbopack: {
+    resolveAlias: {
+      "@": __dirname,
+    },
+  },
 };
 
 export default async function nextConfig(): Promise<NextConfig> {

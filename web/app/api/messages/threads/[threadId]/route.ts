@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { trackUserActivity } from "@/lib/track-activity";
 
 interface RouteParams {
   params: Promise<{ threadId: string }>;
@@ -48,7 +49,11 @@ export async function GET(request: Request, { params }: RouteParams) {
         },
         messages: {
           orderBy: { createdAt: "asc" },
-          include: {
+          select: {
+            id: true,
+            body: true,
+            createdAt: true,
+            readAt: true,
             sender: {
               select: {
                 id: true,
@@ -75,6 +80,9 @@ export async function GET(request: Request, { params }: RouteParams) {
         { status: 403 }
       );
     }
+
+    // Track user activity for email notification purposes (async, fire-and-forget)
+    trackUserActivity(userId).catch(() => {});
 
     return NextResponse.json(thread);
   } catch (error: any) {

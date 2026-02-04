@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 
 export const metadata = {
   title: "Blog",
@@ -41,6 +42,7 @@ const FEATURED_ARTICLES = [
 export default function BlogPage() {
   return (
     <main className="container mx-auto px-4 py-12">
+      <Breadcrumbs items={[{ label: "Blog" }]} className="mb-6" />
       <header className="mx-auto max-w-3xl text-center">
         <p className="text-sm font-semibold uppercase tracking-[0.4em] text-neutral-500">
           Blog

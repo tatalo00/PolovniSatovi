@@ -311,22 +311,26 @@ export function ListingImageGallery({ photos, title, isVerifiedSeller }: Listing
             </TooltipProvider>
           </div>
 
-          {/* Mobile Navigation Dots */}
+          {/* Mobile Navigation Dots - 44px touch targets for accessibility */}
           {photos.length > 1 && (
-            <div className="flex justify-center gap-2.5 md:hidden mt-3 px-2">
+            <div className="flex justify-center gap-1 md:hidden mt-3 px-2">
               {photos.map((_, index) => (
                 <button
                   key={index}
-                  className={cn(
-                    "h-3 rounded-full transition-all min-h-[12px] min-w-[12px] touch-manipulation",
-                    index === currentIndex
-                      ? "w-10 bg-primary shadow-md"
-                      : "w-3 bg-muted-foreground/50 hover:bg-muted-foreground/70"
-                  )}
+                  className="h-11 w-11 min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation rounded-full"
                   onClick={() => handleThumbnailClick(index)}
                   aria-label={`Prikaži sliku ${index + 1}`}
                   style={{ touchAction: 'manipulation' }}
-                />
+                >
+                  <span
+                    className={cn(
+                      "h-2.5 rounded-full transition-all",
+                      index === currentIndex
+                        ? "w-8 bg-primary shadow-md"
+                        : "w-2.5 bg-muted-foreground/50"
+                    )}
+                  />
+                </button>
               ))}
             </div>
           )}

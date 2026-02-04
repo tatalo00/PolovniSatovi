@@ -5,8 +5,9 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+  provider        = "prisma-client-js"
+  binaryTargets   = ["native", "rhel-openssl-3.0.x"]
+  previewFeatures = ["relationJoins"]
 }
 
 datasource db {
@@ -35,6 +36,8 @@ model User {
   verifiedAt           DateTime?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
+  lastSeenAt           DateTime? // Track user activity for email notifications
+  lastMessageEmailAt   DateTime? // Track last message notification email (24h cooldown)
 
   accounts            Account[]
   sessions            Session[]
@@ -212,8 +215,8 @@ model ListingPhoto {
 
 model MessageThread {
   id        String   @id @default(cuid())
-  listingId String
-  listing   Listing  @relation(fields: [listingId], references: [id])
+  listingId String?
+  listing   Listing? @relation(fields: [listingId], references: [id])
   buyerId   String
   sellerId  String
   buyer     User     @relation("buyerThreads", fields: [buyerId], references: [id])

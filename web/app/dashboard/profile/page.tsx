@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AuthenticationStatusCard } from "@/components/user/authentication-status-card";
 import { AuthenticationStatus } from "@/components/user/authentication-status-card";
 import { Prisma } from "@prisma/client";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 
 export const metadata = {
   title: "Moj Profil",
@@ -74,6 +75,13 @@ export default async function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
+      <Breadcrumbs
+        items={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "Moj profil" },
+        ]}
+        className="mb-2"
+      />
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Moj Profil</h1>
         <p className="text-muted-foreground mt-2">

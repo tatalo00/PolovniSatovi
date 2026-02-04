@@ -9,6 +9,7 @@ import { PriceDisplay } from "@/components/currency/price-display";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 
 const statusMeta: Record<ListingStatus, { label: string; description: string }> = {
   DRAFT: {
@@ -131,6 +132,14 @@ export default async function ListingPreviewPage({ params }: PageProps) {
 
   return (
     <div className="space-y-8">
+      <Breadcrumbs
+        items={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "Moji oglasi", href: "/dashboard/listings" },
+          { label: listing.title || "Pregled oglasa" },
+        ]}
+        className="mb-2"
+      />
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">

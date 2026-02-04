@@ -16,6 +16,7 @@ import { ShareButton } from "@/components/listings/share-button";
 import { Prisma } from "@prisma/client";
 import { AUTHENTICATION_STATUS, type AuthenticationStatus } from "@/lib/authentication/status";
 import { SimilarListingsSection } from "@/components/listings/similar-listings-section";
+import { BackToResults } from "@/components/listings/back-to-results";
 import { computeSellerTier } from "@/lib/seller-tier";
 import { formatResponseTime } from "@/lib/seller-response-time";
 import dynamic from "next/dynamic";
@@ -300,24 +301,26 @@ export default async function ListingPage({ params }: ListingPageProps) {
   );
 
   return (
-    <main className="container mx-auto px-4 pt-8 lg:pb-12">
+    <main className="container mx-auto px-4 pt-8 mobile-bottom-padding lg:pb-12">
       <ListingViewTracker listingId={listing.id} listingTitle={listing.title} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: structuredDataJson }}
       />
 
-      <Breadcrumbs
-        items={[
-          { label: "Oglasi", href: "/listings" },
-          {
-            label: listing.brand,
-            href: `/listings?brand=${encodeURIComponent(listing.brand)}`,
-          },
-          { label: listing.title },
-        ]}
-        className="mb-4"
-      />
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <Breadcrumbs
+          items={[
+            { label: "Oglasi", href: "/listings" },
+            {
+              label: listing.brand,
+              href: `/listings?brand=${encodeURIComponent(listing.brand)}`,
+            },
+            { label: listing.title },
+          ]}
+        />
+        <BackToResults />
+      </div>
 
       {isOwner && (
         <div className="mb-6 rounded-lg border border-dashed border-primary/40 bg-primary/5 px-4 py-3 text-sm md:text-base">

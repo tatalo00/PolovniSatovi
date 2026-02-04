@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { LayoutDashboard, FileText, MessageSquare, Heart, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useActiveRoute } from "@/lib/hooks/use-active-route";
 
 const ITEMS = [
   { href: "/dashboard", label: "Pregled", icon: LayoutDashboard, exact: true },
@@ -18,12 +18,7 @@ interface DashboardMobileNavProps {
 }
 
 export function DashboardMobileNav({ unreadCount = 0 }: DashboardMobileNavProps) {
-  const pathname = usePathname();
-
-  const isActive = (href: string, exact: boolean) => {
-    if (exact) return pathname === href;
-    return pathname === href || pathname.startsWith(href + "/");
-  };
+  const { isActive } = useActiveRoute();
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:hidden safe-area-inset-bottom">

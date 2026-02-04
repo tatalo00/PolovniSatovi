@@ -1,3 +1,5 @@
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+
 type Section = {
   title: string;
   paragraphs: string[];
@@ -126,6 +128,7 @@ export const metadata = {
 export default function TermsPage() {
   return (
     <main className="container mx-auto px-4 py-12 sm:py-16">
+      <Breadcrumbs items={[{ label: "Uslovi korišćenja" }]} className="mb-6" />
       <div className="mx-auto max-w-4xl space-y-10">
         <header className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
