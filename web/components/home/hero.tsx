@@ -88,7 +88,7 @@ export function Hero({ featuredListings, totalListings, totalSellers }: HeroProp
             {TRUST_INDICATORS.map((indicator) => (
               <div
                 key={indicator.label}
-                className="flex items-center justify-center gap-1.5 sm:gap-2 md:gap-2.5 rounded-full bg-white/5 px-2.5 py-2 sm:px-3 sm:py-2 md:px-4 md:py-2.5 lg:px-6 lg:py-3 text-[8px] sm:text-[9px] md:text-[10px] lg:text-xs font-medium uppercase tracking-[0.05em] sm:tracking-[0.1em] md:tracking-[0.15em] lg:tracking-[0.2em] text-white/70 text-center backdrop-blur-xl flex-1 sm:flex-initial sm:min-w-0"
+                className="flex items-center justify-center gap-1.5 sm:gap-2 md:gap-2.5 rounded-full bg-white/10 px-2.5 py-2 sm:px-3 sm:py-2 md:px-4 md:py-2.5 lg:px-6 lg:py-3 text-[8px] sm:text-[9px] md:text-[10px] lg:text-xs font-medium uppercase tracking-[0.05em] sm:tracking-[0.1em] md:tracking-[0.15em] lg:tracking-[0.2em] text-white/90 text-center backdrop-blur-xl flex-1 sm:flex-initial sm:min-w-0"
               >
                 <span className="text-white flex-shrink-0">{indicator.icon}</span>
                 <span className="text-center leading-tight break-words hyphens-auto">{indicator.label}</span>
@@ -97,21 +97,21 @@ export function Hero({ featuredListings, totalListings, totalSellers }: HeroProp
           </div>
 
           {(totalListings > 0 || totalSellers > 0) && (
-            <p className="mt-4 sm:mt-5 md:mt-6 text-[10px] sm:text-xs text-white/50 tracking-wide">
+            <p className="mt-4 sm:mt-5 md:mt-6 text-[10px] sm:text-xs text-white/70 tracking-wide">
               {totalListings > 0 && (
                 <span>
-                  <span className="font-semibold text-white/80">
+                  <span className="font-semibold text-white">
                     {totalListings.toLocaleString("sr-RS")}
                   </span>{" "}
                   aktivnih oglasa
                 </span>
               )}
               {totalListings > 0 && totalSellers > 0 && (
-                <span className="mx-2 text-white/30">·</span>
+                <span className="mx-2 text-white/50" aria-hidden="true">·</span>
               )}
               {totalSellers > 0 && (
                 <span>
-                  <span className="font-semibold text-white/80">
+                  <span className="font-semibold text-white">
                     {totalSellers.toLocaleString("sr-RS")}
                   </span>{" "}
                   prodavaca

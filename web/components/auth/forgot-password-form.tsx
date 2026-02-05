@@ -82,7 +82,7 @@ export function ForgotPasswordForm({ className }: { className?: string } = {}) {
           placeholder="email@example.com"
           disabled={loading}
           required
-          className="h-12 rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
+          className="h-12 rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-500 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
         />
         {errors.email && (
           <p className="text-sm text-destructive">{errors.email.message}</p>
