@@ -308,7 +308,7 @@ export function SignUpForm({ className }: SignUpFormProps = {}) {
                     onChange={(e) => setName(e.target.value)}
                     required
                     disabled={isBusy}
-                    className="h-12 min-h-[44px] rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
+                    className="h-12 min-h-[44px] rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-500 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
                   />
                 </div>
                 <div className="space-y-2">
@@ -325,7 +325,7 @@ export function SignUpForm({ className }: SignUpFormProps = {}) {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     disabled={isBusy}
-                    className="h-12 min-h-[44px] rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
+                    className="h-12 min-h-[44px] rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-500 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
                   />
                 </div>
               </>
@@ -344,7 +344,7 @@ export function SignUpForm({ className }: SignUpFormProps = {}) {
                     required
                     disabled={isBusy}
                     minLength={8}
-                    className="h-12 min-h-[44px] rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
+                    className="h-12 min-h-[44px] rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-500 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
                   />
                   <PasswordStrength password={password} />
                 </div>
@@ -360,7 +360,7 @@ export function SignUpForm({ className }: SignUpFormProps = {}) {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     disabled={isBusy}
-                    className="h-12 min-h-[44px] rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
+                    className="h-12 min-h-[44px] rounded-xl border-neutral-200 bg-white/90 text-base text-neutral-900 placeholder:text-neutral-500 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
                   />
                 </div>
               </>

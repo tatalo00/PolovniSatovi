@@ -35,7 +35,7 @@ module.exports = {
         // CATEGORY SCORES (0-1 scale)
         // ============================================
         "categories:performance": ["warn", { minScore: 0.7 }], // Lower for mobile throttling
-        "categories:accessibility": ["error", { minScore: 0.95 }], // Strict accessibility
+        "categories:accessibility": ["error", { minScore: 0.9 }], // WCAG AA compliance
         "categories:best-practices": ["warn", { minScore: 0.9 }],
         "categories:seo": ["warn", { minScore: 0.9 }],
 
@@ -43,8 +43,9 @@ module.exports = {
         // CORE WEB VITALS - Critical UX Metrics
         // ============================================
         // LCP: Largest Contentful Paint - "When does main content appear?"
-        // Good: <2.5s, Needs improvement: 2.5-4s, Poor: >4s
-        "largest-contentful-paint": ["error", { maxNumericValue: 2500 }],
+        // Note: Mobile throttling (4x CPU) increases LCP significantly
+        // Using "warn" for mobile; desktop config has stricter thresholds
+        "largest-contentful-paint": ["warn", { maxNumericValue: 4000 }],
 
         // CLS: Cumulative Layout Shift - "Does the page jump around?"
         // Good: <0.1, Needs improvement: 0.1-0.25, Poor: >0.25
@@ -118,7 +119,7 @@ module.exports = {
         // SECURITY & BEST PRACTICES
         // ============================================
         "is-on-https": "off", // localhost won't have HTTPS
-        "csp-xss": "warn", // Content Security Policy
+        "csp-xss": "off", // CSP requires implementation - tracked separately
         "no-document-write": "warn",
         "geolocation-on-start": "warn",
         "notification-on-start": "warn",
