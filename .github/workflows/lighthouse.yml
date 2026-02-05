@@ -9,6 +9,11 @@ on:
 jobs:
   lighthouse:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.DIRECT_URL }}
+      NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+      NEXTAUTH_URL: http://localhost:3001
     steps:
       - uses: actions/checkout@v4
 
@@ -23,15 +28,25 @@ jobs:
         run: npm ci
         working-directory: web
 
+      - name: Build
+        run: npm run build
+        working-directory: web
+
+      - name: Start server
+        run: npm run start &
+        working-directory: web
+
+      - name: Wait for server
+        run: npx wait-on http://localhost:3001 --timeout 60000
+
       - name: Run Lighthouse CI
         uses: treosh/lighthouse-ci-action@v11
         with:
+          urls: |
+            http://localhost:3001/
+            http://localhost:3001/listings
           configPath: "./lighthouserc.js"
           uploadArtifacts: true
           temporaryPublicStorage: true
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          DIRECT_URL: ${{ secrets.DIRECT_URL }}
-          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-          NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}

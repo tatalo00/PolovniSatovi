@@ -2,9 +2,7 @@ module.exports = {
   ci: {
     collect: {
       numberOfRuns: 3,
-      startServerCommand: "cd web && npm run build && npm run start",
-      startServerReadyPattern: "Ready in",
-      startServerReadyTimeout: 180000, // 3 minutes for build + start
+      // URLs provided by workflow or use defaults for local testing
       url: [
         "http://localhost:3001/",
         "http://localhost:3001/listings",
