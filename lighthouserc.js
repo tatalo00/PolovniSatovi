@@ -4,8 +4,8 @@ module.exports = {
       numberOfRuns: 3,
       // URLs provided by workflow or use defaults for local testing
       url: [
-        "http://localhost:3001/",
-        "http://localhost:3001/listings",
+        "http://localhost:3000/",
+        "http://localhost:3000/listings",
       ],
       settings: {
         preset: "desktop",

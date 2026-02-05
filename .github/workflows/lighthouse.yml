@@ -14,7 +14,9 @@ jobs:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       DIRECT_URL: ${{ secrets.DIRECT_URL }}
       NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-      NEXTAUTH_URL: http://localhost:3001
+      NEXTAUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -38,14 +40,14 @@ jobs:
         working-directory: web
 
       - name: Wait for server
-        run: npx wait-on http://localhost:3001 --timeout 60000
+        run: npx wait-on http://localhost:3000 --timeout 60000
 
       - name: Run Lighthouse CI
         uses: treosh/lighthouse-ci-action@v11
         with:
           urls: |
-            http://localhost:3001/
-            http://localhost:3001/listings
+            http://localhost:3000/
+            http://localhost:3000/listings
           configPath: "./lighthouserc.js"
           uploadArtifacts: true
           temporaryPublicStorage: true
