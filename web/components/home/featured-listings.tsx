@@ -38,7 +38,7 @@ export function FeaturedListings({ listings }: FeaturedListingsProps) {
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {listings.slice(0, 8).map((listing) => (
+          {listings.slice(0, 8).map((listing, index) => (
             <Link key={listing.id} href={`/listing/${listing.id}`}>
               <Card className="group h-full transition-all duration-200 hover:shadow-lg hover:border-primary/20">
                 <div className="relative aspect-square w-full overflow-hidden rounded-t-lg">
@@ -48,7 +48,8 @@ export function FeaturedListings({ listings }: FeaturedListingsProps) {
                       alt={listing.title}
                       fill
                       className="object-cover transition-transform duration-200 group-hover:scale-105"
-                      loading="lazy"
+                      priority={index < 2}
+                      loading={index < 2 ? undefined : "lazy"}
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                       placeholder="blur"
                       blurDataURL={BLUR_DATA_URL}

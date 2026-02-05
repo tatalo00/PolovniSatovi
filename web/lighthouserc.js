@@ -3,8 +3,8 @@ module.exports = {
     collect: {
       numberOfRuns: 3,
       startServerCommand: "npm run build && npm run start",
-      startServerReadyPattern: "ready on",
-      startServerReadyTimeout: 60000,
+      startServerReadyPattern: "Ready in",
+      startServerReadyTimeout: 180000, // 3 minutes for build + start
       url: [
         "http://localhost:3001/",
         "http://localhost:3001/listings",
