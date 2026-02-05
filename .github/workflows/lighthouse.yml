@@ -6,9 +6,17 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch: # Allow manual trigger
+  schedule:
+    # Run production tests weekly on Sunday at 6 AM UTC
+    - cron: "0 6 * * 0"
 
 jobs:
-  lighthouse:
+  # ============================================
+  # LOCALHOST TESTING - For PRs and pushes
+  # Tests built app before deployment
+  # ============================================
+  lighthouse-localhost:
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -42,14 +50,64 @@ jobs:
       - name: Wait for server
         run: npx wait-on http://localhost:3000 --timeout 60000
 
-      - name: Run Lighthouse CI
+      - name: Run Lighthouse CI (Mobile)
         uses: treosh/lighthouse-ci-action@v11
         with:
           urls: |
             http://localhost:3000/
             http://localhost:3000/listings
+            http://localhost:3000/auth/signin
           configPath: "./lighthouserc.js"
           uploadArtifacts: true
           temporaryPublicStorage: true
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+      - name: Run Lighthouse CI (Desktop)
+        uses: treosh/lighthouse-ci-action@v11
+        with:
+          urls: |
+            http://localhost:3000/
+            http://localhost:3000/listings
+          configPath: "./lighthouserc-desktop.js"
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+          artifactName: lighthouse-desktop
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+  # ============================================
+  # PRODUCTION TESTING - Weekly baseline
+  # Tests real-world performance
+  # ============================================
+  lighthouse-production:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Lighthouse CI (Production - Mobile)
+        uses: treosh/lighthouse-ci-action@v11
+        with:
+          urls: |
+            https://www.polovnisatovi.net/
+            https://www.polovnisatovi.net/listings
+          configPath: "./lighthouserc-production.js"
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+          artifactName: lighthouse-production-mobile
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+      - name: Run Lighthouse CI (Production - Desktop)
+        uses: treosh/lighthouse-ci-action@v11
+        with:
+          urls: |
+            https://www.polovnisatovi.net/
+            https://www.polovnisatovi.net/listings
+          configPath: "./lighthouserc-production-desktop.js"
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+          artifactName: lighthouse-production-desktop
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
