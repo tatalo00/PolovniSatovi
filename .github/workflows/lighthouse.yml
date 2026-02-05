@@ -9,9 +9,6 @@ on:
 jobs:
   lighthouse:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: web
     steps:
       - uses: actions/checkout@v4
 
@@ -24,12 +21,12 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+        working-directory: web
 
       - name: Run Lighthouse CI
         uses: treosh/lighthouse-ci-action@v11
         with:
-          configPath: "./web/lighthouserc.js"
-          workingDir: "./web"
+          configPath: "./lighthouserc.js"
           uploadArtifacts: true
           temporaryPublicStorage: true
         env:
