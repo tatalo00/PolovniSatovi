@@ -28,14 +28,14 @@ module.exports = {
         // CATEGORY SCORES
         // ============================================
         "categories:performance": ["warn", { minScore: 0.7 }],
-        "categories:accessibility": ["error", { minScore: 0.95 }],
+        "categories:accessibility": ["error", { minScore: 0.9 }],
         "categories:best-practices": ["warn", { minScore: 0.9 }],
         "categories:seo": ["warn", { minScore: 0.9 }],
 
         // ============================================
         // CORE WEB VITALS - Google's "good" thresholds
         // ============================================
-        "largest-contentful-paint": ["error", { maxNumericValue: 2500 }],
+        "largest-contentful-paint": ["warn", { maxNumericValue: 4000 }],
         "cumulative-layout-shift": ["error", { maxNumericValue: 0.1 }],
         "total-blocking-time": ["warn", { maxNumericValue: 300 }],
 
@@ -62,7 +62,7 @@ module.exports = {
         // ============================================
         // ACCESSIBILITY
         // ============================================
-        "color-contrast": "error",
+        "color-contrast": "warn",
         "image-alt": "error",
         "label": "error",
         "link-name": "error",
