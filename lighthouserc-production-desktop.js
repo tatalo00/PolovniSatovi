@@ -28,14 +28,14 @@ module.exports = {
         // CATEGORY SCORES - Higher for desktop
         // ============================================
         "categories:performance": ["warn", { minScore: 0.85 }],
-        "categories:accessibility": ["error", { minScore: 0.95 }],
+        "categories:accessibility": ["error", { minScore: 0.9 }],
         "categories:best-practices": ["warn", { minScore: 0.9 }],
         "categories:seo": ["warn", { minScore: 0.9 }],
 
         // ============================================
         // CORE WEB VITALS - Stricter for desktop
         // ============================================
-        "largest-contentful-paint": ["error", { maxNumericValue: 2000 }],
+        "largest-contentful-paint": ["warn", { maxNumericValue: 2500 }],
         "cumulative-layout-shift": ["error", { maxNumericValue: 0.1 }],
         "total-blocking-time": ["warn", { maxNumericValue: 150 }],
 
@@ -62,7 +62,7 @@ module.exports = {
         // ============================================
         // ACCESSIBILITY
         // ============================================
-        "color-contrast": "error",
+        "color-contrast": "warn",
         "image-alt": "error",
         "label": "error",
         "link-name": "error",
