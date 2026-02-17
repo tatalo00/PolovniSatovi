@@ -23,11 +23,13 @@ export async function POST(request: Request) {
     const params = getSignedUploadParams(folder || "listings");
 
     return NextResponse.json(params);
-  } catch (error: any) {
-    logger.error("Error generating upload signature", { error: error.message, stack: error.stack });
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : "Unknown error";
+    const errStack = error instanceof Error ? error.stack : undefined;
+    logger.error("Error generating upload signature", { error: errMessage, stack: errStack });
     
     // Check if it's an auth error
-    if (error.message?.includes("Unauthorized") || error.message?.includes("auth")) {
+    if (errMessage?.includes("Unauthorized") || errMessage?.includes("auth")) {
       return NextResponse.json(
         { error: "Morate biti prijavljeni da biste uploadovali slike" },
         { status: 401 }
@@ -35,7 +37,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(
-      { error: error.message || "Greška pri pripremi za upload. Pokušajte ponovo." },
+      { error: errMessage || "Greška pri pripremi za upload. Pokušajte ponovo." },
       { status: 500 }
     );
   }

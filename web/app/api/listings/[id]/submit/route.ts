@@ -73,16 +73,18 @@ export async function POST(
     logger.info("Listing submitted for approval", { listingId: id, userId });
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    logger.error("Error submitting listing", { error: error.message });
-    if (error.message === "Unauthorized") {
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : "Unknown error";
+    const errStack = error instanceof Error ? error.stack : undefined;
+    logger.error("Error submitting listing", { error: errMessage });
+    if (errMessage === "Unauthorized") {
       return NextResponse.json(
         { error: "Morate biti prijavljeni" },
         { status: 401 }
       );
     }
     return NextResponse.json(
-      { error: error.message || "Došlo je do greške" },
+      { error: errMessage || "Došlo je do greške" },
       { status: 500 }
     );
   }

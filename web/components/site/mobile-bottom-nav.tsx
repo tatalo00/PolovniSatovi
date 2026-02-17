@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Home, Search, PlusCircle, MessageSquare, User } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -14,8 +15,32 @@ interface MobileBottomNavProps {
   unreadCount?: number;
 }
 
-export function MobileBottomNav({ user, unreadCount = 0 }: MobileBottomNavProps) {
+export function MobileBottomNav({ user, unreadCount: initialCount = 0 }: MobileBottomNavProps) {
   const { pathname, isActive } = useActiveRoute();
+  const [unreadCount, setUnreadCount] = useState(initialCount);
+
+  // Poll unread count every 30s for logged-in users
+  useEffect(() => {
+    if (!user) return;
+
+    let active = true;
+    const poll = async () => {
+      try {
+        const res = await fetch("/api/messages/unread-count");
+        if (res.ok && active) {
+          const data = await res.json();
+          setUnreadCount(data.count ?? 0);
+        }
+      } catch {
+        // Silently fail — badge is non-critical
+      }
+    };
+
+    // Initial fetch after mount
+    poll();
+    const interval = setInterval(poll, 30_000);
+    return () => { active = false; clearInterval(interval); };
+  }, [user]);
 
   // Dashboard has its own mobile nav
   if (pathname.startsWith("/dashboard")) {

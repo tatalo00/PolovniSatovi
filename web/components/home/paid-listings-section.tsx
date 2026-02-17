@@ -1,7 +1,6 @@
 import type { Listing, ListingPhoto } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { unstable_cache } from "next/cache";
-import { CACHE_TAGS, REVALIDATE } from "@/lib/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import { PaidListings, type PaidListing } from "./featured-collections";
 
 type ListingWithPhotos = Listing & {
@@ -27,41 +26,36 @@ const formatEuroFromCents = (value?: number | null) => {
   return EURO_FORMATTER.format(value / 100);
 };
 
-const getPaidListings = unstable_cache(
-  async () => {
-    const listings = await prisma.listing.findMany({
-      where: { status: "APPROVED" },
-      include: {
-        photos: {
-          orderBy: { order: "asc" },
-          take: 1,
-        },
-        seller: {
-          select: {
-            isVerified: true,
-            sellerProfile: {
-              select: {
-                slug: true,
-              },
+async function getPaidListings() {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("listings");
+
+  return prisma.listing.findMany({
+    where: { status: "APPROVED" },
+    include: {
+      photos: {
+        orderBy: { order: "asc" },
+        take: 1,
+      },
+      seller: {
+        select: {
+          isVerified: true,
+          sellerProfile: {
+            select: {
+              slug: true,
             },
           },
         },
       },
-      orderBy: [
-        { priceEurCents: "desc" },
-        { createdAt: "desc" },
-      ],
-      take: 6,
-    });
-
-    return listings;
-  },
-  ["paid-listings"],
-  {
-    tags: [CACHE_TAGS.listings],
-    revalidate: REVALIDATE.MEDIUM,
-  }
-);
+    },
+    orderBy: [
+      { priceEurCents: "desc" },
+      { createdAt: "desc" },
+    ],
+    take: 6,
+  });
+}
 
 export async function PaidListingsSection() {
   let listingsRaw: ListingWithPhotos[] = [];

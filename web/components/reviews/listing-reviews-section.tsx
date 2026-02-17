@@ -84,8 +84,10 @@ export function ListingReviewsSection({
       setEditingReview(null);
       fetchReviews();
       toast.success(editingReview ? "Ocena je ažurirana!" : "Ocena je dodata!");
-    } catch (error: any) {
-      toast.error(error.message || "Došlo je do greške");
+    } catch (error: unknown) {
+      const errMessage = error instanceof Error ? error.message : "Unknown error";
+      const errStack = error instanceof Error ? error.stack : undefined;
+      toast.error(errMessage || "Došlo je do greške");
       throw error;
     }
   };
@@ -111,8 +113,10 @@ export function ListingReviewsSection({
       fetchReviews();
       setDeleteConfirmOpen(false);
       setReviewToDelete(null);
-    } catch (error: any) {
-      toast.error(error.message || "Došlo je do greške");
+    } catch (error: unknown) {
+      const errMessage = error instanceof Error ? error.message : "Unknown error";
+      const errStack = error instanceof Error ? error.stack : undefined;
+      toast.error(errMessage || "Došlo je do greške");
     }
   };
 

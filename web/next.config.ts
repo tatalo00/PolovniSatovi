@@ -39,6 +39,8 @@ const baseConfig: NextConfig = {
   reactCompiler: true,
   // Performance optimizations
   experimental: {
+    // Enable "use cache" directive for data caching
+    useCache: true,
     // Optimize package imports for better tree-shaking
     optimizePackageImports: [
       "lucide-react",

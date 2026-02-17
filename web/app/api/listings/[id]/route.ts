@@ -44,8 +44,10 @@ export async function GET(
     }
 
     return NextResponse.json(listing);
-  } catch (error: any) {
-    logger.error("Error fetching listing", { error: error.message });
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : "Unknown error";
+    const errStack = error instanceof Error ? error.stack : undefined;
+    logger.error("Error fetching listing", { error: errMessage });
     return NextResponse.json(
       { error: "Došlo je do greške" },
       { status: 500 }
@@ -259,9 +261,11 @@ export async function PATCH(
     logger.info("Listing updated", { listingId: id, userId });
 
     return NextResponse.json(updatedListing);
-  } catch (error: any) {
-    logger.error("Error updating listing", { error: error.message });
-    if (error.message === "Unauthorized") {
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : "Unknown error";
+    const errStack = error instanceof Error ? error.stack : undefined;
+    logger.error("Error updating listing", { error: errMessage });
+    if (errMessage === "Unauthorized") {
       return NextResponse.json(
         { error: "Morate biti prijavljeni" },
         { status: 401 }
@@ -320,9 +324,11 @@ export async function DELETE(
     logger.info("Listing deleted", { listingId: id, userId });
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    logger.error("Error deleting listing", { error: error.message });
-    if (error.message === "Unauthorized") {
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : "Unknown error";
+    const errStack = error instanceof Error ? error.stack : undefined;
+    logger.error("Error deleting listing", { error: errMessage });
+    if (errMessage === "Unauthorized") {
       return NextResponse.json(
         { error: "Morate biti prijavljeni" },
         { status: 401 }

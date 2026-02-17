@@ -1,28 +1,22 @@
 import { prisma } from "@/lib/prisma";
-import { unstable_cache } from "next/cache";
-import { CACHE_TAGS, REVALIDATE } from "@/lib/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import { QuickFilterBar } from "./quick-filter-bar";
 
-const getBrands = unstable_cache(
-  async () => {
-    const distinctBrands = await prisma.listing.findMany({
-      where: {
-        status: "APPROVED",
-      },
-      distinct: ["brand"],
-      select: { brand: true },
-    });
+async function getBrands() {
+  "use cache";
+  cacheLife("days");
+  cacheTag("listings");
 
-    return distinctBrands
-      .map((entry) => entry.brand)
-      .filter((brandName): brandName is string => Boolean(brandName));
-  },
-  ["quick-filter-brands"],
-  {
-    tags: [CACHE_TAGS.listings],
-    revalidate: REVALIDATE.MEDIUM,
-  }
-);
+  const distinctBrands = await prisma.listing.findMany({
+    where: { status: "APPROVED" },
+    distinct: ["brand"],
+    select: { brand: true },
+  });
+
+  return distinctBrands
+    .map((entry) => entry.brand)
+    .filter((brandName): brandName is string => Boolean(brandName));
+}
 
 export async function QuickFilterSection() {
   let availableBrands: string[] = [];

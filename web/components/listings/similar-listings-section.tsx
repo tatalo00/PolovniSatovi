@@ -1,4 +1,6 @@
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { CACHE_TAGS, REVALIDATE } from "@/lib/cache";
 import { AUTHENTICATION_STATUS } from "@/lib/authentication/status";
 import { ListingGrid } from "@/components/listings/listing-grid";
 import type { ListingSummary } from "@/types/listing";
@@ -10,55 +12,55 @@ interface SimilarListingsSectionProps {
   limit?: number;
 }
 
+const fetchSimilarListings = (listingId: string, brand: string, priceEurCents: number, limit: number) =>
+  unstable_cache(
+    () => prisma.listing.findMany({
+      where: {
+        status: "APPROVED",
+        id: { not: listingId },
+        OR: [
+          { brand: { equals: brand, mode: "insensitive" } },
+          {
+            priceEurCents: {
+              gte: Math.round(priceEurCents * 0.7),
+              lte: Math.round(priceEurCents * 1.3),
+            },
+          },
+        ],
+      },
+      include: {
+        photos: { orderBy: { order: "asc" }, take: 1 },
+        seller: {
+          select: {
+            name: true,
+            email: true,
+            locationCity: true,
+            locationCountry: true,
+            isVerified: true,
+            authentication: { select: { status: true } },
+            sellerProfile: {
+              select: {
+                slug: true, storeName: true, shortDescription: true,
+                logoUrl: true, ratingAvg: true, reviewCount: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+    }),
+    [`similar-listings-${listingId}`],
+    { tags: [CACHE_TAGS.listings], revalidate: REVALIDATE.MEDIUM }
+  )();
+
 export async function SimilarListingsSection({
   listingId,
   brand,
   priceEurCents,
   limit = 4,
 }: SimilarListingsSectionProps) {
-  const similarRaw = await prisma.listing.findMany({
-    where: {
-      status: "APPROVED",
-      id: { not: listingId },
-      OR: [
-        { brand: { equals: brand, mode: "insensitive" } },
-        {
-          priceEurCents: {
-            gte: Math.round(priceEurCents * 0.7),
-            lte: Math.round(priceEurCents * 1.3),
-          },
-        },
-      ],
-    },
-    include: {
-      photos: {
-        orderBy: { order: "asc" },
-        take: 1,
-      },
-      seller: {
-        select: {
-          name: true,
-          email: true,
-          locationCity: true,
-          locationCountry: true,
-          isVerified: true,
-          authentication: { select: { status: true } },
-          sellerProfile: {
-            select: {
-              slug: true,
-              storeName: true,
-              shortDescription: true,
-              logoUrl: true,
-              ratingAvg: true,
-              reviewCount: true,
-            },
-          },
-        },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-    take: limit,
-  });
+  const similarRaw = await fetchSimilarListings(listingId, brand, priceEurCents, limit);
 
   if (similarRaw.length === 0) return null;
 

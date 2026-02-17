@@ -103,9 +103,11 @@ export function ImageUpload({
     try {
       const uploadedUrls = await Promise.all(uploadPromises);
       onChange([...value, ...uploadedUrls]);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errMessage = error instanceof Error ? error.message : "Unknown error";
+      const errStack = error instanceof Error ? error.stack : undefined;
       console.error("Upload error:", error);
-      const errorMessage = error.message || "Greška pri uploadu slika. Pokušajte ponovo.";
+      const errorMessage = errMessage || "Greška pri uploadu slika. Pokušajte ponovo.";
       toast.error(errorMessage);
       // Reset file input
       if (fileInputRef.current) {

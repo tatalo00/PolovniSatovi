@@ -6,6 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { updateSellerResponseTime } from "@/lib/seller-response-time";
 import { sendNewMessageEmail } from "@/lib/email";
+import { revalidateTag } from "next/cache";
+import { CACHE_TAGS } from "@/lib/cache";
 import { z } from "zod";
 
 const INACTIVITY_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
@@ -61,15 +63,17 @@ export async function GET(request: Request, { params }: RouteParams) {
     });
 
     return NextResponse.json(messages);
-  } catch (error: any) {
-    if (error.message === "Unauthorized") {
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : "Unknown error";
+    const errStack = error instanceof Error ? error.stack : undefined;
+    if (errMessage === "Unauthorized") {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       );
     }
     // Handle database connection errors
-    if (error.code === "P1001" || error.name === "PrismaClientInitializationError") {
+    if ((error as any).code === "P1001" || (error as any).name === "PrismaClientInitializationError") {
       logger.error("Database connection error", { error });
       return NextResponse.json(
         { error: "Greška pri povezivanju sa bazom podataka. Molimo pokušajte ponovo." },
@@ -152,8 +156,11 @@ export async function POST(request: Request, { params }: RouteParams) {
       );
     }
 
-    // Send email notification to recipient (async, fire-and-forget)
+    // Invalidate unread count cache for the recipient
     const recipientId = thread.buyerId === userId ? thread.sellerId : thread.buyerId;
+    revalidateTag(CACHE_TAGS.user(recipientId), "seconds");
+
+    // Send email notification to recipient (async, fire-and-forget)
     notifyRecipient({
       recipientId,
       senderName: message.sender.name || "Korisnik",
@@ -165,8 +172,10 @@ export async function POST(request: Request, { params }: RouteParams) {
     );
 
     return NextResponse.json(message, { status: 201 });
-  } catch (error: any) {
-    if (error.message === "Unauthorized") {
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : "Unknown error";
+    const errStack = error instanceof Error ? error.stack : undefined;
+    if (errMessage === "Unauthorized") {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -179,7 +188,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       );
     }
     // Handle database connection errors
-    if (error.code === "P1001" || error.name === "PrismaClientInitializationError") {
+    if ((error as any).code === "P1001" || (error as any).name === "PrismaClientInitializationError") {
       logger.error("Database connection error", { error });
       return NextResponse.json(
         { error: "Greška pri povezivanju sa bazom podataka. Molimo pokušajte ponovo." },

@@ -1,4 +1,6 @@
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { CACHE_TAGS, REVALIDATE } from "@/lib/cache";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   MessageSquare,
@@ -15,36 +17,43 @@ interface ActivityFeedProps {
   userId: string;
 }
 
+const getActivityData = (userId: string) =>
+  unstable_cache(
+    () => Promise.all([
+      prisma.message.findMany({
+        where: {
+          thread: { OR: [{ buyerId: userId }, { sellerId: userId }] },
+          senderId: { not: userId },
+        },
+        include: {
+          sender: { select: { name: true } },
+          thread: { select: { id: true, listing: { select: { title: true } } } },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      }),
+      prisma.listing.findMany({
+        where: { sellerId: userId, status: { in: ["APPROVED", "REJECTED"] } },
+        select: { id: true, title: true, status: true, updatedAt: true },
+        orderBy: { updatedAt: "desc" },
+        take: 5,
+      }),
+      prisma.favorite.findMany({
+        where: { listing: { sellerId: userId } },
+        include: {
+          user: { select: { name: true } },
+          listing: { select: { title: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      }),
+    ]),
+    [`activity-feed-${userId}`],
+    { tags: [CACHE_TAGS.user(userId)], revalidate: REVALIDATE.INSTANT }
+  )();
+
 export async function ActivityFeed({ userId }: ActivityFeedProps) {
-  const [recentMessages, recentStatusChanges, recentFavorites] = await Promise.all([
-    prisma.message.findMany({
-      where: {
-        thread: { OR: [{ buyerId: userId }, { sellerId: userId }] },
-        senderId: { not: userId },
-      },
-      include: {
-        sender: { select: { name: true } },
-        thread: { select: { id: true, listing: { select: { title: true } } } },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 5,
-    }),
-    prisma.listing.findMany({
-      where: { sellerId: userId, status: { in: ["APPROVED", "REJECTED"] } },
-      select: { id: true, title: true, status: true, updatedAt: true },
-      orderBy: { updatedAt: "desc" },
-      take: 5,
-    }),
-    prisma.favorite.findMany({
-      where: { listing: { sellerId: userId } },
-      include: {
-        user: { select: { name: true } },
-        listing: { select: { title: true } },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 5,
-    }),
-  ]);
+  const [recentMessages, recentStatusChanges, recentFavorites] = await getActivityData(userId);
 
   const activities = [
     ...recentMessages.map((m) => ({

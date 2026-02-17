@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { getUnreadMessageCount } from "@/lib/messages";
 import { DashboardSidebar } from "@/components/dashboard/sidebar";
 import { DashboardMobileNav } from "@/components/dashboard/mobile-nav";
 
@@ -14,15 +14,8 @@ export default async function DashboardLayout({
 
   const userId = session.user.id;
 
-  const unreadCount = await prisma.message.count({
-    where: {
-      thread: {
-        OR: [{ buyerId: userId }, { sellerId: userId }],
-      },
-      senderId: { not: userId },
-      readAt: null,
-    },
-  });
+  // Cached unread message count (30s TTL, shared with root layout)
+  const unreadCount = await getUnreadMessageCount(userId);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-[#FAFAFA] to-background">

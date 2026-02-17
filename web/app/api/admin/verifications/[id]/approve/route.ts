@@ -75,13 +75,15 @@ export async function POST(
     revalidatePath(`/sellers/${application.userId}`);
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : "Unknown error";
+    const errStack = error instanceof Error ? error.stack : undefined;
     logger.error("Error approving seller application", {
-      error: error.message,
-      stack: error.stack,
+      error: errMessage,
+      stack: errStack,
     });
 
-    if (error.message === "Unauthorized") {
+    if (errMessage === "Unauthorized") {
       return NextResponse.json({ error: "Nemate dozvolu" }, { status: 403 });
     }
 

@@ -373,13 +373,15 @@ async function testDuplicateReviewPrevented() {
       
       logResult("Duplicate review prevented", false, 
         "Duplicate review should have been rejected");
-    } catch (error: any) {
-      if (error.code === "P2002") {
+    } catch (error: unknown) {
+      const errMessage = error instanceof Error ? error.message : "Unknown error";
+      const errStack = error instanceof Error ? error.stack : undefined;
+      if ((error as any).code === "P2002") {
         logResult("Duplicate review prevented", true, 
           "Correctly prevented duplicate review (unique constraint violation)");
       } else {
         logResult("Duplicate review prevented", false, 
-          `Unexpected error: ${error.message}`);
+          `Unexpected error: ${errMessage}`);
       }
     }
   } catch (error) {
@@ -874,14 +876,16 @@ async function testDuplicateFavoriteHandled() {
       
       logResult("Duplicate favorite handled gracefully", false, 
         "Duplicate favorite should have been rejected");
-    } catch (error: any) {
-      if (error.code === "P2002") {
+    } catch (error: unknown) {
+      const errMessage = error instanceof Error ? error.message : "Unknown error";
+      const errStack = error instanceof Error ? error.stack : undefined;
+      if ((error as any).code === "P2002") {
         // This is expected - the API handles this by returning success
         logResult("Duplicate favorite handled gracefully", true, 
           "Correctly handles duplicate favorite (unique constraint, API returns 200)");
       } else {
         logResult("Duplicate favorite handled gracefully", false, 
-          `Unexpected error: ${error.message}`);
+          `Unexpected error: ${errMessage}`);
       }
     }
   } catch (error) {

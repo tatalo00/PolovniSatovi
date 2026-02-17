@@ -50,9 +50,11 @@ export function ForgotPasswordForm({ className }: { className?: string } = {}) {
 
       setSuccess(true);
       toast.success("Email je poslat! Proverite vašu email adresu.");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errMessage = error instanceof Error ? error.message : "Unknown error";
+      const errStack = error instanceof Error ? error.stack : undefined;
       console.error("Error:", error);
-      toast.error(error.message || "Došlo je do greške. Pokušajte ponovo.");
+      toast.error(errMessage || "Došlo je do greške. Pokušajte ponovo.");
     } finally {
       setLoading(false);
     }

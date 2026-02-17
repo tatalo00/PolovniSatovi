@@ -85,15 +85,17 @@ export async function GET(request: Request, { params }: RouteParams) {
     trackUserActivity(userId).catch(() => {});
 
     return NextResponse.json(thread);
-  } catch (error: any) {
-    if (error.message === "Unauthorized") {
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : "Unknown error";
+    const errStack = error instanceof Error ? error.stack : undefined;
+    if (errMessage === "Unauthorized") {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       );
     }
     // Handle database connection errors
-    if (error.code === "P1001" || error.name === "PrismaClientInitializationError") {
+    if ((error as any).code === "P1001" || (error as any).name === "PrismaClientInitializationError") {
       logger.error("Database connection error", { error });
       return NextResponse.json(
         { error: "Greška pri povezivanju sa bazom podataka. Molimo pokušajte ponovo." },

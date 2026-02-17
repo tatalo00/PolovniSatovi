@@ -115,8 +115,10 @@ export async function POST(request: Request) {
     await updateSellerRating(sellerId);
 
     return NextResponse.json(review, { status: 201 });
-  } catch (error: any) {
-    if (error.message === "Unauthorized") {
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : "Unknown error";
+    const errStack = error instanceof Error ? error.stack : undefined;
+    if (errMessage === "Unauthorized") {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -128,7 +130,7 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    if (error.code === "P2002") {
+    if ((error as any).code === "P2002") {
       return NextResponse.json(
         { error: "Već ste ocenili ovog prodavca za ovaj oglas" },
         { status: 400 }

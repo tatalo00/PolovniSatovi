@@ -50,9 +50,11 @@ export function ContactSellerForm({
 
       // Redirect to the thread
       router.push(`/dashboard/messages/${thread.id}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errMessage = error instanceof Error ? error.message : "Unknown error";
+      const errStack = error instanceof Error ? error.stack : undefined;
       console.error("Error creating thread:", error);
-      toast.error(error.message || "Došlo je do greške. Pokušajte ponovo.");
+      toast.error(errMessage || "Došlo je do greške. Pokušajte ponovo.");
       setLoading(false);
     }
   };

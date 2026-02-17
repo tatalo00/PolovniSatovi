@@ -1,7 +1,6 @@
 import type { Listing, ListingPhoto } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { unstable_cache } from "next/cache";
-import { CACHE_TAGS, REVALIDATE } from "@/lib/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import { RecentListings } from "./recent-listings";
 
 type ListingWithRelations = Listing & {
@@ -16,40 +15,35 @@ type ListingWithRelations = Listing & {
   } | null;
 };
 
-const getRecentListings = unstable_cache(
-  async () => {
-    const listings = await prisma.listing.findMany({
-      where: { status: "APPROVED" },
-      include: {
-        photos: {
-          orderBy: { order: "asc" },
-          take: 1,
-        },
-        seller: {
-          select: {
-            locationCity: true,
-            locationCountry: true,
-            isVerified: true,
-            sellerProfile: {
-              select: {
-                slug: true,
-              },
+async function getRecentListings() {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("listings");
+
+  return prisma.listing.findMany({
+    where: { status: "APPROVED" },
+    include: {
+      photos: {
+        orderBy: { order: "asc" },
+        take: 1,
+      },
+      seller: {
+        select: {
+          locationCity: true,
+          locationCountry: true,
+          isVerified: true,
+          sellerProfile: {
+            select: {
+              slug: true,
             },
           },
         },
       },
-      orderBy: { createdAt: "desc" },
-      take: 12,
-    });
-
-    return listings;
-  },
-  ["recent-listings"],
-  {
-    tags: [CACHE_TAGS.listings],
-    revalidate: REVALIDATE.MEDIUM,
-  }
-);
+    },
+    orderBy: { createdAt: "desc" },
+    take: 12,
+  });
+}
 
 export async function RecentListingsSection() {
   let listingsRaw: ListingWithRelations[] = [];

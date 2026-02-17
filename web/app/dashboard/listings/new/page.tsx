@@ -1,7 +1,12 @@
+import dynamic from "next/dynamic";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { ListingWizard } from "@/components/listings/listing-wizard";
 import { Plus, Watch } from "lucide-react";
+
+const ListingWizard = dynamic(
+  () => import("@/components/listings/listing-wizard").then(mod => ({ default: mod.ListingWizard })),
+  { ssr: true, loading: () => <div className="h-96 animate-pulse rounded-lg bg-muted" /> }
+);
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";

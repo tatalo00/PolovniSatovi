@@ -78,13 +78,15 @@ export async function POST(
     logger.info("Listing rejected", { listingId: id, reason });
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : "Unknown error";
+    const errStack = error instanceof Error ? error.stack : undefined;
     logger.error("Error rejecting listing", {
-      error: error.message,
-      stack: error.stack,
+      error: errMessage,
+      stack: errStack,
     });
 
-    if (error.message === "Unauthorized" || error.message === "Forbidden") {
+    if (errMessage === "Unauthorized" || errMessage === "Forbidden") {
       return NextResponse.json(
         { error: "Nemate dozvolu za ovu akciju" },
         { status: 403 }

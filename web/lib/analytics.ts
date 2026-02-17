@@ -1,5 +1,3 @@
-"use client";
-
 // Simple analytics tracking
 // In production, integrate with Google Analytics, Mixpanel, etc.
 

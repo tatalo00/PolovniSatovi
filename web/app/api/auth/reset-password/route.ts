@@ -80,8 +80,10 @@ export async function POST(request: Request) {
       success: true,
       message: "Šifra je uspešno promenjena. Možete se sada prijaviti.",
     });
-  } catch (error: any) {
-    logger.error("Error resetting password", { error: error.message });
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : "Unknown error";
+    const errStack = error instanceof Error ? error.stack : undefined;
+    logger.error("Error resetting password", { error: errMessage });
     return NextResponse.json(
       { error: "Došlo je do greške. Pokušajte ponovo." },
       { status: 500 }
