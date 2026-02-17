@@ -51,9 +51,11 @@ export function MessageComposer({ threadId, onMessageSent, isFirstMessage }: Mes
 
       setMessage("");
       onMessageSent?.();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errMessage = error instanceof Error ? error.message : "Unknown error";
+      const errStack = error instanceof Error ? error.stack : undefined;
       console.error("Error sending message:", error);
-      toast.error(error.message || "Došlo je do greške. Pokušajte ponovo.");
+      toast.error(errMessage || "Došlo je do greške. Pokušajte ponovo.");
     } finally {
       setLoading(false);
     }

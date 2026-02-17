@@ -1,7 +1,12 @@
+import dynamic from "next/dynamic";
 import { ListingStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { AdminListingQueue } from "@/components/admin/admin-listing-queue";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+
+const AdminListingQueue = dynamic(
+  () => import("@/components/admin/admin-listing-queue").then(mod => ({ default: mod.AdminListingQueue })),
+  { ssr: true, loading: () => <div className="h-64 animate-pulse rounded-lg bg-muted" /> }
+);
 
 export const metadata = {
   title: "Oglasi za odobrenje",

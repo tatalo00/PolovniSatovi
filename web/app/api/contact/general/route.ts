@@ -65,8 +65,10 @@ export async function POST(request: Request) {
 
     logger.info("General contact email sent successfully", { name, email, subject });
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    logger.error("Error handling general contact form", { error: error?.message });
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : "Unknown error";
+    const errStack = error instanceof Error ? error.stack : undefined;
+    logger.error("Error handling general contact form", { error: errMessage });
     return NextResponse.json(
       { error: "Došlo je do neočekivane greške. Pokušajte ponovo kasnije." },
       { status: 500 }

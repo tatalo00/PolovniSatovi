@@ -1,7 +1,6 @@
 import type { Listing, ListingPhoto } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { unstable_cache } from "next/cache";
-import { CACHE_TAGS, REVALIDATE } from "@/lib/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import { Hero } from "./hero";
 
 type ListingWithRelations = Listing & {
@@ -12,53 +11,50 @@ type ListingWithRelations = Listing & {
   } | null;
 };
 
-const getHeroData = unstable_cache(
-  async () => {
-    const [featuredResult, counts] = await Promise.all([
-      prisma.listing.findMany({
-        where: { status: "APPROVED" },
-        include: {
-          photos: {
-            orderBy: { order: "asc" },
-            take: 1,
+async function getHeroData() {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("listings");
+
+  const [featuredResult, counts] = await Promise.all([
+    prisma.listing.findMany({
+      where: { status: "APPROVED" },
+      include: {
+        photos: {
+          orderBy: { order: "asc" },
+          take: 1,
+        },
+        seller: {
+          select: {
+            locationCity: true,
+            locationCountry: true,
           },
-          seller: {
-            select: {
-              locationCity: true,
-              locationCountry: true,
+        },
+      },
+      orderBy: [
+        { priceEurCents: "desc" },
+        { createdAt: "desc" },
+      ],
+      take: 5,
+    }),
+    Promise.all([
+      prisma.listing.count({
+        where: { status: "APPROVED" },
+      }),
+      prisma.user.count({
+        where: {
+          listings: {
+            some: {
+              status: "APPROVED",
             },
           },
         },
-        orderBy: [
-          { priceEurCents: "desc" },
-          { createdAt: "desc" },
-        ],
-        take: 5,
       }),
-      Promise.all([
-        prisma.listing.count({
-          where: { status: "APPROVED" },
-        }),
-        prisma.user.count({
-          where: {
-            listings: {
-              some: {
-                status: "APPROVED",
-              },
-            },
-          },
-        }),
-      ]),
-    ]);
+    ]),
+  ]);
 
-    return { featuredResult, counts };
-  },
-  ["hero-data"],
-  {
-    tags: [CACHE_TAGS.listings],
-    revalidate: REVALIDATE.MEDIUM,
-  }
-);
+  return { featuredResult, counts };
+}
 
 export async function HeroSection() {
   let featuredRaw: ListingWithRelations[] = [];
@@ -83,11 +79,31 @@ export async function HeroSection() {
     photoUrl: listing.photos[0]?.url,
   }));
 
+  // Determine the hero image URL for preloading
+  const heroImageSrc =
+    featuredListings.find((l) => l.photoUrl)?.photoUrl ??
+    "/images/hero-pocket-watch.jpg";
+
+  // Build the preload href through Next.js image optimizer
+  const preloadHref = heroImageSrc.startsWith("/")
+    ? `/_next/image?url=${encodeURIComponent(heroImageSrc)}&w=1920&q=75`
+    : `/_next/image?url=${encodeURIComponent(heroImageSrc)}&w=1920&q=75`;
+
   return (
-    <Hero
-      featuredListings={featuredListings}
-      totalListings={totalListings}
-      totalSellers={totalSellers}
-    />
+    <>
+      {/* React 19 hoists <link> to <head> automatically */}
+      <link
+        rel="preload"
+        as="image"
+        href={preloadHref}
+        // @ts-expect-error -- fetchpriority is valid HTML but not yet in React types
+        fetchpriority="high"
+      />
+      <Hero
+        featuredListings={featuredListings}
+        totalListings={totalListings}
+        totalSellers={totalSellers}
+      />
+    </>
   );
 }

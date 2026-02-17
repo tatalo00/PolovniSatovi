@@ -1,5 +1,3 @@
-"use client";
-
 import { formatPriceWithConversion, Currency } from "@/lib/currency";
 
 interface PriceDisplayProps {

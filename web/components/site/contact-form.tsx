@@ -88,8 +88,10 @@ export function ContactForm() {
         subject: values.subject,
         message: "",
       });
-    } catch (error: any) {
-      toast.error(error?.message || "Nije moguće poslati poruku. Pokušajte ponovo kasnije.");
+    } catch (error: unknown) {
+      const errMessage = error instanceof Error ? error.message : "Unknown error";
+      const errStack = error instanceof Error ? error.stack : undefined;
+      toast.error(errMessage || "Nije moguće poslati poruku. Pokušajte ponovo kasnije.");
     } finally {
       setIsSubmitting(false);
     }

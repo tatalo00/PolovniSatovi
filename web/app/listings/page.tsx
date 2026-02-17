@@ -22,7 +22,12 @@ export default async function ListingsPage({
   searchParams: Promise<IncomingSearchParams>;
 }) {
   const params = await searchParams;
-  const session = await auth();
+
+  // Parallel: fetch listings data and auth session
+  const [listingsData, session] = await Promise.all([
+    getListings(params),
+    auth(),
+  ]);
 
   const {
     listings,
@@ -31,10 +36,10 @@ export default async function ListingsPage({
     popularBrands,
     currentPage,
     normalizedParams,
-  } = await getListings(params);
+  } = listingsData;
 
+  // Fetch favorites in parallel with session (already resolved above)
   let favoriteIds: string[] = [];
-
   if (session?.user?.id) {
     try {
       const favorites = await prisma.favorite.findMany({
@@ -48,6 +53,7 @@ export default async function ListingsPage({
   }
 
   const clientSearchParams: Record<string, string | undefined> = {
+    q: normalizedParams.q,
     brand: normalizedParams.brand?.join(","),
     model: normalizedParams.model,
     reference: normalizedParams.reference,

@@ -66,8 +66,10 @@ export async function POST(request: Request) {
 
     logger.info("Contact email sent successfully", { listingId, sellerEmail, buyerEmail });
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    logger.error("Error sending contact message", { error: error.message, stack: error.stack });
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : "Unknown error";
+    const errStack = error instanceof Error ? error.stack : undefined;
+    logger.error("Error sending contact message", { error: errMessage, stack: errStack });
     return NextResponse.json(
       { error: "Došlo je do greške pri slanju poruke" },
       { status: 500 }

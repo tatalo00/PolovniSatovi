@@ -70,10 +70,12 @@ try {
   });
   console.log("✅ Database connection successful!");
   console.log("\n" + output);
-} catch (error: any) {
-  const stdout = (error.stdout || "").toString();
-  const stderr = (error.stderr || "").toString();
-  const errorOutput = stdout + stderr + (error.message || "");
+} catch (error: unknown) {
+  const errMessage = error instanceof Error ? error.message : "Unknown error";
+  const errStack = error instanceof Error ? error.stack : undefined;
+  const stdout = ((error as any).stdout || "").toString();
+  const stderr = ((error as any).stderr || "").toString();
+  const errorOutput = stdout + stderr + (errMessage || "");
   
   // Check if it's a connection error
   if (errorOutput.includes("P1001") || errorOutput.includes("Can't reach database")) {
@@ -95,8 +97,8 @@ try {
     console.error("   Then retry: npm run prisma:migrate:deploy");
   } else {
     console.error("❌ Error checking migration status");
-    if (error.stdout) console.error("   stdout:", error.stdout.toString().substring(0, 200));
-    if (error.stderr) console.error("   stderr:", error.stderr.toString().substring(0, 200));
+    if ((error as any).stdout) console.error("   stdout:", (error as any).stdout.toString().substring(0, 200));
+    if ((error as any).stderr) console.error("   stderr:", (error as any).stderr.toString().substring(0, 200));
   }
 }
 
@@ -112,8 +114,10 @@ try {
   });
   console.log("✅ Can introspect database schema");
   console.log("   (Run 'npm run prisma:migrate:status' to see detailed migration status)");
-} catch (error: any) {
-  const errorOutput = (error.stdout || error.stderr || error.message || "").toString();
+} catch (error: unknown) {
+  const errMessage = error instanceof Error ? error.message : "Unknown error";
+  const errStack = error instanceof Error ? error.stack : undefined;
+  const errorOutput = ((error as any).stdout || (error as any).stderr || errMessage || "").toString();
   if (errorOutput.includes("P1001") || errorOutput.includes("Can't reach database")) {
     console.warn("⚠️  Skipping schema drift check (database connection failed)");
   } else {

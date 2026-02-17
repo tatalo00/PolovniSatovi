@@ -54,13 +54,15 @@ export async function PATCH(
     logger.info("Report status updated", { reportId: id, status });
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : "Unknown error";
+    const errStack = error instanceof Error ? error.stack : undefined;
     logger.error("Error updating report status", {
-      error: error.message,
-      stack: error.stack,
+      error: errMessage,
+      stack: errStack,
     });
 
-    if (error.message === "Unauthorized" || error.message === "Forbidden") {
+    if (errMessage === "Unauthorized" || errMessage === "Forbidden") {
       return NextResponse.json(
         { error: "Nemate dozvolu za ovu akciju" },
         { status: 403 }
@@ -68,7 +70,7 @@ export async function PATCH(
     }
 
     return NextResponse.json(
-      { error: error.message || "Došlo je do greške. Pokušajte ponovo." },
+      { error: errMessage || "Došlo je do greške. Pokušajte ponovo." },
       { status: 500 }
     );
   }

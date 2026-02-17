@@ -104,10 +104,12 @@ export async function PATCH(request: Request) {
     logger.info("User profile updated", { userId });
 
     return NextResponse.json(updatedUser);
-  } catch (error: any) {
-    logger.error("Error updating profile", { error: error.message });
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : "Unknown error";
+    const errStack = error instanceof Error ? error.stack : undefined;
+    logger.error("Error updating profile", { error: errMessage });
     return NextResponse.json(
-      { error: error.message || "Došlo je do greške" },
+      { error: errMessage || "Došlo je do greške" },
       { status: 500 }
     );
   }

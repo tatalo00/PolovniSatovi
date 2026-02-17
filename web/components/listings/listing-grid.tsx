@@ -186,6 +186,7 @@ const ListingGridCard = memo(function ListingGridCard({
               fill
               className="object-cover transition-transform duration-500 group-hover:scale-105"
               priority={isPriority}
+              fetchPriority={isPriority ? "high" : undefined}
               loading={isPriority ? undefined : "lazy"}
               sizes={imageSizes}
               placeholder="blur"

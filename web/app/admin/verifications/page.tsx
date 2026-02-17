@@ -1,7 +1,12 @@
+import dynamic from "next/dynamic";
 import { prisma } from "@/lib/prisma";
 import { SellerApplicationStatus } from "@prisma/client";
-import { AdminVerificationsList } from "@/components/admin/admin-verifications-list";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+
+const AdminVerificationsList = dynamic(
+  () => import("@/components/admin/admin-verifications-list").then(mod => ({ default: mod.AdminVerificationsList })),
+  { ssr: true, loading: () => <div className="h-64 animate-pulse rounded-lg bg-muted" /> }
+);
 
 export const metadata = {
   title: "Verified Prodavci - Prijave",

@@ -131,8 +131,10 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json(results.map((row) => row.model).filter(Boolean));
-  } catch (error: any) {
-    logger.error("Listing suggestion error", { error: error?.message });
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : "Unknown error";
+    const errStack = error instanceof Error ? error.stack : undefined;
+    logger.error("Listing suggestion error", { error: errMessage });
     return NextResponse.json(
       { error: "Došlo je do greške pri učitavanju sugestija" },
       { status: 500 }

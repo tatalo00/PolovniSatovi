@@ -73,6 +73,22 @@ type ListingWithSellerDetail = Prisma.ListingGetPayload<{
 // Revalidate listing pages every 5 minutes
 export const revalidate = 300;
 
+// Pre-render the most popular listings at build time
+export async function generateStaticParams() {
+  try {
+    const listings = await prisma.listing.findMany({
+      where: { status: "APPROVED" },
+      select: { id: true },
+      orderBy: { viewCount: "desc" },
+      take: 100,
+    });
+    return listings.map((listing) => ({ id: listing.id }));
+  } catch {
+    // DB unavailable at build time — ISR will handle at runtime
+    return [];
+  }
+}
+
 interface ListingPageProps {
   params: Promise<{ id: string }>;
 }
@@ -179,19 +195,13 @@ export default async function ListingPage({ params }: ListingPageProps) {
 
   const viewerId = session?.user?.id;
 
-  let isFavorited = false;
-  if (viewerId) {
-    const favorite = await prisma.favorite.findUnique({
-      where: {
-        userId_listingId: {
-          userId: viewerId,
-          listingId: id,
-        },
-      },
-      select: { id: true },
-    });
-    isFavorited = Boolean(favorite);
-  }
+  // Check if current user has favorited (runs after auth resolves, lightweight indexed query)
+  const isFavorited = viewerId
+    ? Boolean(await prisma.favorite.findUnique({
+        where: { userId_listingId: { userId: viewerId, listingId: id } },
+        select: { id: true },
+      }))
+    : false;
 
   // Seller stats
   const sellerProfile = listing.seller.sellerProfile;

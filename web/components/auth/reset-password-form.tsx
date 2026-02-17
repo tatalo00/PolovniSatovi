@@ -63,9 +63,11 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
       setTimeout(() => {
         router.push("/auth/signin");
       }, 3000);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errMessage = error instanceof Error ? error.message : "Unknown error";
+      const errStack = error instanceof Error ? error.stack : undefined;
       console.error("Error:", error);
-      toast.error(error.message || "Došlo je do greške. Pokušajte ponovo.");
+      toast.error(errMessage || "Došlo je do greške. Pokušajte ponovo.");
     } finally {
       setLoading(false);
     }

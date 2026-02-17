@@ -1,7 +1,12 @@
+import dynamic from "next/dynamic";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { MessageThreadList } from "@/components/messages/message-thread-list";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+
+const MessageThreadList = dynamic(
+  () => import("@/components/messages/message-thread-list").then(mod => ({ default: mod.MessageThreadList })),
+  { ssr: true, loading: () => <div className="h-64 animate-pulse rounded-lg bg-muted" /> }
+);
 
 export default async function MessagesPage() {
   const session = await auth();

@@ -1,5 +1,3 @@
-"use client";
-
 // Supported currencies
 export type Currency = "EUR" | "RSD";
 

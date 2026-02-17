@@ -28,6 +28,7 @@ export type ListingWithSeller = Prisma.ListingGetPayload<{
 }>;
 
 export interface IncomingSearchParams {
+  q?: string | string[];
   brand?: string | string[];
   model?: string | string[];
   reference?: string | string[];
@@ -53,6 +54,7 @@ export interface IncomingSearchParams {
 }
 
 export type NormalizedParams = {
+  q?: string;
   brand?: string[];
   model?: string;
   reference?: string;
@@ -90,6 +92,11 @@ const getFirstValue = (value?: string | string[]): string | undefined => {
 
 export const normalizeSearchParams = (params: IncomingSearchParams): NormalizedParams => {
   const normalized: NormalizedParams = {};
+
+  const q = getFirstValue(params.q);
+  if (q && q.length <= 100) {
+    normalized.q = q;
+  }
 
   const brands = parseMultiParam(params.brand);
   if (brands.length) {
@@ -403,6 +410,33 @@ const removeVerifiedFilter = (
   return clone;
 };
 
+/**
+ * Full-text search using PostgreSQL tsvector + GIN index.
+ * Returns matching listing IDs ranked by relevance, or null if no query.
+ */
+async function getFullTextSearchIds(query: string): Promise<string[] | null> {
+  if (!query.trim()) return null;
+
+  // Sanitize: remove special tsquery characters, keep alphanumeric + spaces
+  const sanitized = query.replace(/[^\w\s\u00C0-\u024F-]/g, "").trim();
+  if (!sanitized) return null;
+
+  try {
+    const results = await prisma.$queryRaw<Array<{ id: string }>>`
+      SELECT id
+      FROM "Listing"
+      WHERE status = 'APPROVED'
+        AND search_vector @@ websearch_to_tsquery('simple', immutable_unaccent(${sanitized}))
+      ORDER BY ts_rank(search_vector, websearch_to_tsquery('simple', immutable_unaccent(${sanitized}))) DESC
+      LIMIT 500
+    `;
+    return results.map((r) => r.id);
+  } catch {
+    // Fallback: if full-text search fails (e.g. invalid query), return null to use ILIKE
+    return null;
+  }
+}
+
 async function fetchListingsData(params: IncomingSearchParams) {
   const normalizedParams = normalizeSearchParams(params);
   const page = parseInt(normalizedParams.page ?? "1", 10);
@@ -411,6 +445,26 @@ async function fetchListingsData(params: IncomingSearchParams) {
   const offset = (currentPage - 1) * limit;
 
   const where = buildWhereClause(normalizedParams);
+
+  // If free-text search is active, pre-filter by full-text search IDs
+  if (normalizedParams.q) {
+    const ftsIds = await getFullTextSearchIds(normalizedParams.q);
+    if (ftsIds !== null) {
+      if (ftsIds.length === 0) {
+        // No full-text matches — return empty result early
+        return {
+          listings: [] as ListingWithSeller[],
+          total: 0,
+          totalPages: 0,
+          popularBrands: [] as string[],
+          currentPage,
+          normalizedParams,
+        };
+      }
+      where.id = { in: ftsIds };
+    }
+  }
+
   const orderBy = resolveOrderBy(normalizedParams.sort);
 
   const runQueries = async (whereInput: Prisma.ListingWhereInput) => {

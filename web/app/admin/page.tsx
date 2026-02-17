@@ -1,6 +1,11 @@
+import dynamic from "next/dynamic";
 import { prisma } from "@/lib/prisma";
-import { AdminDashboard } from "@/components/admin/admin-dashboard";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+
+const AdminDashboard = dynamic(
+  () => import("@/components/admin/admin-dashboard").then(mod => ({ default: mod.AdminDashboard })),
+  { ssr: true, loading: () => <div className="h-64 animate-pulse rounded-lg bg-muted" /> }
+);
 
 export const metadata = {
   title: "Admin Panel",

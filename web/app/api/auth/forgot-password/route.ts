@@ -94,8 +94,10 @@ export async function POST(request: Request) {
       success: true,
       message: "Ako postoji nalog sa tim emailom, poslat će vam se link za resetovanje šifre.",
     });
-  } catch (error: any) {
-    logger.error("Error in forgot password", { error: error.message });
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : "Unknown error";
+    const errStack = error instanceof Error ? error.stack : undefined;
+    logger.error("Error in forgot password", { error: errMessage });
     return NextResponse.json(
       { error: "Došlo je do greške. Pokušajte ponovo." },
       { status: 500 }

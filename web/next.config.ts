@@ -27,8 +27,8 @@ const baseConfig: NextConfig = {
     ],
     // Optimize images
     formats: ["image/avif", "image/webp"],
-    minimumCacheTTL: 60,
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    minimumCacheTTL: 2592000,
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
   // Enable compression
@@ -39,6 +39,8 @@ const baseConfig: NextConfig = {
   reactCompiler: true,
   // Performance optimizations
   experimental: {
+    // Enable "use cache" directive for data caching
+    useCache: true,
     // Optimize package imports for better tree-shaking
     optimizePackageImports: [
       "lucide-react",

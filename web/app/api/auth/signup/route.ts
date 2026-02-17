@@ -75,8 +75,10 @@ export async function POST(request: Request) {
     logger.info("User created successfully", { userId: user.id, email });
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    logger.error("Signup error", { error: error.message, stack: error.stack });
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : "Unknown error";
+    const errStack = error instanceof Error ? error.stack : undefined;
+    logger.error("Signup error", { error: errMessage, stack: errStack });
     return NextResponse.json(
       { error: "Došlo je do greške. Pokušajte ponovo." },
       { status: 500 }

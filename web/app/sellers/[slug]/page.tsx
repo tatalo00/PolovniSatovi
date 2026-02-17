@@ -1,9 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
+import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { CACHE_TAGS, REVALIDATE } from "@/lib/cache";
 import { ListingGrid } from "@/components/listings/listing-grid";
 import type { ListingSummary } from "@/types/listing";
 import { AUTHENTICATION_STATUS } from "@/lib/authentication/status";
@@ -28,41 +32,64 @@ import { SellerProfileReviewsSection } from "@/components/reviews/seller-profile
 
 export const revalidate = 300;
 
+// Pre-render verified seller profiles at build time
+export async function generateStaticParams() {
+  try {
+    const profiles = await prisma.sellerProfile.findMany({
+      where: {
+        slug: { not: null },
+        user: { isVerified: true },
+      },
+      select: { slug: true },
+    });
+    return profiles
+      .filter((p): p is { slug: string } => p.slug !== null)
+      .map((p) => ({ slug: p.slug }));
+  } catch {
+    return [];
+  }
+}
+
 interface SellerPageProps {
   params: Promise<{ slug: string }>;
 }
 
-async function getSellerProfile(slug: string) {
-  return prisma.sellerProfile.findUnique({
-    where: { slug },
-    select: {
-      id: true,
-      storeName: true,
-      description: true,
-      shortDescription: true,
-      logoUrl: true,
-      heroImageUrl: true,
-      locationCity: true,
-      locationCountry: true,
-      userId: true,
-      ratingAvg: true,
-      reviewCount: true,
-      totalSoldCount: true,
-      avgResponseTimeMinutes: true,
-      returnPolicy: true,
-      user: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          isVerified: true,
-          verifiedAt: true,
-          createdAt: true,
+// Request-level dedup: generateMetadata and page render share the same query
+const getSellerProfile = cache((slug: string) =>
+  unstable_cache(
+    () => prisma.sellerProfile.findUnique({
+      where: { slug },
+      select: {
+        id: true,
+        storeName: true,
+        description: true,
+        shortDescription: true,
+        logoUrl: true,
+        heroImageUrl: true,
+        locationCity: true,
+        locationCountry: true,
+        userId: true,
+        ratingAvg: true,
+        reviewCount: true,
+        totalSoldCount: true,
+        avgResponseTimeMinutes: true,
+        returnPolicy: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            isVerified: true,
+            verifiedAt: true,
+            createdAt: true,
+          },
         },
       },
-    },
-  });
-}
+    }),
+    [`seller-profile-${slug}`],
+    { tags: [CACHE_TAGS.sellers], revalidate: REVALIDATE.MEDIUM }
+  )()
+);
 
 async function getSellerListings(userId: string) {
   return prisma.listing.findMany({
@@ -466,17 +493,19 @@ export default async function SellerPublicProfilePage({ params }: SellerPageProp
           )}
 
           {/* Reviews Section (CP2) */}
-          <SellerProfileReviewsSection
-            sellerId={profile.user.id}
-            sellerName={profile.storeName}
-            initialReviews={initialReviews.map((r) => ({
-              ...r,
-              createdAt: r.createdAt.toISOString(),
-            }))}
-            initialAvgRating={ratingAvg}
-            initialTotalReviews={reviewCount}
-            initialDistribution={ratingDistribution}
-          />
+          <Suspense fallback={<div className="h-48 animate-pulse rounded-lg bg-muted" />}>
+            <SellerProfileReviewsSection
+              sellerId={profile.user.id}
+              sellerName={profile.storeName}
+              initialReviews={initialReviews.map((r) => ({
+                ...r,
+                createdAt: r.createdAt.toISOString(),
+              }))}
+              initialAvgRating={ratingAvg}
+              initialTotalReviews={reviewCount}
+              initialDistribution={ratingDistribution}
+            />
+          </Suspense>
         </div>
 
         {/* Sidebar */}

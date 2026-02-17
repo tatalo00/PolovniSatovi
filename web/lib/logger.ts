@@ -3,7 +3,7 @@ import "server-only";
 type LogLevel = "info" | "warn" | "error" | "debug";
 
 interface LogContext {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 class Logger {

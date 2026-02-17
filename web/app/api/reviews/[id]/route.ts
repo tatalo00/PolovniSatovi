@@ -72,8 +72,10 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     await updateSellerRating(review.sellerId);
 
     return NextResponse.json(updatedReview);
-  } catch (error: any) {
-    if (error.message === "Unauthorized") {
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : "Unknown error";
+    const errStack = error instanceof Error ? error.stack : undefined;
+    if (errMessage === "Unauthorized") {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -130,8 +132,10 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     await updateSellerRating(review.sellerId);
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    if (error.message === "Unauthorized") {
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : "Unknown error";
+    const errStack = error instanceof Error ? error.stack : undefined;
+    if (errMessage === "Unauthorized") {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }

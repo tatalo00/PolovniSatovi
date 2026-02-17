@@ -43,7 +43,7 @@ export function PaidListings({ listings }: PaidListingsProps) {
         </div>
 
         <div className="grid gap-4 sm:gap-5 md:gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {listings.map((listing) => (
+          {listings.map((listing, index) => (
             <Link
               key={listing.id}
               href={listing.href}
@@ -58,6 +58,8 @@ export function PaidListings({ listings }: PaidListingsProps) {
                       fill
                       sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                       className="object-cover transition duration-700 group-hover:scale-105"
+                      priority={index < 3}
+                      fetchPriority={index < 3 ? "high" : undefined}
                       placeholder="blur"
                       blurDataURL={BLUR_DATA_URL}
                     />

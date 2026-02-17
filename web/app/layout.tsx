@@ -3,7 +3,6 @@ import { Suspense } from "react";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
 import { Navbar } from "@/components/site/navbar";
 import { Footer } from "@/components/site/footer";
 import { MobileBottomNav } from "@/components/site/mobile-bottom-nav";
@@ -70,26 +69,6 @@ export default async function RootLayout({
     isVerified: session.user.isVerified ?? false,
   } : null;
 
-  // Query unread message count for mobile nav badge
-  let unreadCount = 0;
-  if (session?.user?.id) {
-    try {
-      unreadCount = await prisma.message.count({
-        where: {
-          thread: {
-            OR: [
-              { buyerId: session.user.id },
-              { sellerId: session.user.id },
-            ],
-          },
-          senderId: { not: session.user.id },
-          readAt: null,
-        },
-      });
-    } catch {
-      // Silently fail - badge is non-critical
-    }
-  }
 
   return (
     <html lang="en" className="h-full overflow-x-hidden">
@@ -102,7 +81,7 @@ export default async function RootLayout({
               <Navbar user={user} />
               <PageTransitionWrapper>{children}</PageTransitionWrapper>
               <Footer />
-              <MobileBottomNav user={user} unreadCount={unreadCount} />
+              <MobileBottomNav user={user} />
               <Toaster
                 position="bottom-center"
                 expand={false}

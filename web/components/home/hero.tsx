@@ -48,6 +48,7 @@ export function Hero({ featuredListings, totalListings, totalSellers }: HeroProp
         alt="Vintage watch collection"
         fill
         priority
+        fetchPriority="high"
         className="object-cover"
         sizes="100vw"
       />
