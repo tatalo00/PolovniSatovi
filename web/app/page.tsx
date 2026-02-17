@@ -6,7 +6,6 @@ import { RecentListingsSection } from "@/components/home/recent-listings-section
 import { TrustServices } from "@/components/home/trust-services";
 import { EducationHub } from "@/components/home/education-hub";
 import {
-  HeroSkeleton,
   QuickFilterBarSkeleton,
   PaidListingsSkeleton,
   RecentListingsSkeleton,
@@ -18,9 +17,7 @@ export const revalidate = 300;
 export default function HomePage() {
   return (
     <main>
-      <Suspense fallback={<HeroSkeleton />}>
-        <HeroSection />
-      </Suspense>
+      <HeroSection />
       <Suspense fallback={<QuickFilterBarSkeleton />}>
         <QuickFilterSection />
       </Suspense>

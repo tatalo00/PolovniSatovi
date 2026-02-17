@@ -167,6 +167,7 @@ export function RecentListings({ listings, favoriteIds }: RecentListingsProps) {
                           className="object-cover transition-transform duration-300 group-hover:scale-105"
                           sizes="300px"
                           priority={isPriority}
+                          fetchPriority={isPriority ? "high" : undefined}
                           loading={isPriority ? undefined : "lazy"}
                         />
                       ) : (

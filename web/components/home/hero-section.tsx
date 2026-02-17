@@ -79,11 +79,31 @@ export async function HeroSection() {
     photoUrl: listing.photos[0]?.url,
   }));
 
+  // Determine the hero image URL for preloading
+  const heroImageSrc =
+    featuredListings.find((l) => l.photoUrl)?.photoUrl ??
+    "/images/hero-pocket-watch.jpg";
+
+  // Build the preload href through Next.js image optimizer
+  const preloadHref = heroImageSrc.startsWith("/")
+    ? `/_next/image?url=${encodeURIComponent(heroImageSrc)}&w=1920&q=75`
+    : `/_next/image?url=${encodeURIComponent(heroImageSrc)}&w=1920&q=75`;
+
   return (
-    <Hero
-      featuredListings={featuredListings}
-      totalListings={totalListings}
-      totalSellers={totalSellers}
-    />
+    <>
+      {/* React 19 hoists <link> to <head> automatically */}
+      <link
+        rel="preload"
+        as="image"
+        href={preloadHref}
+        // @ts-expect-error -- fetchpriority is valid HTML but not yet in React types
+        fetchpriority="high"
+      />
+      <Hero
+        featuredListings={featuredListings}
+        totalListings={totalListings}
+        totalSellers={totalSellers}
+      />
+    </>
   );
 }
